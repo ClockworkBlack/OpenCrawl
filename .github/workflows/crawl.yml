@@ -73,6 +73,9 @@ env:
 
 jobs:
   prepare:
+    # Off until the repository owner opts in: Settings > Secrets and variables > Actions > Variables >
+    # OPENCRAWL_ENABLED = true. A fork or a fresh copy never crawls on a schedule by itself.
+    if: vars.OPENCRAWL_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 80
     outputs:

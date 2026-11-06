@@ -12,7 +12,6 @@ def test_priority_field_kept(tmp_path: Path):
     assert c["a"]["websites"] == ["https://example.org"]
 
 
-def test_starter_subjects_file_loads():
+def test_starter_subjects_file_loads_empty():
     root = Path(__file__).resolve().parents[1]
-    cs = load_subjects(root)
-    assert cs and all(c.get("name") and c.get("variants") for c in cs)
+    assert load_subjects(root) == []   # the starter file ships with no subjects: nobody is researched by default
