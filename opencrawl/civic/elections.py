@@ -33,9 +33,10 @@ QUALIFYING_RX = re.compile(r"\b(qualif(ied|ying)\s+candidates?|candidates?\s+(wh
                            r"list\s+of\s+candidates|candidate\s+qualifying|qualifying\s+(list|report|period))", re.I)
 OFFICE_RX = re.compile(r"^(?:(?:city|town|village|borough)\s+of\s+[\w .'-]+?\s*[-–:]\s*)?(mayor|council|councilm[ae]n|councilmember|"
                        r"commission\w*|alderm\w*|trustee\w*|supervisor\w*|selectm[ae]n|board\s+of\s+(education|commissioners?|trustees)|"
-                       r"school\s+board|post\s+\d+|ward\s+\d+|district\s+\d+|seat\s+\w+|judge|magistrate|sheriff|coroner|clerk|"
-                       r"treasurer|assessor|tax\s+commissioner|solicitor|surveyor|referendum|question|ballot\s+(?:issue|measure)|"
-                       r"amendment|splost|tsplost|esplost|homestead|brunch|sunday\s+sales)\b", re.I)
+                       r"school\s+board|post\s+\d+|ward\s+\d+|district\s+\d+|seat\s+\w+|judge|justice|magistrate|sheriff|coroner|"
+                       r"clerk|treasurer|assessor|auditor|recorder|controller|comptroller|prosecutor|district\s+attorney|surveyor|"
+                       r"constable|regent\w*|director\w*|referendum|question|ballot\s+(?:issue|measure)|amendment|proposition|"
+                       r"initiative|recall)\b", re.I)
 SKIP_ROW = re.compile(r"^(total|totals?\b|total\s+votes|votes\s+cast|undervotes?|overvotes?|write[- ]?ins?|write[- ]?in\s+totals?|"
                       r"blank|registered\s+voters?|ballots?\s+cast|turnout|precincts?\s+reporting|contest\s+total|times\s+counted)",
                       re.I)
@@ -92,27 +93,33 @@ def _clean_name(raw: str) -> tuple[str, str, bool]:
 
 
 YESNO = {"yes", "no", "for", "against", "yes/si", "no/no", "si"}
-# Ballot question types, most specific first. Southern "local option sales tax" names (SPLOST...) sit beside the
-# generic sales / use / lodging / excise taxes, mill levies and debt questions found in most states.
-QUESTION_TYPES = [
-    ("ESPLOST", r"\b(esplost|education(?:al)?\s+(?:special\s+purpose\s+)?local\s+option\s+sales\s+tax|school\s+(?:sales\s+)?tax)\b"),
-    ("TSPLOST", r"\b(tsplost|transportation\s+(?:special\s+purpose\s+)?local\s+option\s+sales\s+tax)\b"),
-    ("SPLOST", r"\b(splost|special\s+purpose\s+local\s+option\s+sales\s+tax)\b"),
-    ("LOST", r"\b(lost\b|local\s+option\s+sales\s+tax)"),
-    ("Homestead exemption", r"\bhomestead\s+exemption"),
+# Ballot question types, most specific first: generic kinds found across most states. A project adds its own
+# state's names (local option sales taxes, revenue-limit questions...) with settings.yaml `civic.ballot_types`,
+# a list of {label, pattern} tried before these (see the Colorado example).
+DEFAULT_QUESTION_TYPES = [
     ("Bond", r"\b(general\s+obligation\s+)?bonds?\b"),
     ("Lodging / excise tax", r"\b(lodging\s+tax|occupancy\s+tax|excise\s+tax|marijuana\s+tax|tobacco\s+tax)\b"),
     ("Sales tax", r"\b(sales\s+(?:and\s+use\s+)?tax|use\s+tax)\b"),
-    ("Mill levy", r"\b(mill\s+lev(?:y|ies)|mill\s+levy\s+override)\b"),
-    ("Debt / revenue retention", r"\b(debt\s+(?:be\s+)?increased|retain\s+and\s+spend|revenue\s+change|de-?bruce|tabor)\b"),
-    ("Alcohol", r"\b(sunday\s+sales|brunch|package\s+sales|distilled\s+spirits|malt\s+beverages|alcoholic\s+beverages|liquor|by\s+the\s+drink)\b"),
+    ("Homestead exemption", r"\bhomestead\s+exemption"),
+    ("Property tax / levy", r"\b(mill\s+lev(?:y|ies)|levy\s+override|millage|property\s+tax|ad\s+valorem|tax\s+levy)\b"),
+    ("Debt / revenue limit", r"\b(debt\s+(?:be\s+)?increased|retain\s+and\s+spend|revenue\s+(?:change|limit)|spending\s+limit)\b"),
+    ("Alcohol", r"\b(package\s+sales|distilled\s+spirits|malt\s+beverages|alcoholic\s+beverages|liquor|by\s+the\s+drink)\b"),
     ("Charter amendment", r"\bcharter\b"),
-    ("Annexation / cityhood", r"\b(annex\w*|incorporat\w*|cityhood|de-?annex\w*|new\s+city)\b"),
-    ("Redevelopment powers / TAD", r"\b(redevelopment\s+powers|tax\s+allocation\s+district)\b"),
-    ("Millage / tax", r"\b(millage|property\s+tax|ad\s+valorem)\b"),
+    ("Annexation / incorporation", r"\b(annex\w*|incorporat\w*|de-?annex\w*|new\s+city)\b"),
     ("Term / government structure", r"\b(term\s+limits?|city\s+manager|consolidat\w*|government\s+structure|elected\s+(?:chair|mayor))\b"),
+    ("Recall", r"\brecall\b"),
     ("Constitutional amendment", r"\b(constitutional\s+amendment|amendment\s+\d|house\s+resolution|senate\s+resolution)\b"),
 ]
+QUESTION_TYPES = list(DEFAULT_QUESTION_TYPES)
+
+
+def configure(civic_cfg: dict | None) -> None:
+    """settings.yaml `civic.ballot_types`: [{label, pattern}], tried before the generic kinds."""
+    extra = [(str(t["label"]), str(t["pattern"])) for t in ((civic_cfg or {}).get("ballot_types") or [])
+             if isinstance(t, dict) and t.get("label") and t.get("pattern")]
+    for _, pat in extra:
+        re.compile(pat)          # a bad pattern fails loudly here, not in the middle of a run
+    QUESTION_TYPES[:] = extra + DEFAULT_QUESTION_TYPES
 
 
 def question_type(text: str) -> str:
@@ -318,50 +325,54 @@ register(Deriver("elections", "kind IN ('page','document') AND source_id NOT LIK
 
 # ----------------------------------------------------------------------------- export (archive shape)
 def export_elections(store, jurisdictions: dict[str, dict]) -> list[dict]:
-    """Group election_result records into archive elections: {eid, date, title, kind, official, u, c:[...]}."""
+    """Group election_result (and ballot-question result) records into elections:
+    {id, date, year, target, title, kind, official, url, contests[]}. An office contest is
+    {index, type: "office", level, office, county, total_votes, candidates[{name, party, votes, incumbent, outcome}],
+    person_keys, url}; a ballot question is {index, type: "question", level, title, county, total_votes,
+    choices[{name, votes}], result, question, question_type, url}."""
     from ..names import person_key as pkey
 
     groups: dict[tuple, dict] = {}
+
+    def group(jid: str, date: str, r: dict, runoff: bool = False) -> dict:
+        return groups.setdefault((jid, date), {
+            "id": f"{jid}-{date}", "date": date, "year": date[:4], "target": jid,
+            "title": f"{jurisdictions.get(jid, {}).get('name', jid)} election {date}" + (" (runoff)" if runoff else ""),
+            "kind": "municipal runoff" if runoff else "municipal", "official": bool(r["meta"].get("official")),
+            "url": r["url"], "contests": [], "_seen": set()})
+
+    def county_of(jid: str) -> str:
+        j = jurisdictions.get(jid)
+        return (j.get("counties") or [j["name"].removesuffix(" County")])[0] if j else ""
+
     for r in store.iter_query("kind='election_result'"):
         m = r["meta"]
         jid = r.get("target") or "state"
-        date = m.get("date") or "0000-00-00"
-        key = (jid, date)
-        g = groups.setdefault(key, {"eid": f"x{jid}-{date}", "date": date, "year": date[:4], "target": jid,
-                                   "title": f"{jurisdictions.get(jid, {}).get('name', jid)} election {date}" +
-                                            (" (runoff)" if m.get("runoff") else ""),
-                                   "kind": "municipal runoff" if m.get("runoff") else "municipal", "official": bool(m.get("official")),
-                                   "u": r["url"], "c": [], "_seen": set()})
+        g = group(jid, m.get("date") or "0000-00-00", r, bool(m.get("runoff")))
         sig = (m["office"].lower(), tuple(x["name"].lower() for x in m["candidates"]))
         if sig in g["_seen"]:
             continue
         g["_seen"].add(sig)
-        county = ""
-        j = jurisdictions.get(jid)
-        if j:
-            county = (j.get("counties") or [j["name"].removesuffix(" County")])[0]
-        g["c"].append({"i": len(g["c"]), "lvl": "local", "sub": "", "key": m["office"], "t": m["office"], "p": "",
-                       "j": county, "vf": 1, "tot": m.get("total", 0),
-                       "o": [[x["name"], x.get("party", ""), x["votes"], 1 if x.get("incumbent") else 0, x.get("outcome", "")]
-                             for x in m["candidates"]],
-                       "u": r["url"], "keys": [pkey(x["name"]) for x in m["candidates"]]})
+        g["contests"].append({
+            "index": len(g["contests"]), "type": "office", "level": "local", "office": m["office"],
+            "county": county_of(jid), "total_votes": m.get("total", 0),
+            "candidates": [{"name": x["name"], "party": x.get("party", ""), "votes": x["votes"],
+                            "incumbent": bool(x.get("incumbent")), "outcome": x.get("outcome", "")} for x in m["candidates"]],
+            "person_keys": [pkey(x["name"]) for x in m["candidates"]], "url": r["url"]})
     for r in store.iter_query("kind='ballot_question' AND meta LIKE '%\"has_results\": true%'"):
         m = r["meta"]
         jid = r.get("target") or "state"
-        date = m.get("date") or "0000-00-00"
-        g = groups.setdefault((jid, date), {"eid": f"x{jid}-{date}", "date": date, "year": date[:4], "target": jid,
-                                            "title": f"{jurisdictions.get(jid, {}).get('name', jid)} election {date}",
-                                            "kind": "municipal", "official": bool(m.get("official")), "u": r["url"], "c": [], "_seen": set()})
+        g = group(jid, m.get("date") or "0000-00-00", r)
         sig = ("q", m["question"].lower()[:120])
         if sig in g["_seen"]:
             continue
         g["_seen"].add(sig)
-        j = jurisdictions.get(jid)
-        county = (j.get("counties") or [j["name"].removesuffix(" County")])[0] if j else ""
         title = m["type"] if (len(m["question"]) > 80 or re.match(r"^shall\b", m["question"], re.I)) else m["question"]
-        g["c"].append({"i": len(g["c"]), "lvl": "local", "sub": "question", "key": f"{county}|{title}", "t": title, "p": "", "j": county,
-                       "vf": 1, "tot": m.get("total", 0), "o": [["Yes", "", m.get("yes", 0), 0, ""], ["No", "", m.get("no", 0), 0, ""]],
-                       "u": r["url"], "res": m.get("result"), "q": m["question"][:600], "type": m["type"]})
+        g["contests"].append({
+            "index": len(g["contests"]), "type": "question", "level": "local", "title": title, "county": county_of(jid),
+            "total_votes": m.get("total", 0),
+            "choices": [{"name": "Yes", "votes": m.get("yes", 0)}, {"name": "No", "votes": m.get("no", 0)}],
+            "result": m.get("result"), "question": m["question"][:600], "question_type": m["type"], "url": r["url"]})
     out = []
     for g in groups.values():
         g.pop("_seen")
@@ -370,5 +381,5 @@ def export_elections(store, jurisdictions: dict[str, dict]) -> list[dict]:
 
 
 def export_qualifying(store) -> list[dict]:
-    return [{"target": r.get("target"), "date": r["meta"].get("date"), "u": r["url"], "contests": r["meta"]["contests"]}
+    return [{"target": r.get("target"), "date": r["meta"].get("date"), "url": r["url"], "contests": r["meta"]["contests"]}
             for r in store.iter_query("kind='qualifying'")]

@@ -13,18 +13,27 @@ send       a small daily batch over SMTP. Off unless `openrecords.enabled` is tr
            or SMTP error.
 check      reads replies over IMAP (matched by the [ORR-<id>] tag in the subject or the thread headers):
            acknowledgement, cost estimate, records attached (PDFs go to imports/screens/ordinances/ and into the
-           Screenshots box) or linked, bounce, denial.
+           screenshot inbox) or linked, bounce, denial.
 follow-up  one polite follow-up in the same thread when the response deadline has passed by a few days.
 
+Replies are untrusted mail. A reply only counts (status change, attachments into the inbox) when it comes from the
+domain the request was sent to (or a domain listed in `openrecords.trusted_reply_domains`, such as the records
+portal a government uses) and the mailbox provider's Authentication-Results don't show it failing DMARC/SPF.
+Anything else is kept for review in data/openrecords/unverified/ and changes nothing. Attachments must be what
+their name says (PDF, image, Word, checked by content), at most 25 MB each and 20 per message; only headers are
+downloaded until a message is known to belong to a request. Connections use TLS with certificate verification
+(SMTPS on 465 or STARTTLS on 587, IMAPS on 993); there is no plain-text fallback.
+
 Mailbox secrets (environment): ORR_SMTP_HOST, ORR_SMTP_PORT (465 SSL or 587 STARTTLS), ORR_USER, ORR_PASSWORD,
-ORR_FROM (the project address), ORR_IMAP_HOST (optional, for replies; port 993).
-Tracker: data/openrecords/requests.json (committed, so the history is visible in the repo).
+ORR_FROM (the project address), ORR_IMAP_HOST (optional, for replies), ORR_IMAP_PORT (default 993).
+Tracker: data/openrecords/requests.json.
 """
 from __future__ import annotations
 
 import datetime as dt
 import email
 import email.utils
+import hashlib
 import imaplib
 import json
 import os
@@ -60,6 +69,16 @@ Code of Ordinances of {name}. I have not yet received a response. Could you let 
 Thank you,
 {requester}
 """
+MAX_ATTACHMENT_BYTES = 25_000_000
+MAX_ATTACHMENTS = 20
+MAX_MESSAGE_BYTES = 60_000_000
+MAX_MESSAGES = 500
+ATTACHMENT_MAGIC = {".pdf": (b"%PDF-",), ".png": (b"\x89PNG\r\n\x1a\n",), ".jpg": (b"\xff\xd8\xff",),
+                    ".jpeg": (b"\xff\xd8\xff",), ".docx": (b"PK\x03\x04",),
+                    ".doc": (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1",)}
+ADDRESS = re.compile(r"^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9-]{1,63}(\.[A-Za-z0-9-]{1,63})*\.[A-Za-z]{2,24}$")
+SECOND_LEVEL = {"co", "com", "gov", "org", "net", "ac", "edu", "k12", "ci", "state", "city", "town", "county", "lib",
+                "mil", "nic", "or", "go", "govt", "gob", "gouv"}
 LAW_DEFAULTS = {"law": "the applicable public records law", "citation": "", "response_days": 10, "cost_cap": "$25.00",
                 "subject": SUBJECT, "template": BODY}
 
@@ -133,8 +152,9 @@ def plan(jurisdictions: list[dict], tracker: Tracker, store=None, cooldown_days:
                 (now - dt.datetime.fromisoformat(t["updated_at"])).days < cooldown_days:
             continue
         rc = j.get("records") or {}
-        if rc.get("emails"):
-            out.append({"target": j, "to": rc["emails"][0], "how": "email", "found_on": rc.get("page")})
+        emails = [a for a in rc.get("emails") or [] if valid_address(a)]
+        if emails:
+            out.append({"target": j, "to": emails[0], "how": "email", "found_on": rc.get("page")})
         elif rc.get("portal"):
             out.append({"target": j, "to": rc["portal"], "how": "portal", "found_on": rc.get("page")})
     return out
@@ -168,6 +188,7 @@ class Mailbox:
         self.port = int(e.get("ORR_SMTP_PORT") or 465)
         self.sender = e.get("ORR_FROM") or self.user
         self.imap_host = e.get("ORR_IMAP_HOST")
+        self.imap_port = int(e.get("ORR_IMAP_PORT") or 993)
 
     @property
     def can_send(self) -> bool:
@@ -181,7 +202,7 @@ class Mailbox:
             s = smtplib.SMTP_SSL(self.smtp_host, self.port, context=ctx, timeout=60)
         else:
             s = smtplib.SMTP(self.smtp_host, self.port, timeout=60)
-            s.starttls(context=ctx)
+            s.starttls(context=ctx)          # raises when the server doesn't offer TLS: never log in in the clear
         try:
             s.login(self.user, self.password)
             s.send_message(msg)
@@ -191,25 +212,102 @@ class Mailbox:
             except Exception:  # noqa: BLE001
                 pass
 
-    def fetch_replies(self, since: dt.date, imap_factory=None) -> list[email.message.Message]:
+    def fetch_replies(self, since: dt.date, imap_factory=None, want=None) -> list[email.message.Message]:
+        """Messages since `since`, read-only. Only headers are fetched first; a message is downloaded in full only
+        when `want(headers)` says it belongs to a request, and only up to MAX_MESSAGE_BYTES."""
         if not (self.imap_host or imap_factory):
             return []
-        m = imap_factory() if imap_factory else imaplib.IMAP4_SSL(self.imap_host, 993)
+        if imap_factory:
+            m = imap_factory()
+        else:
+            m = imaplib.IMAP4_SSL(self.imap_host, self.imap_port, ssl_context=ssl.create_default_context(), timeout=60)
         try:
             m.login(self.user, self.password)
             m.select("INBOX", readonly=True)
             typ, ids = m.search(None, "SINCE", since.strftime("%d-%b-%Y"))
             out = []
-            for i in (ids[0].split() if ids and ids[0] else [])[-500:]:
-                typ, data = m.fetch(i, "(RFC822)")
-                if data and data[0]:
-                    out.append(email.message_from_bytes(data[0][1]))
+            for i in (ids[0].split() if ids and ids[0] else [])[-MAX_MESSAGES:]:
+                typ, data = m.fetch(i, "(RFC822.SIZE BODY.PEEK[HEADER.FIELDS (FROM SUBJECT MESSAGE-ID IN-REPLY-TO "
+                                       "REFERENCES AUTHENTICATION-RESULTS)])")
+                part = next((d for d in (data or []) if isinstance(d, tuple)), None)
+                if not part:
+                    continue
+                size = re.search(rb"RFC822\.SIZE (\d+)", part[0] or b"")
+                if size and int(size.group(1)) > MAX_MESSAGE_BYTES:
+                    continue
+                head = email.message_from_bytes(part[1] or b"")
+                if want is not None and not want(head):
+                    continue
+                typ, data = m.fetch(i, "(BODY.PEEK[])")
+                part = next((d for d in (data or []) if isinstance(d, tuple)), None)
+                if part and part[1] and len(part[1]) <= MAX_MESSAGE_BYTES:
+                    out.append(email.message_from_bytes(part[1]))
             return out
         finally:
             try:
                 m.logout()
             except Exception:  # noqa: BLE001
                 pass
+
+
+def valid_address(a: str) -> bool:
+    return bool(a) and "\n" not in a and "\r" not in a and bool(ADDRESS.match(a.strip()))
+
+
+def org_domain(d: str) -> str:
+    """The registrable part of a mail domain, near enough: bigtown.gov, smallcounty.co.us, city.gov.uk."""
+    parts = [x for x in (d or "").lower().strip(".").split(".") if x]
+    if len(parts) >= 3 and len(parts[-1]) == 2 and parts[-2] in SECOND_LEVEL:
+        return ".".join(parts[-3:])
+    return ".".join(parts[-2:])
+
+
+def _address_of(header) -> str:
+    return email.utils.parseaddr(_decode(header))[1].lower()
+
+
+def sender_check(msg: email.message.Message, sent_to: str, trusted: list[str] | None = None) -> tuple[bool, str]:
+    """(trusted?, why). The From domain must be the request's domain (or a configured trusted one), and the top
+    Authentication-Results header (added by our own mailbox provider) must not show DMARC failing, or SPF failing
+    without a passing DKIM signature."""
+    frm = _address_of(msg.get("From"))
+    dom = frm.rsplit("@", 1)[-1] if "@" in frm else ""
+    if not dom:
+        return False, "no sender address"
+    want = org_domain(sent_to.rsplit("@", 1)[-1]) if "@" in (sent_to or "") else ""
+    ok_domains = {org_domain(x) for x in (trusted or []) if x}
+    if org_domain(dom) != want and org_domain(dom) not in ok_domains:
+        return False, f"sender domain {dom} is not the request's domain {want or '?'}"
+    auth = (msg.get_all("Authentication-Results") or [""])[0].lower()
+    if re.search(r"\bdmarc=fail\b", auth):
+        return False, "DMARC failed"
+    if re.search(r"\bspf=(fail|softfail)\b", auth) and not re.search(r"\bdkim=pass\b", auth):
+        return False, "SPF failed and no valid DKIM signature"
+    return True, "sender domain matches" + (" (authenticated)" if "dmarc=pass" in auth or "dkim=pass" in auth else "")
+
+
+def safe_attachment(filename: str, data: bytes) -> str | None:
+    """Why an attachment is refused, or None when it may be saved: allowed type by name AND content, size cap."""
+    ext = Path(filename or "").suffix.lower()
+    if ext not in ATTACHMENT_MAGIC:
+        return "type not accepted"
+    if not data:
+        return "empty"
+    if len(data) > MAX_ATTACHMENT_BYTES:
+        return f"over {MAX_ATTACHMENT_BYTES // 1_000_000} MB"
+    if not data.startswith(ATTACHMENT_MAGIC[ext]):
+        return f"content is not a {ext[1:].upper()} file"
+    return None
+
+
+_MASK_EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_MASK_PHONE = re.compile(r"(?<!\d)(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)")
+
+
+def _excerpt(body: str, n: int = 300) -> str:
+    """A short excerpt of a reply for the tracker, without the addresses and phone numbers of the people in it."""
+    text = re.sub(r"\s+", " ", body or "").strip()[: n * 2]
+    return _MASK_PHONE.sub("[phone]", _MASK_EMAIL.sub("[email]", text))[:n]
 
 
 def _decode(s) -> str:
@@ -306,37 +404,72 @@ class Requests:
         if not sent:
             return {"checked": 0}
         since = min(dt.date.fromisoformat(t["sent_at"][:10]) for t in self.tracker.data.values() if t.get("sent_at"))
-        msgs = self.mailbox.fetch_replies(since - dt.timedelta(days=1), imap_factory)
+        trusted = list(self.opts.get("trusted_reply_domains") or [])
+
+        def tag_of(subj: str) -> str | None:
+            tag = re.search(r"\[ORR-([a-z0-9-]{1,80})\]", subj)
+            return tag.group(1) if tag else None
+
+        def bounce(frm: str) -> bool:
+            return frm.startswith(("mailer-daemon@", "postmaster@")) or "mailer-daemon" in frm
+
+        def want(h) -> bool:
+            refs = f"{h.get('In-Reply-To', '')} {h.get('References', '')}"
+            return bool(tag_of(_decode(h.get("Subject"))) or any(k in refs for k in sent) or bounce(_address_of(h.get("From"))))
+
+        msgs = self.mailbox.fetch_replies(since - dt.timedelta(days=1), imap_factory, want=want)
         attachments_dir = attachments_dir or self.root / "imports" / "screens" / "ordinances"
+        review_dir = self.root / "data" / "openrecords" / "unverified"
         out = {"checked": len(msgs), "matched": 0, "attachments": 0}
         for m in msgs:
             subj = _decode(m.get("Subject"))
             refs = f"{m.get('In-Reply-To', '')} {m.get('References', '')}"
-            tag = re.search(r"\[ORR-([a-z0-9-]+)\]", subj)
-            jid = tag.group(1) if tag else next((v for k, v in sent.items() if k in refs), None)
-            frm = _decode(m.get("From")).lower()
+            jid = tag_of(subj) or next((v for k, v in sent.items() if k in refs), None)
+            frm = _address_of(m.get("From"))
             body = _text(m)
-            if not jid and ("mailer-daemon" in frm or "postmaster" in frm):
+            is_bounce = bounce(frm) or "undeliverable" in subj.lower() or "delivery status" in subj.lower()
+            if not jid and is_bounce:
                 jid = next((v for k, v in sent.items() if k in body), None)
             if not jid or jid not in self.tracker.data:
                 continue
-            mid = m.get("Message-ID", "")
+            mid = (m.get("Message-ID") or "").strip()[:200]
             t = self.tracker.data[jid]
             if mid and mid in {r.get("message_id") for r in t.get("replies", [])}:
                 continue
             out["matched"] += 1
-            files = []
-            for p in m.walk():
-                fn = p.get_filename()
-                if fn and fn.lower().endswith((".pdf", ".docx", ".doc", ".png", ".jpg", ".jpeg")):
-                    attachments_dir.mkdir(parents=True, exist_ok=True)
-                    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", f"{jid}__{_decode(fn)}")[:150]
-                    (attachments_dir / safe).write_bytes(p.get_payload(decode=True) or b"")
-                    files.append(safe)
-            links = re.findall(r"https?://[^\s<>\")]+", body)[:10]
+            if is_bounce:
+                t.setdefault("replies", []).append({"at": _now(), "from": frm[:120], "subject": subj[:200], "message_id": mid,
+                                                    "status": "bounced", "verified": True, "files": [], "links": []})
+                self.tracker.log(jid, "bounced", "delivery failed")
+                continue
+            trusted_sender, why = sender_check(m, t.get("to", ""), trusted)
+            files, refused = [], []
+            for part in m.walk():
+                fn = _decode(part.get_filename() or "")
+                if not fn:
+                    continue
+                if len(files) + len(refused) >= MAX_ATTACHMENTS:
+                    refused.append(f"{fn[:80]}: too many attachments")
+                    break
+                data = part.get_payload(decode=True) or b""
+                problem = safe_attachment(fn, data)
+                if problem:
+                    refused.append(f"{fn[:80]}: {problem}")
+                    continue
+                dest = attachments_dir if trusted_sender else review_dir
+                dest.mkdir(parents=True, exist_ok=True)
+                stem = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(fn).stem)[:100].strip("._") or "attachment"
+                safe = f"{jid}__{stem}{Path(fn).suffix.lower()}"
+                if (dest / safe).exists():
+                    safe = f"{jid}__{stem}_{hashlib.sha256(data).hexdigest()[:8]}{Path(fn).suffix.lower()}"
+                fd = os.open(dest / safe, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                with os.fdopen(fd, "wb") as fh:
+                    fh.write(data)
+                files.append(safe)
+            links = [u for u in re.findall(r"https?://[^\s<>\")\]]+", body) if len(u) < 500][:10]
             low = body.lower()
-            if "mailer-daemon" in frm or "postmaster" in frm or "undeliverable" in subj.lower() or "delivery status" in subj.lower():
-                status = "bounced"
+            if not trusted_sender:
+                status = t.get("status") or "sent"
             elif files:
                 status = "fulfilled"
             elif re.search(r"\$\s?\d", body) and re.search(r"cost|fee|estimate|charge|invoice", low):
@@ -347,10 +480,17 @@ class Requests:
                 status = "partial"
             else:
                 status = "acknowledged"
-            t.setdefault("replies", []).append({"at": _now(), "from": frm[:120], "subject": subj[:200], "message_id": mid,
-                                                "status": status, "files": files, "links": links, "excerpt": body[:800]})
-            self.tracker.log(jid, status, f"reply from {frm[:80]}", **({"files": t.get("files", []) + files} if files else {}))
-            out["attachments"] += len(files)
+            t.setdefault("replies", []).append({
+                "at": _now(), "from": frm[:120], "subject": subj[:200], "message_id": mid, "status": status,
+                "verified": trusted_sender, "why": why, "files": files, "refused_attachments": refused,
+                "links": links if trusted_sender else [], "excerpt": _excerpt(body)})
+            if trusted_sender:
+                self.tracker.log(jid, status, f"reply from {frm[:80]}", **({"files": t.get("files", []) + files} if files else {}))
+                out["attachments"] += len(files)
+            else:
+                out.setdefault("unverified", 0)
+                out["unverified"] += 1
+                self.log(f"{jid}: reply from {frm[:80]} kept for review ({why})")
         self.tracker.save()
         return out
 
@@ -399,7 +539,7 @@ def discover_contacts(fetcher, jurisdictions: list[dict], state_path: Path, dead
 
     from ..blocked import Blocked
     from ..fetch import Disallowed
-    from .seed import find_records_contact
+    from ..seed import find_records_contact
 
     disc = json.loads(state_path.read_text()) if state_path.exists() else {}
     n = 0

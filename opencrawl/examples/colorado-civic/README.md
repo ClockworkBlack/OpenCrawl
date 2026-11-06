@@ -8,7 +8,8 @@ campaign-finance settings.
 ```bash
 opencrawl init my-colorado --example colorado-civic
 cd my-colorado
-# set http.user_agent in config/settings.yaml to your repository
+# set http.user_agent in config/settings.yaml to your repository, then check the project
+opencrawl doctor
 opencrawl seed --max-minutes 30        # websites (Wikidata by FIPS / article, Wikipedia), portals, feeds, records contacts
 opencrawl targets --sources            # what will be crawled
 opencrawl run --tier a --max-minutes 30
@@ -31,7 +32,7 @@ The same three files, in the same shape, build a registry for any other state.
 
 | file | Colorado specifics |
 |---|---|
-| `config/settings.yaml` | `civic.state_fips: "08"`, Mountain-time off-peak windows, CORA (C.R.S. § 24-72-201 et seq., three working days), `.co.us` as a primary-evidence suffix, "Colorado" as a required place word for news |
+| `config/settings.yaml` | `civic.state_fips: "08"`, Mountain-time off-peak windows, CORA (C.R.S. § 24-72-201 et seq., three working days), `.co.us` as a primary-evidence suffix, "Colorado" as a required place word for news, TABOR revenue-retention and metro-district ballot questions (`civic.ballot_types`) |
 | `config/press.yaml` | Governor's office, Secretary of State, Attorney General, General Assembly, Department of Education, Public Utilities Commission |
 | `config/guides.yaml` | League of Women Voters of Colorado, Vote411, Conservation Colorado, Sierra Club Colorado, CEA, Colorado REALTORS, the two state parties — starting points; check each site |
 | `config/outlets.yaml` | Denver and regional outlets |
@@ -39,4 +40,4 @@ The same three files, in the same shape, build a registry for any other state.
 | `config/finance.yaml` | `state: CO`, TRACER as the state system |
 | `config/sources.yaml` | the Secretary of State's elections pages and historical results site |
 
-Nothing in `opencrawl/` itself knows about Colorado; swap these files for another state's.
+Nothing in the crawler itself knows about Colorado; swap these files for another state's.

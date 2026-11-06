@@ -3,7 +3,7 @@ __pycache__/
 *.egg-info/
 .venv/
 .pytest_cache/
-# the database is persisted as a release asset (see .github/workflows/crawl.yml), not in git
+# the database, state and received records persist encrypted as a release asset (.github/workflows/crawl.yml)
 data/*.db
 data/*.db-wal
 data/*.db-shm
@@ -19,3 +19,11 @@ state/entities.json
 state/orgs.json
 state/profile_inputs.json
 state/research_last.json
+# never in git: unverified claims, replies kept for review, sealed archives and CI scratch directories
+data/quarantine/
+data/openrecords/unverified/
+*.ocv
+.ci-in/
+.ci-out/
+.ci-state/
+.ci-restored

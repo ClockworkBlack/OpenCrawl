@@ -6,7 +6,7 @@ It is read once into state/subjects_imported.json, which `load_subjects` merges 
 
 CSV columns (header names are matched case-insensitively; everything but `name` is optional)
   id, name, aliases, kind, target, targets, places, websites, social, search_terms, news_feeds, office, party,
-  priority, key, fec_id, finance_csv
+  public_role, title, priority, external_id, last_active, fec_id, finance_csv
   List columns hold several values separated by ";" or "|".
 JSON: a list of objects with the same fields, or {"subjects": [...]}.
 """
@@ -43,7 +43,8 @@ def normalize(row: dict) -> dict | None:
         vals = _split(r.get(k))
         if vals:
             out[k] = vals
-    for k in ("kind", "target", "office", "party", "key", "fec_id", "finance_csv", "finance_source", "search_hint"):
+    for k in ("kind", "target", "office", "party", "public_role", "title", "external_id", "last_active", "fec_id",
+              "finance_csv", "finance_source", "search_hint"):
         if r.get(k) not in (None, ""):
             out[k] = str(r[k]).strip()
     if str(r.get("priority", "")).strip().lower() in ("1", "true", "yes", "y"):
@@ -84,7 +85,7 @@ def import_subjects(path: Path, root: Path, log=print) -> dict:
             by_id[s["id"]] = s
     state = Path(root) / "state"
     state.mkdir(parents=True, exist_ok=True)
-    meta = {"from": str(path), "subjects": len(by_id)}
+    meta = {"from": Path(path).name, "subjects": len(by_id)}       # the file's name only, not where it lives
     (state / STATE_FILE).write_text(json.dumps({"meta": meta, "subjects": list(by_id.values())}, ensure_ascii=False, indent=1),
                                     encoding="utf-8")
     log(f"imported {len(by_id)} subjects from {path} -> state/{STATE_FILE}")

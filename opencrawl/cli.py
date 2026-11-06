@@ -30,9 +30,9 @@ Screenshots and documents
 Subjects (research module)
   opencrawl subjects list|research|import [--subject ID] [--max-minutes M] [--since DATE] [--skip step,step] [FILE]
   opencrawl posts account-add|verify|mark|add|pull|list|export   verified social accounts and posts
-  opencrawl rumor list|add|corroborate|debunk|retract
+  opencrawl quarantine list|add|corroborate|debunk|retract   unverified claims, kept apart from the records
   opencrawl finance [run|probe] [--subject ID] [--max-minutes M] [--org-limit N]
-  opencrawl profiles [--subject ID] [--out DIR]   profile supplements (positions, markers, support, career, money)
+  opencrawl profiles [--subject ID] [--out DIR]   profiles (positions, markers, support, career, money)
   opencrawl packets [--out DIR]          research packets only
 
 Civic module
@@ -42,6 +42,13 @@ Civic module
 Export and scheduling
   opencrawl export [--out DIR] [--no-packets]   the JSON bundle (dist/bundle/)
   opencrawl backfill status|next [--minutes N --run-id ID --backfill]   daytime backfill bookkeeping (CI)
+
+Security and privacy
+  opencrawl doctor [--browser] [--ci]    check settings, secrets, permissions, library versions
+  opencrawl purge --subject ID | --expired [--days N]   erase one subject's data / apply privacy.retention_days
+  opencrawl cache prune [--days N]       delete HTTP cache entries (full page copies) older than N days (default all)
+  opencrawl vault keygen | encrypt IN OUT | decrypt IN OUT | pack OUT PATH... | unpack IN DEST
+                                         AES-256-GCM files for data that leaves the machine (key: OPENCRAWL_DATA_KEY)
 """
 from __future__ import annotations
 
@@ -59,8 +66,28 @@ from .fetch import Disallowed
 from .polite import Schedule
 from .store import Store
 
-STARTER = Path(__file__).resolve().parent.parent / "config"
-EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
+STARTER = Path(__file__).resolve().parent / "templates" / "starter"      # = config/ of the repository (tested)
+EXAMPLES = Path(__file__).resolve().parent / "examples"
+
+
+# what a new project keeps out of git: the database, the page cache, exports, quarantined claims, replies kept for
+# review, decrypted archives
+GITIGNORE = """__pycache__/
+*.pyc
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/quarantine/
+data/openrecords/unverified/
+dist/
+state/http_cache/
+state/*.tmp
+*.ocv
+.ci-in/
+.ci-out/
+.ci-state/
+.ci-restored
+"""
 
 
 # ----------------------------------------------------------------------------- project
@@ -69,7 +96,7 @@ def cmd_init(cfg, args):
     src = EXAMPLES / args.example / "config" if args.example else STARTER
     if not src.exists():
         have = sorted(p.name for p in EXAMPLES.iterdir() if (p / "config").exists()) if EXAMPLES.exists() else []
-        sys.exit(f"no example {args.example!r}; examples: {', '.join(have) or 'none (run from a git checkout)'}")
+        sys.exit(f"no example {args.example!r}; examples: {', '.join(have) or 'none'}")
     (dest / "config").mkdir(parents=True, exist_ok=True)
     copied = []
     for p in sorted(src.iterdir()):
@@ -82,7 +109,7 @@ def cmd_init(cfg, args):
         (dest / d).mkdir(parents=True, exist_ok=True)
     gi = dest / ".gitignore"
     if not gi.exists():
-        gi.write_text("__pycache__/\n*.pyc\ndata/*.db\ndata/*.db-wal\ndata/*.db-shm\ndist/\nstate/http_cache/\nstate/*.tmp\n")
+        gi.write_text(GITIGNORE)
     print(f"project at {dest}: config/ ({', '.join(copied) or 'kept existing files'}), data/, state/, imports/")
     if (dest / "config" / "jurisdictions.yaml").exists():
         print("next: set http.user_agent in config/settings.yaml, then `opencrawl seed --max-minutes 30` and `opencrawl run`")
@@ -296,9 +323,18 @@ def cmd_blocked(cfg, args):
             print(f"   -> {a}")
 
 
+def _civic(cfg) -> None:
+    """Project settings the civic modules read (state, ballot-question kinds)."""
+    from .civic import elections, seed as civic_seed
+
+    elections.configure(cfg.get("civic"))
+    civic_seed.configure(cfg.get("civic"))
+
+
 def cmd_derive(cfg, args):
     from . import derive
 
+    _civic(cfg)
     store = config.make_store(cfg)
     try:
         deadline = time.monotonic() + float(args.max_minutes) * 60 if args.max_minutes else None
@@ -329,7 +365,9 @@ def cmd_sponsors(cfg, args):
     store = config.make_store(cfg)
     try:
         deadline = time.monotonic() + float(args.max_minutes or 20) * 60
-        tokens = {k: v for k, v in (cfg.get("legistar_tokens") or {}).items()}
+        from .adapters.legistar import env_tokens
+
+        tokens = env_tokens()
         print(json.dumps(fill_sponsors(config.make_fetcher(cfg), store, limit=int(args.limit or 2000), deadline=deadline,
                                        tokens=tokens), indent=1))
     finally:
@@ -448,7 +486,7 @@ def cmd_subjects(cfg, args):
         return
     subs = load_subjects(config.ROOT, cfg)
     if args.subject:
-        subs = [c for c in subs if c["id"] == args.subject or c.get("key") == args.subject]
+        subs = [c for c in subs if c["id"] == args.subject or c.get("external_id") == args.subject]
         if not subs:
             sys.exit(f"no subject {args.subject!r} (config/subjects.yaml or `opencrawl subjects import`)")
     if args.action == "list":
@@ -461,8 +499,10 @@ def cmd_subjects(cfg, args):
     skip = set(args.skip.split(",")) if args.skip else set()
     try:
         if args.subject:
+            from .redact import subject_id
+
             for c in subs:
-                print(f"== {c['id']}")
+                print(f"== {subject_id(c['id'])}")
                 print("   " + json.dumps(r.research(c, since=args.since, skip=skip)))
             return
         opts = cfg.get("subjects", {})
@@ -479,36 +519,41 @@ def cmd_subjects(cfg, args):
 
 def cmd_packets(cfg, args):
     from .research.packets import write_packets
-    from .research.subjects import RumorMill, load_subjects
+    from .research.quarantine import Quarantine
+    from .research.subjects import load_subjects
 
     store = config.make_store(cfg)
     try:
         subs = load_subjects(config.ROOT, cfg)
-        rumors = RumorMill(config.ROOT).all()
-        have = set(s for s in store.sources() if s.startswith("subj:")) | {f"subj:{r['subject_id']}" for r in rumors}
-        write_packets(store, [c for c in subs if f"subj:{c['id']}" in have], rumors,
+        held = Quarantine(config.ROOT).all() if (cfg.get("privacy") or {}).get("export_quarantine") else []
+        have = set(s for s in store.sources() if s.startswith("subj:")) | {f"subj:{r['subject_id']}" for r in held}
+        write_packets(store, [c for c in subs if f"subj:{c['id']}" in have], held,
                       Path(args.out or (config.ROOT / "dist" / "bundle" / "packets")))
     finally:
         store.close()
 
 
-def cmd_rumor(cfg, args):
-    from .research.subjects import RumorMill
+def cmd_quarantine(cfg, args):
+    from .research.quarantine import Quarantine
 
-    rm = RumorMill(config.ROOT)
+    q = Quarantine(config.ROOT)
     if args.action == "list":
-        for r in rm.all():
+        for r in q.all():
             if args.subject and r["subject_id"] != args.subject:
                 continue
             print(f"{r['id']} {r['status']:<12} {r['subject_id']:<20} {r['domain']:<28} {r['claim'][:70]}")
     elif args.action == "add":
-        row = rm.add(args.subject, args.url, args.claim or "", origin="manual", author=args.author or "")
-        rm.flush()
+        if not (args.subject and args.url):
+            sys.exit("quarantine add needs --subject and --url")
+        row = q.add(args.subject, args.url, args.claim or "", origin="manual", author=args.author or "")
+        q.flush()
         print(json.dumps(row, indent=2))
     else:
+        if not args.id:
+            sys.exit(f"quarantine {args.action} needs --id")
         status = {"corroborate": "corroborated", "debunk": "debunked", "retract": "retracted"}[args.action]
-        row = rm.set_status(args.id, status, args.evidence or "", args.note or "")
-        print(json.dumps(row, indent=2) if row else f"no rumor {args.id}")
+        row = q.set_status(args.id, status, args.evidence or "", args.note or "")
+        print(json.dumps(row, indent=2) if row else f"no quarantined claim {args.id}")
 
 
 def cmd_finance(cfg, args):
@@ -524,7 +569,7 @@ def cmd_finance(cfg, args):
             return
         subs = load_subjects(config.ROOT, cfg)
         if args.subject:
-            subs = [c for c in subs if c["id"] == args.subject or c.get("key") == args.subject]
+            subs = [c for c in subs if c["id"] == args.subject or c.get("external_id") == args.subject]
         deadline = time.monotonic() + float(args.max_minutes or 30) * 60
         print(json.dumps(fin.run(subs, since=args.since or cfg.get("limits", {}).get("since", "2016-01-01"),
                                  deadline=deadline, org_limit=int(args.org_limit or fin.opts.get("org_limit", 40))), indent=1))
@@ -533,7 +578,7 @@ def cmd_finance(cfg, args):
 
 
 def cmd_profiles(cfg, args):
-    """Profile supplements (positions, ideology markers, endorsements, ratings, votes, bills, career, money)."""
+    """Profiles (positions, ideology markers, endorsements, ratings, votes, bills, career, money)."""
     from .research.profiles import build_profiles, write_profiles
 
     store = config.make_store(cfg)
@@ -541,12 +586,12 @@ def cmd_profiles(cfg, args):
         profiles, bundle = build_profiles(config.ROOT, store, cfg)
         if args.subject:
             for p in profiles:
-                if p["subject_id"] == args.subject or p.get("key") == args.subject:
+                if p["subject_id"] == args.subject or p.get("external_id") == args.subject:
                     print(json.dumps(p, indent=1, ensure_ascii=False))
             return
         out = Path(args.out or (config.ROOT / "dist" / "bundle" / "profiles"))
         n = write_profiles(profiles, out, state_dir=cfg["state_dir"])
-        thin = sum(1 for p in profiles if p["inference_inputs"] < 2)
+        thin = sum(1 for p in profiles if p["evidence_count"] < 2)
         print(json.dumps({"profiles": n, "thin": thin, "graph": bundle["graph"]}, indent=1))
     finally:
         store.close()
@@ -592,6 +637,7 @@ def cmd_records(cfg, args):
 def cmd_export(cfg, args):
     from .export import export
 
+    _civic(cfg)
     store = config.make_store(cfg)
     try:
         export(config.ROOT, Path(args.out or (config.ROOT / "dist" / "bundle")), store=store, cfg=cfg,
@@ -625,6 +671,59 @@ def cmd_backfill(cfg, args):
     if args.github_output:
         with open(args.github_output, "a") as f:
             f.write(f"go={'true' if out.get('go') else 'false'}\n")
+
+
+# ----------------------------------------------------------------------------- security and privacy
+def cmd_doctor(cfg, args):
+    from . import doctor
+
+    sys.exit(doctor.main(cfg, config.ROOT, browser=args.browser, ci=args.ci))
+
+
+def cmd_purge(cfg, args):
+    from . import privacy
+
+    if not args.subject and not args.expired:
+        sys.exit("purge: give --subject ID or --expired")
+    store = config.make_store(cfg)
+    try:
+        if args.subject:
+            print(json.dumps(privacy.erase_subject(config.ROOT, store, args.subject), indent=1))
+        if args.expired:
+            print(json.dumps(privacy.expire(config.ROOT, cfg, store, args.days), indent=1))
+    finally:
+        store.close()
+
+
+def cmd_cache(cfg, args):
+    from . import privacy
+
+    print(json.dumps(privacy.prune_cache(cfg["state_dir"], args.days or 0), indent=1))
+
+
+def cmd_vault(cfg, args):
+    from . import vault
+
+    if args.action == "keygen":
+        print(vault.keygen())
+        print("store it as the OPENCRAWL_DATA_KEY secret (and somewhere safe): without it the data can't be read",
+              file=sys.stderr)
+        return
+    try:
+        key = vault.key_from_env(args.key_env)
+        p = [Path(x) for x in args.paths]
+        if args.action == "encrypt" and len(p) == 2:
+            print(json.dumps({"bytes": vault.encrypt_file(p[0], p[1], key), "out": str(p[1])}))
+        elif args.action == "decrypt" and len(p) == 2:
+            print(json.dumps({"bytes": vault.decrypt_file(p[0], p[1], key), "out": str(p[1])}))
+        elif args.action == "pack" and len(p) >= 2:
+            print(json.dumps(vault.pack(p[1:], p[0], key, base=Path.cwd(), exclude=tuple(args.exclude or ()))))
+        elif args.action == "unpack" and len(p) == 2:
+            print(json.dumps(vault.unpack(p[0], p[1], key)))
+        else:
+            sys.exit("vault: encrypt IN OUT | decrypt IN OUT | pack OUT PATH... | unpack IN DEST")
+    except vault.VaultError as exc:
+        sys.exit(f"vault: {exc}")
 
 
 # ----------------------------------------------------------------------------- argument parsing
@@ -668,7 +767,7 @@ def build_parser() -> argparse.ArgumentParser:
     sj.add_argument("--limit", type=int)
     sj.add_argument("--skip", help="comma list: mentions,votes,sponsorships,posts,statements,articles,leads,social_mentions,connections")
     pk = sub.add_parser("packets"); pk.add_argument("--out")
-    ru = sub.add_parser("rumor"); ru.add_argument("action", choices=["list", "add", "corroborate", "debunk", "retract"])
+    ru = sub.add_parser("quarantine"); ru.add_argument("action", choices=["list", "add", "corroborate", "debunk", "retract"])
     for flag in ("--subject", "--url", "--claim", "--author", "--id", "--evidence", "--note"):
         ru.add_argument(flag)
     e = sub.add_parser("export"); e.add_argument("--out"); e.add_argument("--no-packets", action="store_true")
@@ -683,25 +782,64 @@ def build_parser() -> argparse.ArgumentParser:
     rq = sub.add_parser("records"); rq.add_argument("action", choices=["status", "plan", "contacts", "send", "check", "follow-up"])
     rq.add_argument("--limit", type=int); rq.add_argument("--dry-run", action="store_true")
     rq.add_argument("--max-minutes", type=float); rq.add_argument("--show", action="store_true", help="plan: print the first draft")
+    dr = sub.add_parser("doctor"); dr.add_argument("--browser", action="store_true", help="also start the headless browser once")
+    dr.add_argument("--ci", action="store_true", help="also the checks for a scheduled CI run (encryption key, guard)")
+    pu = sub.add_parser("purge"); pu.add_argument("--subject"); pu.add_argument("--expired", action="store_true")
+    pu.add_argument("--days", type=float, help="--expired: override privacy.retention_days")
+    ca = sub.add_parser("cache"); ca.add_argument("action", choices=["prune"]); ca.add_argument("--days", type=float)
+    va = sub.add_parser("vault"); va.add_argument("action", choices=["keygen", "encrypt", "decrypt", "pack", "unpack"])
+    va.add_argument("paths", nargs="*"); va.add_argument("--key-env", default="OPENCRAWL_DATA_KEY")
+    va.add_argument("--exclude", action="append", help="pack: a path (relative) to leave out; repeatable")
     return ap
 
 
 COMMANDS = {"init": cmd_init, "window": cmd_window, "seed": cmd_seed, "status": cmd_status, "targets": cmd_targets,
             "discover": cmd_discover, "run": cmd_run, "delta": cmd_delta, "merge": cmd_merge, "search": cmd_search,
             "tasks": cmd_tasks, "blocked": cmd_blocked, "ocr": cmd_ocr, "capture": cmd_capture, "screens": cmd_screens,
-            "posts": cmd_posts, "subjects": cmd_subjects, "packets": cmd_packets, "rumor": cmd_rumor, "export": cmd_export,
+            "posts": cmd_posts, "subjects": cmd_subjects, "packets": cmd_packets, "quarantine": cmd_quarantine, "export": cmd_export,
             "records": cmd_records, "derive": cmd_derive, "transcripts": cmd_transcripts, "finance": cmd_finance,
-            "sponsors": cmd_sponsors, "profiles": cmd_profiles, "backfill": cmd_backfill}
+            "sponsors": cmd_sponsors, "profiles": cmd_profiles, "backfill": cmd_backfill, "doctor": cmd_doctor,
+            "purge": cmd_purge, "cache": cmd_cache, "vault": cmd_vault}
+
+
+class _CISafeStream:
+    """stdout/stderr inside GitHub Actions: text from the web that reaches the log can't act as a workflow command
+    (lines starting with ::) or hide itself with control characters. The crawler never issues workflow commands
+    itself; step outputs go through the $GITHUB_OUTPUT file."""
+
+    def __init__(self, stream):
+        self._s = stream
+        self._at_line_start = True
+
+    def write(self, text):
+        from .redact import clean_output
+
+        if not text:
+            return 0
+        out = clean_output(text)
+        if self._at_line_start and out.lstrip().startswith("\u200b"):
+            pass
+        elif self._at_line_start and out.lstrip().startswith("::"):
+            out = "\u200b" + out
+        self._at_line_start = out.endswith("\n")
+        self._s.write(out)
+        return len(text)
+
+    def __getattr__(self, name):
+        return getattr(self._s, name)
 
 
 def main(argv=None):
+    import os
+
+    os.umask(0o077)         # databases, state, exports and received records: readable by the owner only
+    if os.environ.get("GITHUB_ACTIONS") == "true" and not isinstance(sys.stdout, _CISafeStream):
+        sys.stdout, sys.stderr = _CISafeStream(sys.stdout), _CISafeStream(sys.stderr)
     args = build_parser().parse_args(argv)
     cfg = config.load()
     try:
         COMMANDS[args.cmd](cfg, args)
     except BrokenPipeError:  # `opencrawl targets | head`
-        import os
-
         os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
 
 

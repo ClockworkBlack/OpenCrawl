@@ -1,9 +1,9 @@
 """Name variants for matching subjects (people) in text.
 
 "Robert \"Bob\" Example Jr."   -> Robert Example, Bob Example
-"Pat A. Local"                 -> Pat A Local, Pat Local
+"Robin A. Ashby"               -> Robin A Ashby, Robin Ashby
 "DOE, JANE"                    -> Jane Doe
-"KIM POST (NORTH COUNTY)"      -> Kim Post
+"TAYLOR CALDER (NORTH COUNTY)" -> Taylor Calder
 Every variant keeps at least a first and last name, so a bare surname never matches.
 """
 from __future__ import annotations

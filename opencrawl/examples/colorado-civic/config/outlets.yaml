@@ -1,5 +1,5 @@
 # News outlets whose reporting counts as "reported" evidence (as opposed to "primary" = official record /
-# the subject's own channels, and "unverified" = everything else, which lands in the Rumor Mill).
+# the subject's own channels, and "unverified" = everything else, which lands in the quarantine).
 # A starting list for Colorado; add local papers as you go. Match is by registered domain (and subdomains).
 outlets:
   # statewide / Denver

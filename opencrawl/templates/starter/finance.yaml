@@ -1,0 +1,28 @@
+# Campaign finance sources (research module; only used for subjects with money records).
+state: ""                      # postal abbreviation that scopes FEC, IRS and OpenCorporates lookups, e.g. CO
+
+# A state campaign-finance system's search page. The crawler never guesses a search URL: `opencrawl finance
+# probe` lists what the system's front page links to (state/finance_portal.json); once a person has confirmed
+# the right search page and its query format, put it in search_url with {last} / {first} / {name}
+# placeholders and set confirmed: true.
+state_commission:
+  name: ""                     # e.g. "Colorado Secretary of State TRACER"
+  home: ""
+  search_url: null
+  confirmed: false
+
+# FEC (federal candidates and PACs): api.open.fec.gov. Set FEC_API_KEY (DEMO_KEY works for small volumes).
+fec:
+  enabled: true
+
+# ProPublica Nonprofit Explorer (IRS 990 data): no key needed.
+propublica:
+  enabled: true
+
+# OpenCorporates (corporate registry data: incorporation, status, officers). Needs OPENCORPORATES_API_KEY.
+opencorporates:
+  enabled: true
+
+# Organization lookups per run (biggest money first; each is re-checked after recheck_days).
+org_limit: 40
+recheck_days: 90

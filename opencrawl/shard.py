@@ -48,6 +48,9 @@ def in_shard(src: dict, shard: tuple[int, int] | None) -> bool:
 
 
 # --------------------------------------------------------------------------- database deltas
+# a delta holds plain tables only: no full-text index, no triggers (merge refuses a delta that has any)
+DELTA_DDL = ";\n".join(st.strip() for st in DDL.split(";") if st.strip().upper().startswith("CREATE TABLE")) + ";"
+
 def write_delta(store: Store, since: str, out: Path) -> dict:
     """Copy rows changed/fetched at or after `since` into a fresh database at `out`."""
     store.flush()
@@ -55,7 +58,7 @@ def write_delta(store: Store, since: str, out: Path) -> dict:
     if out.exists():
         out.unlink()
     d = sqlite3.connect(out)
-    d.executescript(DDL)
+    d.executescript(DELTA_DDL)
     d.close()
     db = store.db
     with store._lock:
@@ -81,6 +84,7 @@ def merge_delta(store: Store, delta: Path) -> dict:
     with store._lock:
         db.execute("ATTACH DATABASE ? AS d", (str(delta),))
         try:
+            _check_delta(db)
             db.execute("BEGIN")
             n_rec = db.execute(
                 f"INSERT INTO main.records({cols}) SELECT {cols} FROM d.records WHERE true "
@@ -99,6 +103,25 @@ def merge_delta(store: Store, delta: Path) -> dict:
         finally:
             db.execute("DETACH DATABASE d")
     return {"records": n_rec, "urls": n_url, "cursors": n_cur, "file": str(delta)}
+
+
+def _check_delta(db) -> None:
+    """A delta must be plain tables with the expected columns (no views, no triggers) and pass a quick check;
+    the main connection already runs with trusted_schema=OFF, so nothing in it can call functions."""
+    from .store import StoreError
+
+    kinds = {r[0]: r[1] for r in db.execute("SELECT name, type FROM d.sqlite_master")}
+    for t in ("records", "urls", "cursors"):
+        if kinds.get(t) != "table":
+            raise StoreError(f"delta: {t} is missing or not a table")
+    if any(v == "trigger" for v in kinds.values()) or any(v == "view" for v in kinds.values()):
+        raise StoreError("delta: unexpected triggers or views")
+    have = {r[1] for r in db.execute("PRAGMA d.table_info(records)")}
+    if not set(COLS) <= have:
+        raise StoreError("delta: records table has the wrong columns")
+    ok = db.execute("PRAGMA d.quick_check").fetchone()[0]
+    if ok != "ok":
+        raise StoreError(f"delta: integrity check failed ({ok})")
 
 
 # --------------------------------------------------------------------------- state files

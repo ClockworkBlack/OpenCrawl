@@ -52,7 +52,7 @@ OPENCORPORATES = "https://api.opencorporates.com/v0.4"
 
 DATE_RX = re.compile(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b")
 ISO_RX = re.compile(r"\b(20\d\d|19\d\d)-(\d\d)-(\d\d)\b")
-AMOUNT_RX = re.compile(r"\$?\s?(\d{1,3}(?:,\d{3})+|\d+)(\.\d{2})?\b")
+AMOUNT_RX = re.compile(r"\$?\s?(?<![\d,])(\d{1,3}(?:,\d{3}){1,5}|\d{1,12})(\.\d{2})?\b")
 SECTION_RX = re.compile(r"^\s*(?:(?:schedule|section|part)\s+[A-Z0-9]+[:.\s-]*)?(?P<sec>contributions?(?:\s+received)?|"
                         r"itemized\s+contributions?|in[- ]kind(?:\s+contributions?)?|expenditures?|disbursements?|"
                         r"itemized\s+expenditures?|loans?(?:\s+received)?|investments?|common\s+source|"
@@ -76,7 +76,7 @@ LABEL_RX = {
 }
 US_STATES = ("AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|"
              "OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|PR")
-CITY_STATE_RX = re.compile(r"([A-Za-z.' ]{2,40}),?\s+(" + US_STATES + r")\b\.?\s*(\d{5})?")
+CITY_STATE_RX = re.compile(r"(?<![A-Za-z.'])([A-Za-z.'][A-Za-z.' ]{1,39}),?[ \t]{1,4}(" + US_STATES + r")\b\.?[ \t]{0,4}(\d{5})?")
 NTEE = {"A": "arts, culture and humanities", "B": "education", "C": "environment", "D": "animal-related",
         "E": "health care", "F": "mental health", "G": "diseases and disorders", "H": "medical research",
         "I": "crime and legal", "J": "employment", "K": "food, agriculture and nutrition", "L": "housing and shelter",
@@ -169,11 +169,11 @@ def _kind_of(s: str) -> str:
     return "contribution"
 
 
-# ----------------------------------------------------------------------------- CCDR text (PDF)
+# ----------------------------------------------------------------------------- disclosure report text (PDF)
 def looks_like_finance_report(title: str, url: str, text: str) -> bool:
     s = f"{title} {url}".lower()
     head = (text or "")[:3000].lower()
-    if re.search(r"campaign[ _-]?(contribution|finance|disclosure)|contribution[ _-]?disclosure|\bccdr\b", s):
+    if re.search(r"campaign[ _-]?(contribution|finance|disclosure)|contribution[ _-]?disclosure|disclosure[ _-]?report", s):
         return True
     return bool(re.search(r"campaign contribution disclosure report|contributions received|itemized contributions", head)
                 and re.search(r"\b(contributor|employer|occupation|amount)\b", head))
@@ -224,7 +224,7 @@ SKIP_NAME = re.compile(r"^(?:report|reporting|period|date|candidate|office|commi
                        r"beginning|ending|net|name|contributor|payee)\b|:$", re.I)
 
 
-def parse_ccdr_text(text: str) -> list[dict]:
+def parse_disclosure_text(text: str) -> list[dict]:
     """Rows of {name, amount, date, employer, occupation, city, state, kind, purpose, election, line} from report text.
     Two layouts: labeled blocks ('Contributor Name: ... Employer: ... Date: ... Amount: ...') and table rows
     (name ... date ... amount on one line, with employer/occupation on the same or following lines)."""
@@ -354,8 +354,7 @@ class Finance:
         self.orgs_cfg = self._load_orgs()
         self.entities = EntityIndex(root / "state" / "entities.json", store=store)
         raw = store.kv_get("orgs")                       # organization lookups: when each was last checked
-        legacy = root / "state" / "orgs.json"
-        self.org_state = json.loads(raw) if raw else (json.loads(legacy.read_text()) if legacy.exists() else {})
+        self.org_state = json.loads(raw) if raw else {}
 
     def _load_orgs(self) -> dict:
         p = self.root / "config" / "organizations.yaml"
@@ -401,7 +400,7 @@ class Finance:
                     n += 1
         return n
 
-    # ------------------------------------------------------------------ 2. crawled CCDR documents
+    # ------------------------------------------------------------------ 2. crawled disclosure reports
     def from_documents(self, candidates: list[dict], limit: int = 500) -> dict:
         """Parse posted disclosure reports (documents with doc_type finance_report, or whose text looks like one)."""
         by_name = {}
@@ -420,7 +419,7 @@ class Finance:
                 head = header_of(text)
                 who = head.get("candidate") or head.get("committee") or ""
                 cand = by_name.get(who.lower()) or by_name.get((committee_candidate(who) or "").lower()) if who else None
-                parsed = parse_ccdr_text(text)
+                parsed = parse_disclosure_text(text)
                 sid = f"subj:{cand['id']}" if cand else d["source_id"]
                 for row in parsed:
                     rec = contribution_record(sid, d["url"], row, (cand or {}).get("name") or who,
@@ -445,9 +444,9 @@ class Finance:
     def _fec(self, path: str, params: dict | None = None) -> dict | None:
         if not self.f:
             return None
-        key = os.environ.get("FEC_API_KEY", "DEMO_KEY")
+        hdr = {"X-Api-Key": os.environ.get("FEC_API_KEY") or "DEMO_KEY"}     # api.data.gov reads the key header
         try:
-            r = self.f.get(f"{FEC}{path}", params={**(params or {}), "api_key": key}, use_cache=False)
+            r = self.f.get(f"{FEC}{path}", params=dict(params or {}), headers=hdr, use_cache=False)
         except (Blocked, Disallowed):
             return None
         if r.status != 200:
@@ -585,9 +584,9 @@ class Finance:
             info["website"] = hand.get("website") or ""
             info["org_kind"] = hand.get("kind") or info["org_kind"]
             if hand.get("what"):
-                info["what"].append({"text": hand["what"], "src": hand.get("src") or "config/organizations.yaml", "basis": "hand note"})
+                info["what"].append({"text": hand["what"], "source": hand.get("source") or "config/organizations.yaml", "basis": "hand note"})
             for o in hand.get("officers") or []:
-                info["officers"].append({"name": o.get("name"), "role": o.get("role", ""), "src": o.get("src") or hand.get("src") or "config/organizations.yaml"})
+                info["officers"].append({"name": o.get("name"), "role": o.get("role", ""), "source": o.get("source") or hand.get("source") or "config/organizations.yaml"})
         from .entities import PAC_WORDS
 
         if e["kind"] == "committee" or PAC_WORDS.search(name):
@@ -601,9 +600,9 @@ class Finance:
             s.get("registry") == "opencorporates" for s in info["sources"]) else "unknown")
         info["org_kind"] = kind
         summary = "; ".join(w["text"] for w in info["what"][:4])
-        rec = Record("org", "organization", info["sources"][0]["u"] if info["sources"] else f"entity:{eid}",
+        rec = Record("org", "organization", info["sources"][0]["url"] if info["sources"] else f"entity:{eid}",
                      title=name, text=summary or name, channel="api" if info["sources"] else "derived", evidence="primary",
-                     key=f"org|{eid}", meta={**info, "opened": bool(info["sources"]), "opened_url": info["sources"][0]["u"] if info["sources"] else ""})
+                     key=f"org|{eid}", meta={**info, "opened": bool(info["sources"]), "opened_url": info["sources"][0]["url"] if info["sources"] else ""})
         self.store.add(rec)
         self.org_state[eid] = {"checked": dt.date.today().isoformat(), "kind": kind, "sources": len(info["sources"])}
         e["attrs"]["org_kind"] = kind
@@ -622,19 +621,19 @@ class Finance:
         det = det[0] if det else {}
         src = f"{FEC}/committee/{cid}/"
         info["fec_id"] = cid
-        info["sources"].append({"t": f"FEC committee {cid}", "u": src, "registry": "fec"})
+        info["sources"].append({"title": f"FEC committee {cid}", "url": src, "registry": "fec"})
         what = ", ".join(x for x in (det.get("committee_type_full"), det.get("designation_full"), det.get("organization_type_full"),
                                      det.get("party_full")) if x)
         if what:
-            info["what"].append({"text": f"Registered with the FEC as a {what}", "src": src, "basis": "FEC registration"})
+            info["what"].append({"text": f"Registered with the FEC as a {what}", "source": src, "basis": "FEC registration"})
         if det.get("affiliated_committee_name"):
-            info["what"].append({"text": f"Affiliated committee: {det['affiliated_committee_name']}", "src": src, "basis": "FEC registration"})
+            info["what"].append({"text": f"Affiliated committee: {det['affiliated_committee_name']}", "source": src, "basis": "FEC registration"})
         info["connected_org"] = det.get("connected_organization_name") or ""
         info["treasurer"] = det.get("treasurer_name") or ""
         if info["treasurer"]:
-            info["officers"].append({"name": info["treasurer"], "role": "treasurer", "src": src})
+            info["officers"].append({"name": info["treasurer"], "role": "treasurer", "source": src})
         if det.get("custodian_of_records_name"):
-            info["officers"].append({"name": det["custodian_of_records_name"], "role": "custodian of records", "src": src})
+            info["officers"].append({"name": det["custodian_of_records_name"], "role": "custodian of records", "source": src})
         info["city"], info["state"] = det.get("city") or "", det.get("state") or ""
         info["website"] = info["website"] or (det.get("website") or "")
         # who receives their money (schedule B: disbursements to candidates/committees)
@@ -643,7 +642,7 @@ class Finance:
         for s in (rr or {}).get("results", [])[:100]:
             info["recipients"].append({"name": s.get("recipient_name"), "amount": s.get("disbursement_amount"),
                                        "date": (s.get("disbursement_date") or "")[:10], "purpose": s.get("disbursement_description"),
-                                       "src": s.get("pdf_url") or f"{FEC}/schedules/schedule_b/?committee_id={cid}"})
+                                       "source": s.get("pdf_url") or f"{FEC}/schedules/schedule_b/?committee_id={cid}"})
 
     def _enrich_propublica(self, info: dict, name: str | None = None, label: str = ""):
         """IRS exempt-organization data for the org itself, or (label set) for its connected organization."""
@@ -674,7 +673,7 @@ class Finance:
         src = f"{PROPUBLICA}/organizations/{ein}.json"
         if not label:
             info["ein"] = str(ein)
-        info["sources"].append({"t": f"ProPublica Nonprofit Explorer (IRS data) EIN {ein}", "u": src, "registry": "propublica"})
+        info["sources"].append({"title": f"ProPublica Nonprofit Explorer (IRS data) EIN {ein}", "url": src, "registry": "propublica"})
         sub = str(hit.get("subseccd") or hit.get("subsection_code") or "")
         ntee = (hit.get("ntee_code") or "")[:1].upper()
         parts = []
@@ -683,7 +682,7 @@ class Finance:
         if ntee in NTEE:
             parts.append(f"activity area: {NTEE[ntee]} (NTEE {hit.get('ntee_code')})")
         if parts:
-            info["what"].append({"text": label + "IRS-registered nonprofit: " + "; ".join(parts), "src": src,
+            info["what"].append({"text": label + "IRS-registered nonprofit: " + "; ".join(parts), "source": src,
                                  "basis": "IRS Business Master File via ProPublica"})
         if not label:
             info["city"] = info["city"] or (hit.get("city") or "")
@@ -696,7 +695,7 @@ class Finance:
                     f0 = filings[0]
                     info["what"].append({"text": label + f"Most recent IRS filing (tax year {f0.get('tax_prd_yr')}): revenue "
                                                  f"${(f0.get('totrevenue') or 0):,.0f}, expenses ${(f0.get('totfuncexpns') or 0):,.0f}",
-                                         "src": f0.get("pdf_url") or src, "basis": "Form 990"})
+                                         "source": f0.get("pdf_url") or src, "basis": "Form 990"})
         except (Blocked, Disallowed):
             pass
         except Exception:  # noqa: BLE001
@@ -727,17 +726,17 @@ class Finance:
         jc = hit.get("jurisdiction_code") or juris or "us"
         src = hit.get("opencorporates_url") or f"{OPENCORPORATES}/companies/{jc}/{hit.get('company_number')}"
         where = (self.state or jc.split("_")[-1].upper())
-        info["sources"].append({"t": f"{where} corporate registry via OpenCorporates ({hit.get('company_number')})", "u": src,
+        info["sources"].append({"title": f"{where} corporate registry via OpenCorporates ({hit.get('company_number')})", "url": src,
                                 "registry": "opencorporates"})
         info["what"].append({"text": f"{where}-registered {hit.get('company_type') or 'company'} ({hit.get('current_status') or 'status unknown'}),"
                                      f" formed {hit.get('incorporation_date') or '?'}; registered address {hit.get('registered_address_in_full') or '?'}",
-                             "src": src, "basis": "corporate registry"})
+                             "source": src, "basis": "corporate registry"})
         try:
             rr = self.f.get(f"{OPENCORPORATES}/companies/{jc}/{hit.get('company_number')}", params={"api_token": key}, use_cache=False)
             if rr.status == 200:
                 for o in rr.json()["results"]["company"].get("officers", []):
                     oo = o.get("officer", o)
-                    info["officers"].append({"name": oo.get("name"), "role": oo.get("position", ""), "src": src})
+                    info["officers"].append({"name": oo.get("name"), "role": oo.get("position", ""), "source": src})
         except (Blocked, Disallowed):
             pass
         except Exception:  # noqa: BLE001
@@ -775,14 +774,14 @@ class Finance:
                 page = r
         text = extract.main_text(page.text) if page.status == 200 else ""
         if text:
-            info["sources"].append({"t": f"{info['name']} — about page", "u": page.url, "registry": "site"})
-            info["what"].append({"text": re.sub(r"\s+", " ", text)[:700], "src": page.url, "basis": "self-description"})
+            info["sources"].append({"title": f"{info['name']} — about page", "url": page.url, "registry": "site"})
+            info["what"].append({"text": re.sub(r"\s+", " ", text)[:700], "source": page.url, "basis": "self-description"})
             for m in re.finditer(r"([A-Z][a-z]+(?:\s+[A-Z][a-z.]+){1,3})\s*[,–\-]\s*((?:Executive\s+)?(?:President|Chair(?:man|woman|person)?|"
                                  r"Vice\s+Chair|Treasurer|Secretary|Director|CEO|Founder|Board\s+Member|Trustee)[^,.\n]{0,40})", text):
-                info["officers"].append({"name": m.group(1), "role": m.group(2).strip(), "src": page.url})
+                info["officers"].append({"name": m.group(1), "role": m.group(2).strip(), "source": page.url})
             for m in re.finditer(r"((?:Executive\s+)?(?:President|Chair(?:man|woman|person)?|Treasurer|Secretary|CEO|Founder))\s*[:–\-]\s*"
                                  r"([A-Z][a-z]+(?:\s+[A-Z][a-z.]+){1,3})", text):
-                info["officers"].append({"name": m.group(2), "role": m.group(1).strip(), "src": page.url})
+                info["officers"].append({"name": m.group(2), "role": m.group(1).strip(), "source": page.url})
         seen = set()
         info["officers"] = [o for o in info["officers"] if o.get("name") and not (o["name"].lower() in seen or seen.add(o["name"].lower()))]
 
@@ -832,7 +831,7 @@ class Finance:
             return 0
         from .. import extract
 
-        rows = parse_ccdr_text(extract.main_text(text))
+        rows = parse_disclosure_text(extract.main_text(text))
         n = 0
         for row in rows:
             rec = contribution_record(f"subj:{c['id']}", r.url, row, c["name"], "candidate",

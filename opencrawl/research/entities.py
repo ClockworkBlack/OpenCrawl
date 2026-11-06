@@ -71,7 +71,7 @@ COMMITTEE_RX = [
     re.compile(r"^(?:the\s+)?(?:re-?)?elect\s+(?P<name>[A-Za-z.'’\- ]{4,50}?)(?:\s+(?:for|as|to)\s+.*)?$", re.I),
     re.compile(r"^(?P<name>[A-Za-z.'’\- ]{4,50}?)\s+(?:for|4)\s+(?:mayor|council|city council|commission|commissioner|senate|state senate|house|"
                r"state house|governor|lt\.? governor|school board|sheriff|judge|congress|psc|district attorney|solicitor|"
-               r"clerk|coroner|tax commissioner|assessor|treasurer|us senate|u\.s\. senate|the people|[A-Z][a-z]+)\b.*$", re.I),
+               r"clerk|coroner|assessor|treasurer|auditor|recorder|us senate|u\.s\. senate|the people|[A-Z][a-z]+)\b.*$", re.I),
     re.compile(r"^(?P<name>[A-Za-z.'’\- ]{4,50}?)\s+(?:campaign|campaign committee|victory fund|leadership fund)\s*$", re.I),
 ]
 
@@ -81,7 +81,7 @@ STOP = {"a", "an", "the", "better", "our", "new", "good", "strong", "safe", "gre
 
 @lru_cache(maxsize=262144)
 def committee_candidate(name: str) -> str | None:
-    """'Friends of Pat Local' / 'Pat Local for Mayor' / 'Committee to Elect Pat Local' -> 'Pat Local'."""
+    """'Friends of Robin Ashby' / 'Robin Ashby for Mayor' / 'Committee to Elect Robin Ashby' -> 'Robin Ashby'."""
     n = re.sub(r"\s+", " ", (name or "").strip())
     for rx in COMMITTEE_RX:
         m = rx.match(n)

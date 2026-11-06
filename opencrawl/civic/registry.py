@@ -7,8 +7,8 @@ Layers, lowest to highest priority:
   config/overrides.yaml        hand edits under `targets:` (website, portals, enabled, tier, notes)
 
 Neither file is required: without them this module contributes nothing and `targets.yaml` is the whole registry.
-The example project under examples/colorado-civic holds a complete registry for one US state, built by
-examples/colorado-civic/scripts/build_registry.py from public Wikipedia / Census lists; the same script works for
+The example project under opencrawl/examples/colorado-civic holds a complete registry for one US state, built by
+opencrawl/examples/colorado-civic/scripts/build_registry.py from public Wikipedia / Census lists; the same script works for
 any state.
 
 A jurisdiction expands into one crawl source per place its records live (opencrawl.targets.sources_for):
@@ -117,7 +117,7 @@ def _elections(j: dict, base: dict, url: str) -> dict:
     return {**base, "id": f"{j['id']}:elections", "url": url, "kind": "election", "depth": 3, "max_pages": 150,
             "coverage": True,
             "include": ["result", "qualif", "candidate", "runoff", "ballot", "election", "returns", "canvass",
-                        "referendum", "splost", "precinct", "summary"],
+                        "referendum", "ballot", "precinct", "summary"],
             "exclude": ["calendar.aspx?", "/search", "login", "?print", "/tag/", "/author/"]}
 
 
@@ -153,7 +153,7 @@ PORTAL_SOURCES.update({"legistar": _legistar, "civicclerk": _civicclerk, "boardd
 SITE_INCLUDE = {
     "school_district": ["board", "agenda", "minute", "meeting", "policy", "policies", "superintendent", "budget",
                         "millage", "news", "press", "election", "resolution", "district-office", "about",
-                        "video", "transcript", "calendar-of-meetings", "boarddocs", "esplost", "splost"],
+                        "video", "transcript", "calendar-of-meetings", "boarddocs", "bond", "levy"],
     "government": ["council", "commission", "agenda", "minute", "ordinance", "resolution", "meeting",
                    "mayor", "clerk", "election", "qualif", "result", "runoff", "ballot", "news", "press",
                    "document", "board", "appoint", "transcript", "video"],

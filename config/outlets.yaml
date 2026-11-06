@@ -1,6 +1,6 @@
 # News outlets whose reporting counts as "reported" evidence in subject research (as opposed to "primary" =
 # a target's own records / the subject's own channels, and "unverified" = everything else, which lands in the
-# Rumor Mill). Match is by registered domain (and subdomains). Add the outlets that cover your targets.
+# quarantine). Match is by registered domain (and subdomains). Add the outlets that cover your targets.
 outlets:
   - apnews.com
   - reuters.com

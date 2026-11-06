@@ -16,6 +16,7 @@ a page-URL pattern.
 from __future__ import annotations
 
 import datetime as dt
+import os
 import re
 from typing import Iterator
 
@@ -47,12 +48,24 @@ def _year_windows(start: str, end: str) -> list[tuple[str, str]]:
     return out
 
 
+def env_tokens() -> dict[str, str]:
+    """API tokens for the Legistar clients that require one, from the LEGISTAR_TOKENS environment variable
+    ("client=token,client2=token2"; a GitHub Actions secret in CI). Tokens are secrets: never put them in config."""
+    out = {}
+    for pair in re.split(r"[,\s]+", os.environ.get("LEGISTAR_TOKENS", "").strip()):
+        if "=" in pair:
+            k, v = pair.split("=", 1)
+            if k.strip() and v.strip():
+                out[k.strip().lower()] = v.strip()
+    return out
+
+
 class Legistar:
     def __init__(self, fetcher: Fetcher, client: str, token: str | None = None):
         self.f = fetcher
         self.client = client
         self.base = API.format(client=client)
-        self.token = token
+        self.token = token or env_tokens().get((client or "").lower())
         self._no_select = False
         self._office_rows: list[dict] | None = None   # /officerecords, read once per run
 

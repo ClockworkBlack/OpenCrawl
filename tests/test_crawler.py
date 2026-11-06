@@ -33,7 +33,7 @@ SITE = {
     "/private/x": ("text/html", b"<html><body>nope</body></html>"),
     "/campaign": ("text/html", b"""<html><body><main><p>Follow Jane on
         <a href="https://bsky.app/profile/janedoe.bsky.social">Bluesky</a> and
-        <a href="https://www.instagram.com/janedoe_ga/">Instagram</a>.</p></main></body></html>"""),
+        <a href="https://www.instagram.com/janedoe_example/">Instagram</a>.</p></main></body></html>"""),
 }
 
 

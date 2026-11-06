@@ -19,13 +19,13 @@ VTT = """WEBVTT
 <v Mayor>Call to order. Roll call please.
 
 00:00:04.500 --> 00:00:08.000
-Council member Pat Local: present.
+Council member Robin Ashby: present.
 
 00:12:30.000 --> 00:12:36.000
-Pat Local: I move to table the short-term rental ordinance until the traffic study is done.
+Robin Ashby: I move to table the short-term rental ordinance until the traffic study is done.
 
 00:12:36.500 --> 00:12:40.000
-Second by council member Kim Post. All in favor.
+Second by council member Taylor Calder. All in favor.
 
 00:45:01.000 --> 00:45:05.000
 Motion carries five to zero.
@@ -58,9 +58,9 @@ Item three.
 GRANICUS_TRANSCRIPT = """<html><head><title>Transcript - City Council 10/20/2026</title></head><body>
 <div class="transcript">
 <p>[00:00:03] MAYOR: Good evening and welcome.</p>
-<p>[00:00:09] CLERK: Roll call. Council member Pat Local.</p>
-<p>[00:00:12] PAT LOCAL: Here.</p>
-<p>[00:31:40] PAT LOCAL: I cannot support a data center on that parcel without a water study.</p>
+<p>[00:00:09] CLERK: Roll call. Council member Robin Ashby.</p>
+<p>[00:00:12] ROBIN ASHBY: Here.</p>
+<p>[00:31:40] ROBIN ASHBY: I cannot support a data center on that parcel without a water study.</p>
 <p>[00:31:55] MAYOR: Noted. Next speaker.</p>
 <p>[01:10:02] CLERK: Motion passes.</p>
 </div></body></html>"""
@@ -160,13 +160,13 @@ def test_from_meetings_and_mention_time_codes(server, fetcher, tmp_path):
     (root / "config").mkdir(parents=True)
     base = Path(__file__).resolve().parent.parent
     (root / "config" / "outlets.yaml").write_text((base / "config" / "outlets.yaml").read_text())
-    (root / "config" / "jurisdictions.yaml").write_text((base / "examples" / "colorado-civic" / "config" / "jurisdictions.yaml").read_text())
+    (root / "config" / "jurisdictions.yaml").write_text((base / "opencrawl" / "examples" / "colorado-civic" / "config" / "jurisdictions.yaml").read_text())
     r = Researcher(root, {}, fetcher, store, log=lambda *_: None)
-    cand = {"id": "pat-local", "name": "Pat Local", "aliases": [], "websites": [], "social": [], "targets": ["rifle"],
-            "target": "rifle", "variants": name_variants("Pat Local")}
+    cand = {"id": "robin-ashby", "name": "Robin Ashby", "aliases": [], "websites": [], "social": [], "targets": ["rifle"],
+            "target": "rifle", "variants": name_variants("Robin Ashby")}
     counts = r.research(cand, skip={"votes", "posts", "statements", "articles", "leads", "social_mentions", "connections"})
     assert counts["mention"] == 2
-    ms = {m["url"]: m for m in store.read("subj:pat-local", "mention")}
+    ms = {m["url"]: m for m in store.read("subj:robin-ashby", "mention")}
     gran = next(m for u, m in ms.items() if "TranscriptViewer" in u)
     assert gran["meta"]["time"] == "0:00:09" and gran["published"] == "2026-10-20"       # first mention: roll call
     assert any("water study" in m["text"] for m in ms.values())

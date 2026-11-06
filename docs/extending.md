@@ -108,3 +108,16 @@ Record(source_id, kind, url, title="", text="", markdown="", published=None, cha
   `video_id`, `record_id`...) in `meta` so several records on one URL stay distinct. `opencrawl.store.ID_FIELDS`
   lists the keys it looks at.
 - `meta` is free-form JSON; keep it small (counts, ids, a few fields), not a copy of the text.
+
+## Network access in plug-ins
+
+Fetch through the `fetcher` you are given (`fetcher.get`, `fetcher.post`, `fetcher.download`): it applies the network
+guard (public addresses only, checked again at connect time), robots.txt, the block list, per-host spacing, redirect
+checks, size and time limits, and the run's deadline. Pass API keys as `headers=`, never in the URL or `params=`, so
+they can't end up in logs or state files. Need a real browser? Use `opencrawl.browser.session(fetcher)` and
+`opencrawl.browser.goto(page, url, fetcher)`: every connection the browser makes goes through the same guard. Don't
+open your own `requests.Session`, socket or `playwright` browser: they would skip all of the above.
+
+Text from the web, email and uploads is untrusted. Bound every regular expression you add (no unbounded `.*` or
+nested quantifiers over long input; `scripts/redos_audit.py` checks module-level patterns), and never use a value from
+a page as a file name or a SQL fragment without validating it (`opencrawl.targets.safe_id`).

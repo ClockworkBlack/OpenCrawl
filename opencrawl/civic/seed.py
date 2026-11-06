@@ -7,7 +7,7 @@
                          inspector, so `portals.elections` is filled for every government target)
 
 Settings (settings.yaml):
-  civic.state_fips   two-digit state FIPS code the registry covers (e.g. "13"); needed by the Wikidata queries
+  civic.state_fips   two-digit state FIPS code the registry covers (e.g. "08"); needed by the Wikidata queries
   civic.state_name   the state's name, used to disambiguate Wikipedia searches
 """
 from __future__ import annotations
@@ -58,7 +58,7 @@ def wikidata_websites(fetcher: Fetcher, state_fips: str | None = None) -> dict[s
 # ----------------------------------------------------------------------------- elections office
 ELECTIONS_LINK = re.compile(r"\b(elections?|voter\s+registration|board\s+of\s+elections|registrar|elections?\s*(&|and)\s*"
                             r"(voter\s+)?registration|vote\b)", re.I)
-STATE_VOTER_SITES = re.compile(r"\bsos\.[a-z]{2}\.gov|[a-z]{2,}sos\.gov|sos\.state\.[a-z]{2}\.us|sos\.[a-z]{2}\.us|mvp\.sos|"
+STATE_VOTER_SITES = re.compile(r"\bsos\.[a-z]{2}\.gov|[a-z]{2,20}sos\.gov|sos\.state\.[a-z]{2}\.us|sos\.[a-z]{2}\.us|"
                                r"vote\.gov|govote[a-z]*\.|facebook|twitter|instagram|youtube", re.I)
 
 

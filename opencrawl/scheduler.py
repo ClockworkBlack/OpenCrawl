@@ -44,6 +44,10 @@ class Progress:
         return self.data.get(source_id, {})
 
     def update(self, source_id: str, **fields):
+        from . import redact
+
+        fields = {k: redact.text(v) if isinstance(v, str) and k in ("status", "error", "note") else v
+                  for k, v in fields.items()}
         with self._lock:
             rec = self.data.setdefault(source_id, {})
             rec.update(fields)

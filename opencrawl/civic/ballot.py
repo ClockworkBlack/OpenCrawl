@@ -4,12 +4,13 @@ Yes/No contest on a results page into a ballot_question with counts).
 
 A ballot question record (kind ballot_question) carries
   question   the text as printed ("Shall the City of ... be authorized to levy ...?")
-  type       ESPLOST / TSPLOST / SPLOST / LOST / Homestead exemption / Bond / Alcohol /
-             Charter amendment / Annexation / cityhood / Redevelopment powers / Millage /
-             Term / government structure / Constitutional amendment / Referendum
+  type       Bond / Sales tax / Lodging or excise tax / Homestead exemption / Property tax or levy /
+             Debt or revenue limit / Alcohol / Charter amendment / Annexation or incorporation /
+             Term or government structure / Recall / Constitutional amendment / Referendum, plus the
+             state-specific kinds a project lists in settings.yaml civic.ballot_types
   date       the election date the page gives, when it gives one
   amount / years / purposes  dollar figures, the number of years and the listed projects a
-             SPLOST question names, when present
+             tax question names, when present
 Text-only records and results records for the same jurisdiction, date and type are paired
 in the export (ballot_questions.json), each keeping its own source.
 """
@@ -23,8 +24,8 @@ from ..store import Record
 
 QUESTION_RX = re.compile(r"(Shall\s+(?:the\s+)?[^?]{20,900}\?)", re.I | re.S)
 HINT = re.compile(r"\b(shall\s+the|shall\s+[a-z .'-]{3,60}\s+taxes\s+be\s+increased|referendum|ballot\s+(?:question|issue|measure)|"
-                  r"special\s+election\s+question|sample\s+ballot|splost|esplost|tsplost|homestead\s+exemption|mill\s+levy|"
-                  r"be\s+authorized\s+to)\b", re.I)
+                  r"special\s+election\s+question|sample\s+ballot|homestead\s+exemption|mill\s+levy|bond\s+(?:issue|question)|"
+                  r"proposition\s+\w+|be\s+authorized\s+to)\b", re.I)
 AMOUNT_RX = re.compile(r"\$\s?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?\s*(?:million|billion))", re.I)
 YEARS_RX = re.compile(r"\b(?:for\s+a\s+period\s+of|period\s+of|not\s+to\s+exceed|for)\s+(?:(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+)(?:\(\d+\)\s+)?(?:years?|quarters?|calendar\s+quarters)", re.I)
 PLACE_RX = re.compile(r"\b(?:city|town)\s+of\s+((?-i:[A-Z])[\w .'-]+?)(?=\s+(?:be|levy|issue|impose|to|is|and|,|shall)|,|\?|$)|"
@@ -98,7 +99,7 @@ def export_questions(store, jurisdictions: dict) -> list[dict]:
         out.append({"target": jid, "name": jurisdictions.get(jid, {}).get("name", jid), "date": m.get("date"), "type": m.get("type"),
                     "question": (match or r)["meta"].get("question") or m.get("question"), "yes": m.get("yes"), "no": m.get("no"),
                     "total": m.get("total"), "result": m.get("result"), "official": m.get("official"),
-                    "src": [r["url"]] + ([match["url"]] if match else []),
+                    "sources": [r["url"]] + ([match["url"]] if match else []),
                     "amount": (match or {}).get("meta", {}).get("amount"), "years": (match or {}).get("meta", {}).get("years"),
                     "purposes": (match or {}).get("meta", {}).get("purposes")})
     for t in texts:
@@ -108,5 +109,5 @@ def export_questions(store, jurisdictions: dict) -> list[dict]:
         jid = t.get("target") or ""
         out.append({"target": jid, "name": jurisdictions.get(jid, {}).get("name", jid), "date": m.get("date"), "type": m.get("type"),
                     "question": m.get("question"), "yes": None, "no": None, "total": None, "result": None, "official": None,
-                    "src": [t["url"]], "amount": m.get("amount"), "years": m.get("years"), "purposes": m.get("purposes")})
+                    "sources": [t["url"]], "amount": m.get("amount"), "years": m.get("years"), "purposes": m.get("purposes")})
     return sorted(out, key=lambda q: (q["date"] or "", q["target"]))

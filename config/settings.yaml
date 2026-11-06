@@ -6,7 +6,8 @@ http:
   # Identify honestly. Point to your repository so site admins can see what this is and reach you.
   # Wikimedia and others require a descriptive User-Agent for automated clients.
   user_agent: "OpenCrawl/1.0 (+https://github.com/your-org/your-repo)"
-  contact: ""                  # optional project contact address (never a personal one); also OPENCRAWL_CONTACT
+  contact: ""                  # optional, added to the User-Agent: a project or role address, never a personal one
+                               # (OPENCRAWL_CONTACT also works). Nothing is added unless you set it.
   min_interval_seconds: 3      # per host; robots.txt Crawl-delay wins if larger
   host_intervals:              # per-host floors (seconds between requests to that host)
     webapi.legistar.com: 0.5   # APIs built for machine traffic can go faster
@@ -26,14 +27,21 @@ http:
     - api.open.fec.gov/v1
     - projects.propublica.org/nonprofits/api
     - api.opencorporates.com
-  timeout_seconds: 30
-  max_bytes: 25000000
+  timeout_seconds: 30          # per connection attempt and per read
+  max_response_seconds: 300    # a response still arriving after this long is abandoned
+  max_bytes: 25000000          # bigger responses are abandoned
+  max_redirects: 5             # every hop is checked like a new request (network guard, robots.txt, block list)
   blocked_ttl_days: 7          # a host that refuses the crawler is left alone this long
+  # The network guard: only public internet addresses are fetched (no localhost, private networks, cloud
+  # metadata services), by the HTTP client and the headless browser alike. To crawl an intranet on purpose, list
+  # its hosts or networks here, or set allow_private_networks: true. Never do either on a CI runner.
+  allow_private_networks: false
+  allow_hosts: []              # e.g. [intranet.example.org, 10.20.0.0/16]
 
 # "Good times": when the sites you crawl see the least human traffic. Page crawling (HTML / sitemap / browser)
 # only runs inside these windows; APIs and feeds run any time. No windows = crawl whenever a run starts.
 schedule:
-  timezone: America/New_York
+  timezone: UTC                # use the sites' own time zone (an IANA name such as America/Denver)
   api_anytime: true
   windows:
     - {days: [mon, tue, wed, thu, fri], start: "23:00", end: "06:00"}
@@ -65,7 +73,7 @@ crawl:
 
 # Evidence grading for subject research: a URL on the target's own site, the subject's own site, a verified social
 # account or one of these domains / suffixes counts as `primary`; outlets.yaml domains count as `reported`;
-# everything else is `unverified` and goes to the Rumor Mill.
+# everything else is `unverified` and goes to the quarantine (never into a profile or packet).
 evidence:
   primary_suffixes: [".gov", ".mil"]
   primary_domains: []
@@ -73,13 +81,14 @@ evidence:
 subjects:
   max_minutes: 60              # research budget per run; due subjects resume next run
   cadence_days: 30             # re-research subjects this often
-  recent_cadence_days: 3       # subjects marked recent (a race this year or last) this often
+  recent_cadence_days: 3       # subjects active recently (`last_active` this year or last) this often
   max_mentions: 150            # record mentions kept per subject
   max_articles_per_query: 60
   gdelt: true                  # news search (several names per query; each article opened and checked)
   google_news: true            # leads only: Google News links can't be opened directly
   leads_for: all               # or priority_or_recent: news-lead searches only for priority / recent subjects
-  bluesky_search: true
+  bluesky_search: false        # true: also search public Bluesky posts naming each subject. Off by default: it
+                               # collects what members of the public wrote, not just the subject's own posts
   places: []                   # words an article must contain besides a subject's name (a state, a region)
 
 # Which derivers turn crawled pages into structured records (`opencrawl derive`). Unset = the civic set:
@@ -100,6 +109,8 @@ civic:
   state_fips: ""               # two-digit state FIPS code, e.g. "08"; needed for the Wikidata lookup by FIPS
   state_name: ""               # e.g. Colorado
   state_abbr: ""               # e.g. CO
+  # ballot_types:              # your state's ballot-question kinds, tried before the generic ones (Bond, Sales tax...)
+  #   - {label: "Revenue retention", pattern: '\b(retain and spend|revenue change)\b'}
 
 # Public records requests for codes of ordinances (`opencrawl records ...`, civic module). Nothing is sent until
 # enabled is true, requester is set, and the mailbox secrets exist (ORR_SMTP_HOST, ORR_SMTP_PORT, ORR_USER,
@@ -114,6 +125,17 @@ openrecords:
   daily_limit: 10              # new requests per day (keeps a new mailbox out of spam folders)
   cooldown_days: 180           # never ask the same jurisdiction twice inside this
   follow_up_after_business_days: 5
+  trusted_reply_domains: []    # besides the domain each request went to: a records portal a government replies from
+                               # (e.g. its GovQA or NextRequest address). Other senders' replies are kept for review.
+
+# Privacy. Subject research and screenshots hold information about people: keep only what's useful, and only about
+# people who hold or seek a public role.
+privacy:
+  public_figures_only: true    # a person is researched only with an office, public_role or title in subjects.yaml
+  retention_days:              # e.g. 730: `opencrawl purge --expired` deletes research, screenshots, quarantined
+                               # claims, reply excerpts and cached pages older than this (unset = keep)
+  export_quarantine: false     # unverified claims stay out of exports (true: quarantine.json, for review only)
+  export_screenshot_text: true # false: screenshots.json lists items without their OCR text
 
 data_dir: data                 # the database lives at data/crawl.db (override with OPENCRAWL_DB)
 state_dir: state

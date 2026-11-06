@@ -2,12 +2,15 @@
 
 1. first crawl vs re-crawl of a synthetic city site (listing pages, deep pages, PDFs)
 2. database write throughput
-3. finding a candidate's name in every stored record: scan (the v0.2 JSONL way) vs full-text search
+3. finding a subject's name in every stored record: a plain scan vs full-text search
 
 usage: python scripts/bench.py [--pages 300] [--pdfs 150] [--records 100000]
 """
 from __future__ import annotations
 
+import os
+
+os.environ.setdefault("OPENCRAWL_ALLOW_PRIVATE_NETWORKS", "1")   # the benchmark's sites run on 127.0.0.1
 import argparse
 import http.server
 import io
@@ -124,7 +127,7 @@ def bench_store_and_search(n: int) -> dict:
         w = time.perf_counter() - t0
         out["write"] = {"records": n, "seconds": round(w, 2), "records_per_second": int(n / w)}
         probe = random.sample(names, 50)
-        # v0.2 approach: every record, every name, regex
+        # plain scan: every record, every name, regex
         t0 = time.perf_counter()
         scan_hits = 0
         for nm in probe:

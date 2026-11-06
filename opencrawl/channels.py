@@ -39,7 +39,7 @@ from lxml import etree
 from . import extract
 from .blocked import Blocked
 from .feeds import looks_like_feed, parse_feed
-from .fetch import Disallowed, Fetcher
+from .fetch import Disallowed, Fetcher, OutOfTime
 from .store import Record
 
 STRUCTURED = ("api", "wp_json", "feed")
@@ -309,11 +309,11 @@ def is_document_url(url: str) -> bool:
 
 def doc_type(url: str, title: str = "") -> str:
     s = f"{url} {title}".lower()
-    for t, pat in (("finance_report", r"campaign[ _-]?(?:contribution|finance|disclosure)|contribution[ _-]?disclosure|\bccdr\b|"
+    for t, pat in (("finance_report", r"campaign[ _-]?(?:contribution|finance|disclosure)|contribution[ _-]?disclosure|disclosure[ _-]?report|"
                                       r"disclosure[ _-]?report|financial[ _-]?disclosure"),
                    ("minutes", r"minute"), ("agenda", r"agenda"), ("ordinance", r"ordinance"), ("resolution", r"resolution"),
                    ("results", r"result|canvass|returns|tally|summary report"), ("qualifying", r"qualif"),
-                   ("sample_ballot", r"sample ballot|specimen ballot"), ("referendum", r"referendum|splost|question"),
+                   ("sample_ballot", r"sample ballot|specimen ballot"), ("referendum", r"referendum|ballot question|ballot issue|question"),
                    ("budget", r"budget"), ("packet", r"packet"), ("transcript", r"transcript|caption")):
         if re.search(pat, s):
             return t
@@ -587,11 +587,9 @@ def _html_crawl(fetcher: Fetcher, src: dict, max_pages: int, ctx: CrawlContext |
 
 
 def _browser_crawl(fetcher: Fetcher, src: dict, max_pages: int, ctx: CrawlContext | None = None) -> Iterator[Record]:
-    """Headless Chromium for JS-rendered sites (code libraries, SPA city sites).
-    Same robots/rate-limit/frontier rules as everything else."""
-    from playwright.sync_api import sync_playwright
-
-    from .fetch import launch_browser
+    """Headless Chromium for JS-rendered sites (code libraries, single-page sites), through browser.session (every
+    connection guarded). Same robots/block-list/rate-limit/frontier rules as everything else."""
+    from . import browser
 
     ctx = ctx or CrawlContext()
     start = src["url"]
@@ -599,9 +597,8 @@ def _browser_crawl(fetcher: Fetcher, src: dict, max_pages: int, ctx: CrawlContex
     selector = src.get("content_selector")
     link_pattern = src.get("follow")  # substring a link must contain to be followed
     seen, queue, count = set(), deque([(start, 0)]), 0
-    with sync_playwright() as p:
-        browser = launch_browser(p)
-        page = browser.new_page(user_agent=fetcher.user_agent)
+    with browser.session(fetcher, block=("media", "font", "image")) as bctx:
+        page = bctx.new_page()
         while queue and count < max_pages:
             url, depth = queue.popleft()
             if url in seen:
@@ -609,26 +606,36 @@ def _browser_crawl(fetcher: Fetcher, src: dict, max_pages: int, ctx: CrawlContex
             seen.add(url)
             if not fetcher.allowed(url) or _skip_fresh(ctx, url, depth):
                 continue
-            fetcher.limiter.wait(url, fetcher.robots.crawl_delay(url))
-            t0 = time.monotonic()
             try:
-                resp = page.goto(url, wait_until="networkidle", timeout=60000)
-            except Exception:  # noqa: BLE001
-                fetcher.limiter.record(url, 599, time.monotonic() - t0)
+                resp = browser.goto(page, url, fetcher)
+            except (OutOfTime, Blocked):
+                raise
+            except Disallowed:
+                continue
+            except Exception:  # noqa: BLE001 — navigation error, timeout
+                fetcher.limiter.record(url, 599, 0.0)
                 continue
             status = resp.status if resp else 0
-            fetcher.limiter.record(url, status, time.monotonic() - t0)
+            final = page.url
+            if final != url and urlsplit(final).netloc != host:
+                continue      # the page moved to another site: not this source's content
             if ctx.frontier:
                 ctx.frontier.mark_url(url, status, src["id"], "text/html", page.content().encode() if status == 200 else None)
             if status != 200:
                 continue
             count += 1
             html = page.inner_html(selector) if selector and page.query_selector(selector) else page.content()
-            title, md = extract.html_to_markdown(f"<html><head><title>{page.title()}</title></head><body>{html}</body></html>", url)
+            title, md = extract.html_to_markdown(f"<html><head><title>{_html_escape(page.title())}</title></head>"
+                                                 f"<body>{html}</body></html>", url)
             if md:
                 yield Record(src["id"], src.get("kind", "page"), url, title=title, text=md, markdown=md, channel="browser",
                              meta={"opened": True})
             for link in extract.links(page.content(), url):
                 if urlsplit(link).netloc == host and (not link_pattern or link_pattern in link) and link not in seen:
                     queue.append((link, depth + 1))
-        browser.close()
+
+
+def _html_escape(s: str) -> str:
+    import html as _h
+
+    return _h.escape(s or "", quote=False)

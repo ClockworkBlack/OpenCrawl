@@ -9,8 +9,12 @@ Environment variables
   OPENCRAWL_ROOT             project directory (above)
   OPENCRAWL_DB               path of the SQLite database (default <root>/data/crawl.db)
   OPENCRAWL_USER_AGENT       overrides http.user_agent
-  OPENCRAWL_CONTACT          a contact address added to the User-Agent (never a personal address)
+  OPENCRAWL_CONTACT          a contact address added to the User-Agent (a project or role address, never a personal
+                             one); nothing is added unless this or http.contact is set
   OPENCRAWL_BROWSER_CHANNEL  "chrome" to use an installed Chrome instead of Playwright's Chromium
+  OPENCRAWL_BROWSER_ALLOW_NO_SANDBOX  1 to let the browser run without its sandbox when it can't start with it (root)
+  OPENCRAWL_ALLOW_PRIVATE_NETWORKS    1 to let the crawler reach private and loopback addresses (see netguard.py)
+  OPENCRAWL_REDACT_LOGS      1 to print subject ids as short hashes in logs (shared CI logs)
 """
 from __future__ import annotations
 
@@ -39,8 +43,9 @@ ROOT = _find_root()
 
 DEFAULTS: dict = {
     "http": {"user_agent": "OpenCrawl/1.0 (+https://github.com/your-org/your-repo)", "min_interval_seconds": 3,
-             "timeout_seconds": 30, "max_bytes": 25_000_000, "blocked_ttl_days": 7, "host_intervals": {},
-             "api_endpoints": [], "contact": ""},
+             "timeout_seconds": 30, "max_bytes": 25_000_000, "max_response_seconds": 300, "max_redirects": 5,
+             "blocked_ttl_days": 7, "host_intervals": {}, "api_endpoints": [], "contact": "",
+             "allow_private_networks": False, "allow_hosts": []},
     "schedule": {"timezone": "UTC", "api_anytime": True, "windows": []},
     "cadence_days": {"a": 1, "b": 7, "c": 30},
     "frontier": {"document_ttl_days": 3650, "page_revisit_days": 7},
@@ -53,6 +58,8 @@ DEFAULTS: dict = {
     "subjects": {},
     "derivers": None,       # None = the built-in civic derivers; [] = none; or a list of module paths
     "openrecords": {"enabled": False},
+    "privacy": {"retention_days": None, "public_figures_only": True, "export_quarantine": False,
+                "export_screenshot_text": True},
     "data_dir": "data",
     "state_dir": "state",
 }
@@ -86,15 +93,19 @@ def make_store(cfg: dict):
 
 
 def make_fetcher(cfg: dict):
+    from . import netguard
     from .fetch import Fetcher
 
     http = cfg.get("http", {})
+    netguard.configure(bool(http.get("allow_private_networks")), list(http.get("allow_hosts") or []))
     return Fetcher(
         user_agent=_user_agent(http),
         state_dir=cfg["state_dir"],
         min_interval=float(http.get("min_interval_seconds", 2.0)),
         timeout=float(http.get("timeout_seconds", 30)),
         max_bytes=int(http.get("max_bytes", 25_000_000)),
+        max_seconds=float(http.get("max_response_seconds", 300)),
+        max_redirects=int(http.get("max_redirects", 5)),
         blocked_ttl_days=int(http.get("blocked_ttl_days", 7)),
         host_intervals=http.get("host_intervals") or {},
         api_endpoints=http.get("api_endpoints") or [],
@@ -102,10 +113,11 @@ def make_fetcher(cfg: dict):
 
 
 def _user_agent(http: dict) -> str:
-    """Honest User-Agent; adds a contact address when one is configured (Wikimedia asks automated clients for one).
-    OPENCRAWL_CONTACT, else the project mailbox used for records requests (ORR_FROM). Never a personal address."""
+    """Honest User-Agent. A contact address is added only when one is set on purpose (OPENCRAWL_CONTACT or
+    http.contact): Wikimedia asks automated clients for one, but an address is never borrowed from elsewhere
+    (the records mailbox, git config), so nothing identifying goes out unless the operator chose it."""
     ua = os.environ.get("OPENCRAWL_USER_AGENT") or http.get("user_agent") or DEFAULTS["http"]["user_agent"]
-    contact = os.environ.get("OPENCRAWL_CONTACT") or os.environ.get("ORR_FROM") or http.get("contact")
+    contact = os.environ.get("OPENCRAWL_CONTACT") or http.get("contact")
     if contact and contact not in ua:
         ua = ua[:-1] + f"; {contact})" if ua.endswith(")") else f"{ua} ({contact})"
     return ua

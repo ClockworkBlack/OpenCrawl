@@ -10,6 +10,9 @@ usage: python scripts/bench_pipeline.py [--targets 30] [--subjects 4000] [--vote
 """
 from __future__ import annotations
 
+import os
+
+os.environ.setdefault("OPENCRAWL_ALLOW_PRIVATE_NETWORKS", "1")   # the benchmark's sites run on 127.0.0.1
 import argparse
 import json
 import random
@@ -73,7 +76,7 @@ def build(root: Path, n_jur: int, votes_per: int, n_contribs: int, seed: int = 7
     rnd = random.Random(seed)
     (root / "config").mkdir(parents=True, exist_ok=True)
     (root / "state").mkdir(parents=True, exist_ok=True)
-    example = ROOT / "examples" / "colorado-civic" / "config"
+    example = ROOT / "opencrawl" / "examples" / "colorado-civic" / "config"
     for f in ("outlets.yaml", "topics.yaml", "issues.yaml", "finance.yaml", "organizations.yaml", "overrides.yaml"):
         shutil.copy(ROOT / "config" / f, root / "config" / f)
     for f in ("jurisdictions.yaml", "school_districts.yaml", "press.yaml", "guides.yaml"):

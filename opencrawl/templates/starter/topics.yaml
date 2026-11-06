@@ -1,0 +1,17 @@
+# Topic tags: a record gets every topic whose pattern matches its title or text (case-insensitive regular
+# expressions). They group records in exports and packets (a council member's votes by subject, an
+# organization's statements by theme). Replace these with the subjects your project tracks.
+topics:
+  Governance and policy: '\b(polic(y|ies)|regulation\w*|legislation|ordinance\w*|resolution\w*|charter|bylaws?|rule-?making)\b'
+  Budget and finance: '\b(budget\w*|fiscal|appropriation\w*|audit\w*|revenue|spending|funding|grant\w*|tax\w*|fee schedule)\b'
+  Elections and ethics: '\b(election\w*|ballot|campaign|candidate\w*|ethics|lobby\w*|conflicts? of interest|disclosure)\b'
+  Housing and land use: '\b(housing|zoning|rezon\w*|land use|development|affordable|rent\b|homeless\w*|permits?)\b'
+  Environment and climate: '\b(environment\w*|climate|emissions?|pollution|conservation|water quality|wildfire|flood\w*)\b'
+  Energy: '\b(energy|electric\w*|solar|wind power|natural gas|pipeline|power plant|grid|rate (?:case|increase)s?)\b'
+  Water and utilities: '\b(water|sewer|stormwater|utilit\w*|wastewater|reservoir|drought|solid waste|sanitation|recycling)\b'
+  Health and safety: '\b(health|hospital\w*|public safety|police|fire (?:department|rescue)|emergency|crime)\b'
+  Education: '\b(school\w*|education|students?|teachers?|curriculum|tuition|university)\b'
+  Labor and workforce: '\b(workers?|labor|union\w*|wages?|employment|layoffs?|hiring|strike)\b'
+  Transportation: '\b(transportation|transit|roads?|highway\w*|traffic|rail\b|airport|parking)\b'
+  Technology and data: '\b(technology|software|data (?:privacy|center|breach)|artificial intelligence|\bai\b|cybersecurity)\b'
+  Appointments and personnel: '\b(appoint\w*|hired|resign\w*|retire\w*|nominat\w*|sworn in|personnel)\b'

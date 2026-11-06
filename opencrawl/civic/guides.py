@@ -20,19 +20,24 @@ from ..derive import Deriver, register
 from ..names import name_variants
 from ..store import Record
 
-OFFICE_WORDS = (r"(?:governor|lieutenant governor|lt\.? governor|attorney general|secretary of state|state school superintendent|"
-                r"commissioner of (?:agriculture|insurance|labor)|public service commission(?:er)?|psc|u\.?s\.? (?:senate|house|representative|congress)|"
-                r"congress(?:ional)?|state (?:senate|house|representative|senator)|senate|house|district attorney|solicitor|sheriff|judge|"
-                r"mayor|city council|council|commission(?:er)?|school board|board of education|clerk|tax commissioner|coroner|"
-                r"probate|magistrate|superior court|supreme court|court of appeals)(?:\s+(?:district|dist\.?|seat|post|ward)\s*\d+[A-Za-z]?)?")
-NAME = r"(?-i:[A-Z][A-Za-z'’.\-]+(?:\s+(?:[A-Z]\.|[A-Z][A-Za-z'’.\-]+|\"[^\"]{2,20}\"|“[^”]{2,20}”)){1,4}(?:,?\s+(?:Jr|Sr|II|III|IV)\.?)?)"
-ENDORSE_LINE = re.compile(r"^\s*(?:[-*•·]\s*)?(?P<name>" + NAME + r")\s*(?:[-–—:|(,]\s*|\s+for\s+|\s+–\s+)(?P<office>[^|\n()]{3,80}?)\)?\s*(?:\||$)", re.I | re.M)
+OFFICE_WORDS = (r"(?:governor|lieutenant governor|lt\.? governor|attorney general|secretary of state|treasurer|auditor|"
+                r"comptroller|controller|superintendent(?: of (?:public instruction|schools|education))?|"
+                r"commissioner(?: of [a-z ]{3,30})?|(?:public service|public utilities|corporation|railroad) commission(?:er)?|"
+                r"u\.?s\.? (?:senate|house|representative|congress)|congress(?:ional)?|"
+                r"state (?:senate|house|representative|senator|assembly|legislature)|assembly(?:member|man|woman)?|senate|house|"
+                r"district attorney|prosecut(?:or|ing attorney)|sheriff|judge|justice|mayor|city council|council|"
+                r"school board|board of (?:education|regents|trustees|supervisors|commissioners)|clerk|assessor|recorder|"
+                r"coroner|county executive|alder(?:man|woman|person)|trustee|regent|"
+                r"(?:supreme|superior|district|circuit|county|probate|appeals?|municipal) court)"
+                r"(?:\s+(?:district|dist\.?|seat|post|ward|division)\s*\d+[A-Za-z]?)?")
+NAME = r"(?-i:[A-Z][A-Za-z'’.\-]{0,30}+(?:[ \t]{1,3}+(?:[A-Z]\.|[A-Z][A-Za-z'’.\-]{0,30}+|\"[^\"\n]{2,20}\"|“[^”\n]{2,20}”)){1,4}(?:,?[ \t]{1,3}(?:Jr|Sr|II|III|IV)\.?)?)"
+ENDORSE_LINE = re.compile(r"^[ \t]*+(?:[-*•·][ \t]*+)?(?P<name>" + NAME + r")[ \t]*+(?:[-–—:|(,][ \t]*+|for[ \t]++|–[ \t]++)(?P<office>[^|\n()]{3,80}?)\)?[ \t]*(?:\||$)", re.I | re.M)
 ENDORSES = re.compile(r"\b(?:endorse[sd]?|is proud to endorse|announces? (?:its|our|the) endorsement of|supports?)\s+(?P<name>" + NAME + r")"
                       r"(?:\s+(?:for|in the race for|in)\s+(?P<office>[^.,;\n]{3,80}))?", re.I)
-RATING_ROW = re.compile(r"^\s*(?:[-*•·]\s*)?(?P<name>" + NAME + r")\s*(?:\(\s*(?P<party>[DRLI])\s*[-–]?\s*[^)]*\))?\s*(?:[|:–—-]\s*)?(?P<mid>[^|\n]{0,60}?)\s*[|:]?\s*"
-                        r"(?P<rating>[A-F][+\-]?|\d{1,3}\s?%|\d{1,3}(?:\.\d)?(?=\s*(?:%|/100|$|\|)))\s*(?:%|/100)?\s*(?:\||$)", re.I | re.M)
-QUESTION = re.compile(r"^\s*(?:Q(?:uestion)?\s*\d*[:.)]\s*|\d{1,2}[.)]\s+)?(?P<q>[^\n?]{15,300}\?)\s*$", re.M)
-ANSWER = re.compile(r"^\s*(?P<name>" + NAME + r")\s*(?:\([^)]{1,40}\))?\s*[:：]\s*(?P<a>.{20,2500}?)(?=\n\s*(?:" + NAME + r")\s*(?:\([^)]{1,40}\))?\s*[:：]|\n\s*\n|\Z)", re.S | re.M)
+RATING_ROW = re.compile(r"^[ \t]*+(?:[-*•·][ \t]*+)?(?P<name>" + NAME + r")[ \t]*+(?:\([ \t]*(?P<party>[DRLI])[ \t]*[-–]?[ \t]*[^)\n]{0,40}\))?[ \t]*+(?:[|:–—-][ \t]*+)?(?P<mid>[^|\n]{0,60}?)[ \t]*[|:]?[ \t]*"
+                        r"(?P<rating>[A-F][+\-]?|\d{1,3}[ \t]?%|\d{1,3}(?:\.\d)?(?=[ \t]*(?:%|/100|$|\|)))[ \t]*(?:%|/100)?[ \t]*(?:\||$)", re.I | re.M)
+QUESTION = re.compile(r"^[ \t]*+(?:Q(?:uestion)?[ \t]*\d{0,3}[:.)][ \t]*+|\d{1,2}[.)][ \t]++)?(?P<q>[^\n?]{15,300}\?)[ \t]*$", re.M)
+ANSWER = re.compile(r"^[ \t]*+(?P<name>" + NAME + r")[ \t]*+(?:\([^)\n]{1,40}\))?[ \t]*[:：][ \t]*+(?P<a>.{20,2500}?)(?=\n[ \t]*(?:" + NAME + r")[ \t]*(?:\([^)\n]{1,40}\))?[ \t]*[:：]|\n[ \t]*\n|\Z)", re.S | re.M)
 NOISE = re.compile(r"\b(click|read more|donate|subscribe|share|menu|privacy|cookie|login|sign up|search|copyright)\b", re.I)
 OFFICE_RX = re.compile(OFFICE_WORDS, re.I)
 

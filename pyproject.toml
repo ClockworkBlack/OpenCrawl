@@ -1,12 +1,27 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "opencrawl"
 version = "1.0.0"
 description = "A polite, resumable crawler for any list of websites, organizations or causes, with optional civic (government) and subject-research modules"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.10"
-dependencies = ["requests>=2.31", "beautifulsoup4>=4.12", "lxml>=5.0", "PyYAML>=6.0", "Pillow>=10.0",
-                "pytesseract>=0.3.10", "pdfplumber>=0.11", "playwright>=1.44"]
+requires-python = ">=3.11"
+# Floors are the releases that fixed known security issues in the libraries that parse untrusted input
+# (requirements.txt pins the exact versions CI runs).
+dependencies = [
+  "requests>=2.32.4",
+  "urllib3>=2.6.0",
+  "beautifulsoup4>=4.12",
+  "lxml>=5.3.0",
+  "PyYAML>=6.0.1",
+  "Pillow>=11.3.0",
+  "pdfplumber>=0.11.8",
+  "pdfminer.six>=20251107",
+  "cryptography>=44.0.0",
+]
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
@@ -15,14 +30,21 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-transcribe = ["faster-whisper>=1.0"]
-dev = ["pytest>=8"]
+browser = ["playwright>=1.49"]          # script-rendered pages and screenshots (`opencrawl capture`, render: browser)
+ocr = ["pytesseract>=0.3.10"]           # scanned PDFs and screenshots (needs the tesseract program)
+transcribe = ["faster-whisper>=1.0"]    # local transcription of posted recordings
+all = ["playwright>=1.49", "pytesseract>=0.3.10"]
+dev = ["pytest>=8", "reportlab>=4"]
 
 [project.scripts]
 opencrawl = "opencrawl.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["opencrawl*"]
+exclude = ["opencrawl.examples*", "opencrawl.templates*"]
+
+[tool.setuptools.package-data]
+opencrawl = ["templates/*/*", "examples/*/*", "examples/*/*/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

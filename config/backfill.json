@@ -1,10 +1,10 @@
 {
-  "_note": "Daytime backfill (opencrawl/backfill.py): back-to-back GitHub Actions runs from the morning until subject profiles stop filling. Set enabled to true to start it; delete state/backfill.json's done flag (or the file) to start over. month_minutes_cap counts every run's Actions minutes this month (month_minutes_before adds runs from before counting began). Size it to your plan's included minutes plus any Actions budget you set, leaving room for the nightly runs.",
+  "_note": "Daytime backfill (opencrawl/backfill.py): back-to-back GitHub Actions runs inside the day window until subject profiles stop filling. Set enabled to true to start it; delete state/backfill.json's done flag (or the file) to start over. Set window.timezone to your own (an IANA name such as America/Denver). month_minutes_cap counts every run's Actions minutes this month (month_minutes_before adds runs from before counting began). Size it to your plan's included minutes plus any Actions budget you set, leaving room for the nightly runs.",
   "enabled": false,
   "window": {
-    "start": "06:00",
-    "end": "21:30",
-    "timezone": "America/New_York"
+    "start": "08:00",
+    "end": "20:00",
+    "timezone": "UTC"
   },
   "research_minutes": 100,
   "finance_minutes": 20,

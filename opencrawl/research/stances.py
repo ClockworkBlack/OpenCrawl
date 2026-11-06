@@ -1,15 +1,14 @@
 """Subject history, ideology, stances and support, as sourced profile items.
 
-A downstream site can only reason about "what they may support next" from sourced items: stated
-positions, statements, ratings, endorsements, official votes and sponsored bills (it
-needs at least two). This module turns everything the crawler has on a candidate into
-exactly those items, each with the record it came from, and grades each by evidence:
+Anything said about where a subject stands should rest on sourced items: stated positions, statements, ratings,
+endorsements, official votes and sponsored bills (two or more before saying anything). This module turns
+everything the crawler has on a subject into exactly those items, each with the record it came from, and grades
+each by evidence:
 
-  positions     sentences in the candidate's own words (campaign site, verified posts,
-                meeting transcripts where the candidate is the speaker, questionnaire
-                answers) or reported with attribution (a listed outlet quoting them),
-                that take a stance on an issue (config/issues.yaml, config/topics.yaml)
-  statements    the candidate's own sentences with a stance cue but no matched issue
+  positions     sentences in the subject's own words (own site, verified posts, meeting transcripts where the
+                subject is the speaker, questionnaire answers) or reported with attribution (a listed outlet
+                quoting them), that take a stance on an issue (config/issues.yaml, config/topics.yaml)
+  statements    the subject's own sentences with a stance cue but no matched issue
   ideology      documented markers only: self-descriptions ("a conservative Republican"),
                 caucus/organization memberships, interest-group ratings, endorsements,
                 party. Composed into one sourced line; never a guess.
@@ -21,10 +20,9 @@ exactly those items, each with the record it came from, and grades each by evide
   ordinances    supported / opposed: votes and sponsorships on ordinances and resolutions
 
 Nothing here is an inference: every item quotes or cites a record that was opened.
-Unverified material (anything from a source that is neither the candidate's own
-channel, an official record nor a listed outlet) never enters; it stays in the Rumor
-Mill. Items parsed from transcripts or scans carry needs_review when speaker
-attribution rests on a label the crawler read rather than a byline.
+Unverified material (anything from a source that is neither the subject's own channel, an official record nor
+a listed outlet) never enters; it stays in the quarantine. Items parsed from transcripts or scans carry
+needs_review when speaker attribution rests on a label the crawler read rather than a byline.
 """
 from __future__ import annotations
 
@@ -117,7 +115,7 @@ SENT_SPLIT = re.compile(r"(?<=[.!?])(?<![A-Z]\.)(?<!\bMr\.)(?<!\bMrs\.)(?<!\bMs\
 
 
 def split_sentences(text: str) -> list[str]:
-    """Sentences, without breaking after initials ("Jordan P. Hale") or common abbreviations."""
+    """Sentences, without breaking after initials ("Dale P. Corwin") or common abbreviations."""
     return [p.strip() for p in SENT_SPLIT.split(re.sub(r"\s+", " ", text or "")) if p.strip()]
 
 
@@ -166,7 +164,7 @@ def _clean_org(s: str) -> str:
 
 
 def _split_names(tail: str) -> list[str]:
-    """'State Chamber of Commerce and Sheriff Dana Reed. I ...' -> both names (stops at the sentence end)."""
+    """'State Chamber of Commerce and Sheriff Morgan Okafor. I ...' -> both names (stops at the sentence end)."""
     tail = re.split(r"[.;:!?\n]|\s+(?:for|in|on|at|to|because|who|which)\s+", tail, maxsplit=1)[0]
     parts = re.split(r"\s*,\s*|\s+and\s+|\s*&\s*", tail)
     out = []
@@ -197,7 +195,7 @@ class SourceList:
         if k in self.index:
             return self.index[k]
         self.index[k] = len(self.items)
-        self.items.append({"t": (title or r.get("title") or "").strip()[:200] or u, "u": u, "d": _d10(r),
+        self.items.append({"title": (title or r.get("title") or "").strip()[:200] or u, "url": u, "date": _d10(r),
                            "kind": r.get("kind"), "evidence": r.get("evidence") or "primary"})
         return self.index[k]
 
@@ -335,8 +333,8 @@ class Extractor:
         return out
 
 
-# ----------------------------------------------------------------------------- the profile supplement
-def profile_supplement(cand: dict, store: Store, root: Path | None = None, outlets: set[str] | None = None,
+# ----------------------------------------------------------------------------- the profile
+def build_profile(cand: dict, store: Store, root: Path | None = None, outlets: set[str] | None = None,
                        money: dict | None = None, career: list[dict] | None = None, legis: dict | None = None,
                        speakers: TranscriptSpeakers | None = None, records: dict | None = None) -> dict:
     """Everything the crawler has on one subject, as profile items with src indexes.
@@ -356,14 +354,14 @@ def profile_supplement(cand: dict, store: Store, root: Path | None = None, outle
         seen_pos.add(key)
         topics = issues_of(text, root)
         i = S.add(r)
-        item = {"stance": text[:420], "d": _d10(r), "src": [i], "basis": basis, "evidence": evidence}
+        item = {"stance": text[:420], "date": _d10(r), "refs": [i], "basis": basis, "evidence": evidence}
         if review:
             item["needs_review"] = True
         if topics:
             for t in topics[:2]:
                 positions.append({"topic": t, **item})
         else:
-            statements.append({"d": _d10(r), "text": text[:420], "src": [i], "basis": basis, "evidence": evidence})
+            statements.append({"date": _d10(r), "text": text[:420], "refs": [i], "basis": basis, "evidence": evidence})
 
     def by_kind(kind: str) -> list[dict]:
         rows = records.get(kind, []) if records is not None else store.read(sid, kind)
@@ -377,13 +375,13 @@ def profile_supplement(cand: dict, store: Store, root: Path | None = None, outle
         for s in ex.own_sentences(r.get("text") or "")[:40]:
             add_position(s, r, basis, "primary")
         for m in ex.markers(r.get("text") or "", own=True):
-            markers.append({**m, "d": _d10(r), "src": [S.add(r)], "basis": basis, "evidence": "primary"})
+            markers.append({**m, "date": _d10(r), "refs": [S.add(r)], "basis": basis, "evidence": "primary"})
         for a in ex.affiliations(r.get("text") or "", own=True):
-            affils.append({**a, "d": _d10(r), "src": [S.add(r)], "basis": basis, "evidence": "primary"})
+            affils.append({**a, "date": _d10(r), "refs": [S.add(r)], "basis": basis, "evidence": "primary"})
         for e in ex.endorsements(r.get("text") or "", own=True):
-            endos.append({**e, "d": _d10(r), "src": [S.add(r)], "basis": basis + " (self-reported)", "evidence": "primary"})
+            endos.append({**e, "date": _d10(r), "refs": [S.add(r)], "basis": basis + " (self-reported)", "evidence": "primary"})
         for rt in ex.ratings(r.get("text") or "", own=True):
-            rates.append({**rt, "src": [S.add(r)], "basis": basis + " (self-reported)", "evidence": "primary"})
+            rates.append({**rt, "refs": [S.add(r)], "basis": basis + " (self-reported)", "evidence": "primary"})
     # what they said at meetings: transcripts in their targets where they are the labeled speaker
     jids = [j for j in cand.get("targets", []) if j]
     per_transcript: dict[str, int] = {}
@@ -406,13 +404,13 @@ def profile_supplement(cand: dict, store: Store, root: Path | None = None, outle
             if attributed:
                 add_position(s, r, f"reported by {outlet}".strip(), "reported")
         for m in ex.markers(r.get("text") or "", own=False):
-            markers.append({**m, "d": _d10(r), "src": [S.add(r)], "basis": f"reported by {outlet}", "evidence": "reported"})
+            markers.append({**m, "date": _d10(r), "refs": [S.add(r)], "basis": f"reported by {outlet}", "evidence": "reported"})
         for a in ex.affiliations(r.get("text") or "", own=False):
-            affils.append({**a, "d": _d10(r), "src": [S.add(r)], "basis": f"reported by {outlet}", "evidence": "reported"})
+            affils.append({**a, "date": _d10(r), "refs": [S.add(r)], "basis": f"reported by {outlet}", "evidence": "reported"})
         for e in ex.endorsements(r.get("text") or "", own=False):
-            endos.append({**e, "d": _d10(r), "src": [S.add(r)], "basis": f"reported by {outlet}", "evidence": "reported"})
+            endos.append({**e, "date": _d10(r), "refs": [S.add(r)], "basis": f"reported by {outlet}", "evidence": "reported"})
         for rt in ex.ratings(r.get("text") or "", own=False):
-            rates.append({**rt, "src": [S.add(r)], "basis": f"reported by {outlet}", "evidence": "reported"})
+            rates.append({**rt, "refs": [S.add(r)], "basis": f"reported by {outlet}", "evidence": "reported"})
     # questionnaires and guides (kind guide_answer, from opencrawl.guides) and endorsement records
     for r in by_kind("guide_answer"):
         m = r.get("meta", {})
@@ -424,13 +422,13 @@ def profile_supplement(cand: dict, store: Store, root: Path | None = None, outle
         m = r.get("meta", {})
         if m.get("type") == "endorsement" and m.get("party"):
             endos.append({"name": m["party"], "direction": m.get("direction", "received"), "text": (r.get("text") or "")[:300],
-                          "d": _d10(r), "src": [S.add(r)], "basis": m.get("basis") or ("campaign site (self-reported)" if m.get("self_reported") else "endorser's own page"),
+                          "date": _d10(r), "refs": [S.add(r)], "basis": m.get("basis") or ("campaign site (self-reported)" if m.get("self_reported") else "endorser's own page"),
                           "evidence": r.get("evidence") or "primary"})
         elif m.get("type") in ("membership", "affiliation") and m.get("party"):
-            affils.append({"org": m["party"], "role": m.get("role", "member"), "text": (r.get("text") or "")[:300], "d": _d10(r),
-                           "src": [S.add(r)], "basis": m.get("basis") or "record", "evidence": r.get("evidence") or "primary"})
+            affils.append({"org": m["party"], "role": m.get("role", "member"), "text": (r.get("text") or "")[:300], "date": _d10(r),
+                           "refs": [S.add(r)], "basis": m.get("basis") or "record", "evidence": r.get("evidence") or "primary"})
         elif m.get("type") == "rating" and m.get("party"):
-            rates.append({"org": m["party"], "rating": m.get("rating", ""), "year": m.get("year", ""), "src": [S.add(r)],
+            rates.append({"org": m["party"], "rating": m.get("rating", ""), "year": m.get("year", ""), "refs": [S.add(r)],
                           "basis": m.get("basis") or "scorecard", "evidence": r.get("evidence") or "primary"})
     # votes (council roll calls found for this candidate; legislature votes passed in)
     ords_for, ords_against = [], []
@@ -452,7 +450,7 @@ def profile_supplement(cand: dict, store: Store, root: Path | None = None, outle
         m = r.get("meta", {})
         v = (m.get("vote") or "").lower()
         item = {"bill": m.get("matter_file") or "", "session": r.get("target") or cand.get("target") or "",
-                "title": (r.get("title") or "")[:200], "vote": m.get("vote"), "d": _d10(r), "src": [S.add(r)],
+                "title": (r.get("title") or "")[:200], "vote": m.get("vote"), "date": _d10(r), "refs": [S.add(r)],
                 "result": m.get("result"), "topics": m.get("topics", []), "basis": m.get("basis") or "roll call"}
         if m.get("procedural"):
             item["procedural"] = True
@@ -466,27 +464,27 @@ def profile_supplement(cand: dict, store: Store, root: Path | None = None, outle
     for r in by_kind("sponsorship"):
         m = r.get("meta", {})
         item = {"number": m.get("number") or m.get("MatterFile") or "", "session": m.get("session") or r.get("target") or "",
-                "caption": (r.get("title") or "")[:200], "role": m.get("role") or "sponsor", "d": _d10(r), "src": [S.add(r)],
+                "caption": (r.get("title") or "")[:200], "role": m.get("role") or "sponsor", "date": _d10(r), "refs": [S.add(r)],
                 "enacted": m.get("enacted"), "status": m.get("status")}
         bills.append(item)
         if re.search(r"\b(ordinance|resolution)\b", f"{item['number']} {item['caption']}", re.I):
             ords_for.append({**item, "bill": item["number"], "title": item["caption"], "vote": "sponsor"})
     if legis:
         member = legis.get("member") or {}
-        msrc = S.add({"url": member.get("u"), "title": member.get("t") or f"Legislature member page: {member.get('name')}", "kind": "legislator",
-                      "evidence": "primary"}) if member.get("u") else None
+        msrc = S.add({"url": member.get("url"), "title": member.get("title") or f"Legislature member page: {member.get('name')}", "kind": "legislator",
+                      "evidence": "primary"}) if member.get("url") else None
         for v in legis.get("votes", []):
-            votes.append({**v, "src": [S.add({"url": v.get("u"), "title": f"{v.get('bill')}: {v.get('title')}", "kind": "vote", "evidence": "primary"})] if v.get("u") else []})
+            votes.append({**v, "refs": [S.add({"url": v.get("url"), "title": f"{v.get('bill')}: {v.get('title')}", "kind": "vote", "evidence": "primary"})] if v.get("url") else []})
         for b in legis.get("bills", []):
-            bills.append({**b, "src": [S.add({"url": b.get("u"), "title": f"{b.get('number')}: {b.get('caption')}", "kind": "bill", "evidence": "primary"})] if b.get("u") else []})
+            bills.append({**b, "refs": [S.add({"url": b.get("url"), "title": f"{b.get('number')}: {b.get('caption')}", "kind": "bill", "evidence": "primary"})] if b.get("url") else []})
         for cm in legis.get("committees", []):
             if cm.get("name"):
-                affils.append({"org": f"{member.get('chamber') or 'General Assembly'} {cm['name']} Committee", "role": (cm.get("role") or "member").lower(),
-                               "text": f"{cm.get('role') or 'Member'}, {cm['name']} ({cm.get('session') or ''})".strip(), "d": "",
-                               "src": [msrc] if msrc is not None else [], "basis": "legislature member record", "evidence": "primary"})
+                affils.append({"org": f"{member.get('chamber') or 'Legislature'} {cm['name']} Committee", "role": (cm.get("role") or "member").lower(),
+                               "text": f"{cm.get('role') or 'Member'}, {cm['name']} ({cm.get('session') or ''})".strip(), "date": "",
+                               "refs": [msrc] if msrc is not None else [], "basis": "legislature member record", "evidence": "primary"})
         if member.get("title"):
-            affils.append({"org": f"{member.get('legislature') or 'Legislature'} {member.get('chamber') or ''} leadership".replace("  ", " "), "role": member["title"].lower(), "text": member["title"], "d": "",
-                           "src": [msrc] if msrc is not None else [], "basis": "legislature member record", "evidence": "primary"})
+            affils.append({"org": f"{member.get('legislature') or 'Legislature'} {member.get('chamber') or ''} leadership".replace("  ", " "), "role": member["title"].lower(), "text": member["title"], "date": "",
+                           "refs": [msrc] if msrc is not None else [], "basis": "legislature member record", "evidence": "primary"})
     # dedupe lists
     def uniq(items, keyf):
         seen, out = set(), []
@@ -501,23 +499,23 @@ def profile_supplement(cand: dict, store: Store, root: Path | None = None, outle
     affils = uniq(affils, lambda a: (a["org"].lower(), a["role"]))
     endos = uniq(endos, lambda e: (e["name"].lower(), e["direction"]))
     rates = uniq(rates, lambda r: (r["org"].lower(), r["rating"], r.get("year", "")))
-    party = cand.get("party") or (cand.get("last_race") or {}).get("party") or ""
+    party = cand.get("party") or ((cand.get("races") or [{}])[-1] or {}).get("party") or ""
     ideology, isrc = compose_ideology(party, markers, affils, rates, endos)
     n = len(positions) + len(statements) + len(rates) + (1 if endos else 0) + (1 if ideology else 0) + len(votes) + len(bills)
     depth = "full" if n >= 12 and positions else "partial" if n >= 4 else "thin" if n else "none"
     out = {
-        "key": cand.get("key") or cand["id"], "subject_id": cand["id"], "name": cand["name"], "party": party,
-        "as_of": max((x.get("d") or "" for x in S.items), default=""), "office": cand.get("office", ""), "targets": jids,
+        "subject_id": cand["id"], "external_id": cand.get("external_id") or "", "name": cand["name"], "party": party,
+        "as_of": max((x.get("date") or "" for x in S.items), default=""), "office": cand.get("office", ""), "targets": jids,
         "sources": S.items,
-        "ideology": ideology, "isrc": isrc, "ideology_markers": markers[:40],
+        "ideology": ideology, "ideology_refs": isrc, "ideology_markers": markers[:40],
         "positions": positions[:80], "statements": statements[:40],
-        "affiliations": affils[:40], "endorsements": [e["name"] + (f" ({e['d'][:4]})" if e.get("d") else "") for e in endos if e["direction"] == "received"][:40],
-        "endorsement_items": endos[:60], "esrc": sorted({i for e in endos for i in e["src"]}),
-        "ratings": [{"org": r["org"], "rating": r["rating"], "year": r.get("year", ""), "src": r["src"], "basis": r["basis"]} for r in rates][:40],
+        "affiliations": affils[:40], "endorsements": [e["name"] + (f" ({e['date'][:4]})" if e.get("date") else "") for e in endos if e["direction"] == "received"][:40],
+        "endorsement_items": endos[:60], "endorsement_refs": sorted({i for e in endos for i in e["refs"]}),
+        "ratings": [{"org": r["org"], "rating": r["rating"], "year": r.get("year", ""), "refs": r["refs"], "basis": r["basis"]} for r in rates][:40],
         "votes": votes[:300], "bills": bills[:120],
         "ordinances_supported": ords_for[:120], "ordinances_opposed": ords_against[:120],
         "money": money or {}, "career": career or [],
-        "inference_inputs": n, "depth": depth,
+        "evidence_count": n, "depth": depth,
         "note": "Items quote or cite records the crawler opened; evidence is primary (own channel / official record) or "
                 "reported (listed outlet). Nothing here is an inference. needs_review marks speaker-labeled transcript lines.",
     }
@@ -533,25 +531,25 @@ def compose_ideology(party: str, markers: list[dict], affils: list[dict], rates:
     if selfd:
         phr = sorted({m["phrase"] for m in selfd})
         parts.append("self-described " + " / ".join(phr[:3]))
-        src += [i for m in selfd for i in m["src"]]
+        src += [i for m in selfd for i in m["refs"]]
     lab = defaultdict(int)
     for m in markers:
         if m["marker"] != "self-description":
             lab[m["marker"]] += 1
-            src += m["src"]
+            src += m["refs"]
     if lab:
         parts.append("language used: " + ", ".join(f"{k} ({v})" for k, v in sorted(lab.items(), key=lambda kv: -kv[1])[:3]))
     cauc = [a for a in affils if re.search(r"caucus", a["org"], re.I)]
     if cauc:
         parts.append("caucus: " + "; ".join(sorted({a["org"] for a in cauc})[:3]))
-        src += [i for a in cauc for i in a["src"]]
+        src += [i for a in cauc for i in a["refs"]]
     if rates:
         parts.append("ratings: " + "; ".join(f"{r['org']} {r['rating']}" for r in rates[:4]))
-        src += [i for r in rates[:4] for i in r["src"]]
+        src += [i for r in rates[:4] for i in r["refs"]]
     recv = [e for e in endos if e["direction"] == "received"]
     if recv:
         parts.append("endorsed by " + "; ".join(sorted({e["name"] for e in recv})[:5]))
-        src += [i for e in recv[:5] for i in e["src"]]
+        src += [i for e in recv[:5] for i in e["refs"]]
     if len(parts) <= 1 and not src:
         return "", []
     return "; ".join(parts), sorted(set(src))

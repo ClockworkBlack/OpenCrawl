@@ -108,3 +108,12 @@ def test_example_registry_loads_through_cli_status(tmp_path, capsys, monkeypatch
     assert "run `opencrawl seed` first" in md and "Colorado Open Records Act" in md
     cfg = yaml.safe_load((tmp_path / "co" / "config" / "settings.yaml").read_text())
     assert cfg["openrecords"]["response_days"] == 3 and cfg["civic"]["state_fips"] == "08"
+
+
+def test_starter_template_matches_repository_config():
+    """`opencrawl init` copies opencrawl/templates/starter/; a checkout uses config/. They must not drift apart."""
+    a, b = ROOT / "config", ROOT / "opencrawl" / "templates" / "starter"
+    names = sorted(p.name for p in a.iterdir() if p.is_file())
+    assert names == sorted(p.name for p in b.iterdir() if p.is_file())
+    for n in names:
+        assert (a / n).read_bytes() == (b / n).read_bytes(), f"config/{n} differs from the starter template"

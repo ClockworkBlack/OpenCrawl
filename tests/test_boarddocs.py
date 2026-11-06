@@ -35,9 +35,9 @@ ITEM3 = """<html><body><h1>Approval of Minutes of September 8, 2026</h1><main><p
 <a href="/co/testville/Board.nsf/files/F0000002/$file/Minutes%20September%208%202026.pdf">Minutes September 8 2026.pdf</a></main></body></html>"""
 
 MINUTES_TEXT = ["TESTVILLE BOARD OF EDUCATION MINUTES September 8, 2026",
-                "Members present: Chair Dana Reed, Pat Local, Kim Post, Lee Ward, Sam Third.",
+                "Members present: Chair Morgan Okafor, Robin Ashby, Taylor Calder, Jesse Fenwick, Casey Garnet.",
                 "",
-                "Motion by Local, seconded by Post, to adopt the FY27 budget. Motion carried 4-0."]
+                "Motion by Ashby, seconded by Calder, to adopt the FY27 budget. Motion carried 4-0."]
 
 
 def _pdf(lines):
@@ -138,13 +138,13 @@ def test_boarddocs_records_and_minutes_votes(server, fetcher, tmp_path):
     old = next(r for r in recs if r.kind == "agenda_item" and r.title == "Old item")
     assert not old.meta["opened"] and old.channel == "listed"                            # 2015 item: listed from the agenda only
     mins = next(r for r in recs if r.kind == "document" and "Minutes" in r.title)
-    assert mins.meta["doc_type"] == "minutes" and mins.channel == "pdf" and "Motion by Local" in mins.text
+    assert mins.meta["doc_type"] == "minutes" and mins.channel == "pdf" and "Motion by Ashby" in mins.text
     # the minutes deriver turns the attachment into a board vote
     out = derive.run(store, only={"minutes"}, log=lambda *_: None)
     assert out["minutes"]["derived"] == 2
     v = store.query("kind='vote'")[0]
     assert v["target"] == "sd-testville" and {x["person"]: x["vote"] for x in v["meta"]["votes"]} == {
-        "Pat Local": "yes", "Kim Post": "yes", "Lee Ward": "yes", "Sam Third": "yes"}
+        "Robin Ashby": "yes", "Taylor Calder": "yes", "Jesse Fenwick": "yes", "Casey Garnet": "yes"}
     # a second pass skips the old meeting (stored, outside the lookback) but re-reads the recent one
     recs2 = [r for r in channels.crawl(fetcher, src, {"channel": "api", "endpoint": "boarddocs:" + public}, {},
                                        modified_since="2026-11-01T00:00:00", ctx=channels.CrawlContext(frontier=store))

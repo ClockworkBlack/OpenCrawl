@@ -1,15 +1,15 @@
 """Press releases -> appointments (and who announced them).
 
 Official newsrooms (config/press.yaml: the Governor, Lt. Governor, Attorney General, Secretary of
-State, the General Assembly, state agencies) and every jurisdiction's own news pages are crawled
+State, the legislature, state agencies) and every jurisdiction's own news pages are crawled
 as kind press_release. This deriver reads those (and news-flash feed items) for appointment
 language and writes one `appointment` record per person named:
 
-  "Governor Jordan P. Hale today announced the appointment of Jane Q. Public to the State Board
-   of Education"                       -> person Jane Q. Public, body State Board of Education, by Hale
-  "... appointed John Doe as judge of the Superior Court of the Blue Ridge Judicial Circuit"
-  "The Council appointed Pat Local to the Planning Commission (term ending 2028)"
-  "appointments to the Board of Natural Resources: Jane Doe of Macon; John Roe of Rome"
+  "Governor Dale P. Corwin today announced the appointment of Jamie Q. Sample to the State Board
+   of Education"                       -> person Jamie Q. Sample, body State Board of Education, by Corwin
+  "... appointed John Doe as judge of the District Court of the Fourth Judicial District"
+  "The Council appointed Robin Ashby to the Planning Commission (term ending 2028)"
+  "appointments to the Board of Natural Resources: Jane Doe of Springfield; John Roe of Riverside"
 
 Everything is quoted from the release that was opened; nothing is inferred. A release that
 names several appointees yields several records, each with the sentence it came from.

@@ -5,7 +5,7 @@
 
 http:
   user_agent: "OpenCrawl/1.0 (+https://github.com/your-org/your-repo)"   # point this at your repository
-  contact: ""                  # optional project contact address (never a personal one)
+  contact: ""                  # optional, added to the User-Agent: a project or role address, never a personal one
   min_interval_seconds: 3
   host_intervals:
     webapi.legistar.com: 0.5
@@ -23,8 +23,12 @@ http:
     - projects.propublica.org/nonprofits/api
     - api.opencorporates.com
   timeout_seconds: 30
+  max_response_seconds: 300
   max_bytes: 25000000
+  max_redirects: 5
   blocked_ttl_days: 7
+  allow_private_networks: false   # public internet addresses only (see the starter settings.yaml)
+  allow_hosts: []
 
 # Government sites see the least human traffic late at night (Mountain time).
 schedule:
@@ -67,7 +71,7 @@ subjects:
   gdelt: true
   google_news: true
   leads_for: priority_or_recent
-  bluesky_search: true
+  bluesky_search: false        # true also collects public Bluesky posts by anyone that name a subject
   places: ["Colorado", "Colo."]       # an article must name the subject AND the state (or their place) to count
 
 transcribe:
@@ -81,6 +85,11 @@ civic:
   state_fips: "08"
   state_name: Colorado
   state_abbr: CO
+  # Colorado ballot-question kinds, tried before the generic ones: TABOR (the Taxpayer's Bill of Rights) puts tax
+  # increases and revenue retention ("de-Brucing") on the ballot.
+  ballot_types:
+    - {label: "TABOR revenue retention", pattern: '\b(de-?bruc\w*|tabor|retain and spend|revenue change)\b'}
+    - {label: "Metro district", pattern: '\bmetropolitan district\b'}
 
 # Colorado Open Records Act (CORA): records are due within three working days, extendable to seven in extenuating
 # circumstances (C.R.S. § 24-72-203(3)(b)). Nothing is sent until enabled is true, requester is set and the
@@ -95,6 +104,13 @@ openrecords:
   daily_limit: 10
   cooldown_days: 180
   follow_up_after_business_days: 5
+  trusted_reply_domains: []    # a records portal a government replies from, besides the domain the request went to
+
+privacy:
+  public_figures_only: true    # people are researched only with an office, public_role or title
+  retention_days:              # e.g. 730 for `opencrawl purge --expired`
+  export_quarantine: false
+  export_screenshot_text: true
 
 data_dir: data
 state_dir: state

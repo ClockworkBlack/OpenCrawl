@@ -21,4 +21,4 @@ issues:
   Technology and privacy: '\b(broadband|internet access|artificial intelligence|\bai\b|social media|data privacy|cybersecurity)\b'
   Veterans and military: '\b(veterans?\b|military|armed forces|national guard)\b'
   Seniors: '\b(seniors?\b|elderly|retire\w*|social security|aging|nursing homes?|long[- ]term care)\b'
-  Local control: '\b(home rule|local control|consolidation|preemption|cityhood|de-?annexation)\b'
+  Local control: '\b(home rule|local control|consolidation|preemption|incorporation|de-?annexation)\b'

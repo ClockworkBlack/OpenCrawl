@@ -1,7 +1,11 @@
 # Screenshot inbox
 
-Drop screenshots here and the next workflow run reads them into the **Screenshots box** (`screenshots.json` in
+Drop screenshots here and the next workflow run reads them into the screenshot inbox (`screenshots.json` in
 the export bundle).
+
+Anything you upload to a **public** repository is public: don't upload screenshots that show private messages,
+other people's personal details or anything you wouldn't publish. Screenshots received or processed by the workflow
+are kept in its encrypted data archive.
 
 - `ordinances/`  ordinances, resolutions, codes, public-hearing notices, agendas, minutes
 - `posts/`       social media posts (Facebook, Instagram, X, Bluesky, Nextdoor, YouTube...)

@@ -17,7 +17,7 @@ from opencrawl.names import name_variants
 from opencrawl.store import Store
 
 ROOT = Path(__file__).resolve().parent.parent
-REGISTRY = ROOT / "examples" / "colorado-civic" / "config" / "jurisdictions.yaml"
+REGISTRY = ROOT / "opencrawl" / "examples" / "colorado-civic" / "config" / "jurisdictions.yaml"
 needs_ocr = pytest.mark.skipif(not shutil.which("tesseract"), reason="tesseract not installed")
 _REG = yaml.safe_load(REGISTRY.read_text())
 JUR = _REG["counties"] + _REG["municipalities"]
@@ -31,7 +31,7 @@ def ingested(tmp_path_factory):
     (inbox / "ordinances").mkdir()
     (inbox / "desktop_notice.png").rename(inbox / "ordinances" / "desktop_notice.png")
     store = Store(root / "data")
-    cands = [{"id": "casey-morgan", "variants": name_variants("Casey Morgan")}]
+    cands = [{"id": "harper-bennett", "variants": name_variants("Harper Bennett")}]
     stats = screens.Inbox(root, store, cands, log=lambda *_: None, targets=JUR).ingest()
     yield root, store, stats
     store.close()
@@ -55,7 +55,7 @@ def test_boxes_platforms_and_review_status(ingested):
     plats = sorted(i["platform"] for i in box["posts"])
     assert plats == ["facebook", "facebook", "instagram", "x"]                                 # merged scroll -> facebook
     x = next(i for i in box["posts"] if i["platform"] == "x")
-    assert x["handles"][0] == "jordanavery_co" and x["posts_linked"][0]["url"].endswith("/status/1800042")
+    assert x["handles"][0] == "rowanteller_co" and x["posts_linked"][0]["url"].endswith("/status/1800042")
     rows = store.query("kind='screenshot'")
     assert all(r["evidence"] == "lead" for r in rows)
     assert any("9:41" in line for r in rows for line in r["meta"]["dropped_chrome"])          # status bar removed
@@ -66,8 +66,8 @@ def test_boxes_platforms_and_review_status(ingested):
 def test_candidates_and_no_surname_places(ingested):
     _, store, _ = ingested
     notice = screens.Inbox.box_export(store)["ordinances"][0]
-    assert notice["subjects"] == ["casey-morgan"]
-    assert "morgan" not in notice["targets"]                                             # a surname, not the town
+    assert notice["subjects"] == ["harper-bennett"]
+    assert "bennett" not in notice["targets"]                                            # a surname, not the town
     assert "public hearing" in notice["text"].lower()
 
 
@@ -75,7 +75,7 @@ def test_match_jurisdictions():
     screens.configure({"state_abbr": "CO", "state_name": "Colorado"})
     m = lambda t: screens.match_targets(t, JUR)  # noqa: E731
     assert m("The City of Rifle council adopted it") == ["rifle"]
-    assert m("Council member Casey Morgan said") == []
+    assert m("Council member Harper Bennett said") == []
     assert m("Posted by Adams County") == ["co-adams"]
     assert m("Castle Rock residents") == ["castle-rock"]
     assert m("Ruling in Morrison, CO today") == ["morrison"]           # a surname-like town needs the state

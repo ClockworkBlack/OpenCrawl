@@ -96,6 +96,20 @@ def _providers_loaded():
 
 
 # ----------------------------------------------------------------------------- targets
+SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{0,99}$")
+
+
+def safe_id(value) -> bool:
+    """Ids name files in the export (targets/<id>.json) and state; lower-case letters, digits, '.', '_' and '-' only."""
+    return isinstance(value, str) and bool(SAFE_ID.match(value))
+
+
+def _warn(msg: str) -> None:
+    import sys
+
+    print(f"opencrawl: {msg}", file=sys.stderr)
+
+
 def tier_of(t: dict) -> str:
     return t.get("tier") or "b"
 
@@ -114,6 +128,9 @@ def targets(root: Path) -> list[dict]:
     for t in base:
         t = dict(t)
         if not t.get("id") or t["id"] in seen:
+            continue
+        if not safe_id(t["id"]):
+            _warn(f"target id {str(t['id'])[:60]!r} skipped: use lower-case letters, digits, '.', '_' and '-'")
             continue
         seen.add(t["id"])
         t.setdefault("name", t["id"])

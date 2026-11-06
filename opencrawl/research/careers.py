@@ -1,7 +1,8 @@
-"""A candidate's political career as a sourced timeline.
+"""A subject's public career as a sourced timeline.
 
 Entries come only from records that state them:
-  election     every contest listed on the subject (`races`, e.g. from `opencrawl subjects import`): office, party, votes, outcome
+  election     every contest listed on the subject (`races`: {election_id, date, office, party, votes, pct, outcome,
+               level, url, title, county, type}, e.g. from `opencrawl subjects import`)
   office       Legistar office records (body, title, start/end), officials listings,
                legislature member records (chamber, district, sessions)
   appointment  appointment announcements (press releases)
@@ -11,8 +12,8 @@ Entries come only from records that state them:
                "elected in 2018", "appointed to the ... in 2020" (basis: own bio)
   membership   affiliations found by opencrawl.stances (caucuses, boards, associations)
 
-Each entry: {d (start or date), to, kind, role, body, target, how, party, outcome,
-text, src:[i], basis, evidence}. Entries are sorted by date; nothing is interpolated.
+Each entry: {date (start or date), end_date, kind, role, body, target, how, party, outcome,
+text, refs:[i], basis, evidence}. Entries are sorted by date; nothing is interpolated.
 """
 from __future__ import annotations
 
@@ -87,7 +88,7 @@ class CareerIndex:
 
 def career_for(cand: dict, store: Store, sources, affiliations: list[dict] | None = None,
                legis_member: dict | None = None, index: CareerIndex | None = None) -> list[dict]:
-    """sources: a stances.SourceList (shared with the profile supplement) so src indexes line up.
+    """sources: a stances.SourceList (shared with the profile) so refs indexes line up.
     index: a CareerIndex shared across candidates (built on the fly when not given)."""
     index = index or CareerIndex(store)
     out: list[dict] = []
@@ -98,32 +99,32 @@ def career_for(cand: dict, store: Store, sources, affiliations: list[dict] | Non
 
     # 1. elections listed on the subject
     for r in cand.get("races") or []:
-        rec = {"url": r.get("u"), "title": r.get("t") or f"Official results: {r.get('office')}, {r.get('d')}", "published": r.get("d"),
+        rec = {"url": r.get("url"), "title": r.get("title") or f"Official results: {r.get('office')}, {r.get('date')}", "published": r.get("date"),
                "kind": "election_result", "evidence": "primary"}
-        i = sources.add(rec) if r.get("u") else None
-        primary = "primary" in (r.get("office") or "").lower() or "Pri" in (r.get("eid") or "")
-        out.append({"d": r.get("d"), "to": "", "kind": "election", "role": "candidate", "body": r.get("office"),
+        i = sources.add(rec) if r.get("url") else None
+        primary = (r.get("type") or "").lower() == "primary" or "primary" in (r.get("office") or "").lower()
+        out.append({"date": r.get("date"), "end_date": "", "kind": "election", "role": "candidate", "body": r.get("office"),
                     "target": r.get("county") or "", "level": r.get("level"), "party": r.get("party"),
                     "outcome": r.get("outcome") or "did not win", "votes": r.get("votes"), "pct": r.get("pct"),
                     "how": ("primary" if primary else "general/special") + " election",
                     "text": f"{r.get('office')}: {r.get('outcome') or 'did not win'} ({r.get('votes')} votes, {r.get('pct')}%)",
-                    "src": [i] if i is not None else [], "basis": "official results", "evidence": "primary"})
+                    "refs": [i] if i is not None else [], "basis": "official results", "evidence": "primary"})
     # 2. office records (Legistar / any `official` record naming them)
     for r in [r for jid in jids for r in index.officials(jid, last)][:200]:
         if not rx.search(r.get("title") or ""):
             continue
         m = r.get("meta", {})
         i = sources.add(r)
-        out.append({"d": (m.get("OfficeRecordStartDate") or m.get("start") or "")[:10], "to": (m.get("OfficeRecordEndDate") or m.get("end") or "")[:10],
+        out.append({"date": (m.get("OfficeRecordStartDate") or m.get("start") or "")[:10], "end_date": (m.get("OfficeRecordEndDate") or m.get("end") or "")[:10],
                     "kind": "office", "role": m.get("OfficeRecordTitle") or m.get("role") or m.get("title") or "member",
                     "body": m.get("OfficeRecordBodyName") or m.get("body") or "", "target": r.get("target") or "",
-                    "how": "office record", "text": r.get("text") or r.get("title") or "", "src": [i],
+                    "how": "office record", "text": r.get("text") or r.get("title") or "", "refs": [i],
                     "basis": "office record (" + (m.get("provider") or r.get("channel") or "record") + ")", "evidence": "primary"})
     if legis_member:
         for t in legis_member.get("terms") or []:
-            out.append({"d": t.get("from", ""), "to": t.get("to", ""), "kind": "office", "role": t.get("role") or "member",
+            out.append({"date": t.get("from", ""), "end_date": t.get("to", ""), "kind": "office", "role": t.get("role") or "member",
                         "body": t.get("body") or "state legislature", "target": t.get("target") or "", "how": "legislature member record",
-                        "text": t.get("text") or "", "src": [sources.add({"url": t.get("u"), "title": t.get("t") or "legislature member record"})] if t.get("u") else [],
+                        "text": t.get("text") or "", "refs": [sources.add({"url": t.get("url"), "title": t.get("title") or "legislature member record"})] if t.get("url") else [],
                         "basis": "legislature member record", "evidence": "primary"})
     # 3. appointments
     for r in index.appointments(last)[:100]:
@@ -131,9 +132,9 @@ def career_for(cand: dict, store: Store, sources, affiliations: list[dict] | Non
         if not rx.search(m.get("person") or ""):
             continue
         i = sources.add(r)
-        out.append({"d": _d10(r), "to": "", "kind": "appointment", "role": m.get("role") or "appointee", "body": m.get("body") or "",
+        out.append({"date": _d10(r), "end_date": "", "kind": "appointment", "role": m.get("role") or "appointee", "body": m.get("body") or "",
                     "target": m.get("level") or "state", "how": f"appointed by {m.get('by')}" if m.get("by") else "appointed",
-                    "text": (r.get("text") or "")[:300], "src": [i], "basis": "appointment announcement", "evidence": r.get("evidence") or "primary"})
+                    "text": (r.get("text") or "")[:300], "refs": [i], "basis": "appointment announcement", "evidence": r.get("evidence") or "primary"})
     # 4. attendance in minutes (floor on service dates, per body); counted per meeting (minutes document)
     if jids:
         seen: dict[tuple, dict] = {}
@@ -141,18 +142,18 @@ def career_for(cand: dict, store: Store, sources, affiliations: list[dict] | Non
             for p, body, d, url in index.attendance(jid, last):
                 if not (rx.search(p) or p.lower().endswith(last)):
                     continue
-                e = seen.setdefault((jid, body), {"first": d, "last": d, "docs": set(), "src": set()})
+                e = seen.setdefault((jid, body), {"first": d, "last": d, "docs": set(), "urls": set()})
                 e["first"], e["last"] = min(e["first"], d), max(e["last"], d)
                 e["docs"].add(url)
-                if len(e["src"]) < 6:
-                    e["src"].add(url)
+                if len(e["urls"]) < 6:
+                    e["urls"].add(url)
         for e in seen.values():
             e["n"] = len(e["docs"])
         for (jid, body), e in seen.items():
-            idx = [sources.add({"url": u, "title": "Council minutes", "published": ""}) for u in sorted(e["src"])]
-            out.append({"d": e["first"], "to": e["last"], "kind": "attendance", "role": "member present", "body": body, "target": jid,
+            idx = [sources.add({"url": u, "title": "Council minutes", "published": ""}) for u in sorted(e["urls"])]
+            out.append({"date": e["first"], "end_date": e["last"], "kind": "attendance", "role": "member present", "body": body, "target": jid,
                         "how": f"listed present in minutes ({e['n']} meetings)", "text": f"Listed as present at {e['n']} meetings between {e['first']} and {e['last']}",
-                        "src": idx, "basis": "minutes attendance (a floor on service, not a term)", "evidence": "primary"})
+                        "refs": idx, "basis": "minutes attendance (a floor on service, not a term)", "evidence": "primary"})
     # 5. own biography
     for r in store.read(f"subj:{cand['id']}", "statement"):
         text = r.get("text") or ""
@@ -162,27 +163,27 @@ def career_for(cand: dict, store: Store, sources, affiliations: list[dict] | Non
             if len(s) > 400:
                 continue
             for m in BIO_SERVED.finditer(s):
-                out.append({"d": m.group("y1") or "", "to": (m.group("y2") or "").replace("present", "").replace("today", ""),
+                out.append({"date": m.group("y1") or "", "end_date": (m.group("y2") or "").replace("present", "").replace("today", ""),
                             "kind": "bio", "role": (m.group("role") or "").strip(), "body": m.group("body").strip(), "target": "",
-                            "how": "served (own bio)", "text": s[:300], "src": [sources.add(r)], "basis": "candidate's own biography", "evidence": "primary"})
+                            "how": "served (own bio)", "text": s[:300], "refs": [sources.add(r)], "basis": "subject's own biography", "evidence": "primary"})
             for m in BIO_ELECTED.finditer(s):
                 how = "elected" if re.search(r"elected", m.group(0), re.I) else "appointed"
                 y = m.group("y1") or (BIO_ELECTED2.search(s).group("y1") if BIO_ELECTED2.search(s) else "")
-                out.append({"d": y, "to": "", "kind": "bio", "role": "", "body": m.group("body").strip(), "target": "", "how": how + " (own bio)",
-                            "text": s[:300], "src": [sources.add(r)], "basis": "candidate's own biography", "evidence": "primary"})
+                out.append({"date": y, "end_date": "", "kind": "bio", "role": "", "body": m.group("body").strip(), "target": "", "how": how + " (own bio)",
+                            "text": s[:300], "refs": [sources.add(r)], "basis": "subject's own biography", "evidence": "primary"})
     # 6. memberships (from stances)
     for a in affiliations or []:
-        out.append({"d": a.get("d", ""), "to": "", "kind": "membership", "role": a.get("role", ""), "body": a.get("org", ""), "target": "",
-                    "how": a.get("basis", ""), "text": a.get("text", ""), "src": a.get("src", []), "basis": a.get("basis", ""), "evidence": a.get("evidence", "primary")})
+        out.append({"date": a.get("date", ""), "end_date": "", "kind": "membership", "role": a.get("role", ""), "body": a.get("org", ""), "target": "",
+                    "how": a.get("basis", ""), "text": a.get("text", ""), "refs": a.get("refs", []), "basis": a.get("basis", ""), "evidence": a.get("evidence", "primary")})
     # dedupe and order
     seen_k, uniq = set(), []
     for e in out:
-        k = (e["kind"], (e.get("body") or "").lower(), e.get("d") or "", (e.get("role") or "").lower(), e.get("outcome") or "")
+        k = (e["kind"], (e.get("body") or "").lower(), e.get("date") or "", (e.get("role") or "").lower(), e.get("outcome") or "")
         if k in seen_k:
             continue
         seen_k.add(k)
         uniq.append(e)
-    uniq.sort(key=lambda e: (e.get("d") or "9999", e["kind"]))
+    uniq.sort(key=lambda e: (e.get("date") or "9999", e["kind"]))
     return uniq
 
 
@@ -192,10 +193,10 @@ def summary(career: list[dict]) -> str:
     held = [e for e in career if e["kind"] in ("office",)]
     parts = []
     if wins:
-        parts.append("won " + "; ".join(f"{e['body']} ({e['d'][:4]})" for e in wins[-6:]))
+        parts.append("won " + "; ".join(f"{e['body']} ({e['date'][:4]})" for e in wins[-6:]))
     if held:
-        parts.append("office records: " + "; ".join(f"{e['role']}, {e['body']} ({e['d'][:4] or '?'}–{e['to'][:4] or 'present'})" for e in held[:6]))
+        parts.append("office records: " + "; ".join(f"{e['role']}, {e['body']} ({e['date'][:4] or '?'}–{e['end_date'][:4] or 'present'})" for e in held[:6]))
     losses = [e for e in career if e["kind"] == "election" and e.get("outcome") not in ("won", "elected", "unopposed") and "primary" not in e["how"]]
     if losses:
-        parts.append("ran and did not win: " + "; ".join(f"{e['body']} ({e['d'][:4]})" for e in losses[-4:]))
+        parts.append("ran and did not win: " + "; ".join(f"{e['body']} ({e['date'][:4]})" for e in losses[-4:]))
     return "; ".join(parts)

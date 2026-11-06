@@ -1,10 +1,10 @@
-"""YouTube: only official government channels become records; anything else goes to the Rumor Mill - Video bucket.
+"""YouTube: only official government channels become records; anything else goes to the video quarantine.
 Bare youtube.com/name links in a site's social icons are found; single videos and embeds are not channels."""
 import json
 
 from opencrawl import transcripts
 from opencrawl.civic.registry import find_portals, sources_for
-from opencrawl.research.rumor_video import VideoRumorMill
+from opencrawl.research.quarantine import VideoQuarantine
 from opencrawl.transcripts import official_channel
 
 SITE = "linked from the official website (https://www.commercecity.example/)"
@@ -16,7 +16,7 @@ def test_official_rules():
     assert official_channel({"title": "Jefferson County Government", "handle": "@cobbcountygovt"}, "Jefferson County", SITE)[0]
     # the county site links the Chamber of Commerce's channel: not the government's
     ok, why = official_channel({"title": "Douglas County Chamber", "handle": "@dcchamber"}, "Douglas County",
-                               "linked from the official website (http://www.douglascountygeorgia.com/)")
+                               "linked from the official website (https://www.douglascounty.example/)")
     assert not ok and "chamber" in why.lower()
     assert not official_channel({"title": "KXYZ-TV", "handle": "@kxyztv"}, "Denver", SITE)[0]
     assert not official_channel({"title": "Commerce City Residents United", "handle": "@sfru"}, "Commerce City", SITE)[0]
@@ -35,7 +35,7 @@ def test_channel_links_found():
     assert src["youtube_basis"] == "linked from the official website (https://www.commercecity.example/)"
 
 
-def test_unofficial_channel_goes_to_rumor_mill(tmp_path, monkeypatch):
+def test_unofficial_channel_goes_to_quarantine(tmp_path, monkeypatch):
     chans = {"official": {"id": "UC1", "title": "City of Commerce City", "handle": "@commercecityco", "description": "",
                           "uploads": "UU1", "url": "https://www.youtube.com/channel/UC1"},
              "other": {"id": "UC2", "title": "Commerce City News Now", "handle": "@sfnews", "description": "",
@@ -46,12 +46,12 @@ def test_unofficial_channel_goes_to_rumor_mill(tmp_path, monkeypatch):
              "description": ""}]
     monkeypatch.setattr(transcripts, "youtube_channel", lambda f, u: chans[u])
     monkeypatch.setattr(transcripts, "youtube_videos", lambda f, u, since, limit=200, channel=None: [dict(v, url=v["url"] + u) for v in vids])
-    rm = VideoRumorMill(tmp_path)
+    rm = VideoQuarantine(tmp_path)
     recs = list(transcripts.youtube_records(None, "commerce-city:youtube", "commerce-city", "official", target_name="Commerce City",
-                                            basis=SITE, rumors=rm))
+                                            basis=SITE, quarantine=rm))
     assert [r.title for r in recs] == ["City Council Meeting 10/27/2026"] and recs[0].meta["official_channel"]["id"] == "UC1"
     assert not list(transcripts.youtube_records(None, "commerce-city:youtube", "commerce-city", "other", target_name="Commerce City",
-                                                basis=SITE, rumors=rm))
-    rows = [json.loads(l) for l in (tmp_path / "data" / "rumor_mill" / "videos.jsonl").read_text().splitlines()]
+                                                basis=SITE, quarantine=rm))
+    rows = [json.loads(l) for l in (tmp_path / "data" / "quarantine" / "videos.jsonl").read_text().splitlines()]
     assert len(rows) == 1 and rows[0]["status"] == "unverified" and "news" in rows[0]["reason"].lower()
     assert rows[0]["channel"]["title"] == "Commerce City News Now"

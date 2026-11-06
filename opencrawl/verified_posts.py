@@ -206,7 +206,7 @@ class Registry:
             evidence["archived_url"] = archived_url
         row.update({
             "post_url": post_url, "platform": platform_of(post_url),
-            "account_id": acc["id"] if acc else account_id, "subject": acc.get("subject") or acc.get("candidate", "") if acc else "",
+            "account_id": acc["id"] if acc else account_id, "subject": acc.get("subject", "") if acc else "",
             "subject_id": acc.get("subject_id") if acc else row.get("subject_id"),
             "posted_at": posted_at or row.get("posted_at"), "text": text or row.get("text", ""),
             "topics": topics or row.get("topics", []), "source": source, "evidence": evidence,
@@ -260,7 +260,22 @@ def _before(ts: str | None, since: str) -> bool:
     return bool(ts) and ts[:10] < since[:10]
 
 
+HANDLE_RX = {
+    "x": re.compile(r"^[A-Za-z0-9_]{1,15}$"),
+    "bluesky": re.compile(r"^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?)+$"),
+    "youtube": re.compile(r"^(@[A-Za-z0-9._-]{1,100}|UC[A-Za-z0-9_-]{22})$"),
+}
+
+
+def valid_handle(platform: str, handle: str | None) -> bool:
+    """Handles go into API paths and parameters: only the characters each platform allows."""
+    rx = HANDLE_RX.get(platform)
+    return bool(handle) and (rx is None or bool(rx.match(handle)))
+
+
 def _pull_bluesky(fetcher: Fetcher, acc: dict, since: str, limit: int):
+    if not valid_handle("bluesky", acc.get("handle")):
+        return
     url = "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed"
     cursor, n = None, 0
     while n < limit:
@@ -294,19 +309,26 @@ def _pull_youtube(fetcher: Fetcher, acc: dict, since: str, limit: int):
         return
     api = "https://www.googleapis.com/youtube/v3"
     h = acc["handle"] or ""
-    params = {"part": "contentDetails", "key": key}
+    if h.lower().startswith("uc") and len(h) == 24:
+        h = "UC" + h[2:]          # handle_of lower-cases; channel ids are case-sensitive, so prefer the stored URL's
+        m = re.search(r"/channel/(UC[A-Za-z0-9_-]{22})", acc.get("profile_url") or "")
+        h = m.group(1) if m else h
+    if not valid_handle("youtube", h):
+        return
+    hdr = {"X-goog-api-key": key}                 # the key travels in a header, never in a URL that could be logged
+    params = {"part": "contentDetails"}
     params.update({"forHandle": h} if h.startswith("@") else {"id": h})
-    ch = fetcher.get(f"{api}/channels", params=params, use_cache=False).json()
+    ch = fetcher.get(f"{api}/channels", params=params, headers=hdr, use_cache=False).json()
     items = ch.get("items") or []
     if not items:
         return
     uploads = items[0]["contentDetails"]["relatedPlaylists"]["uploads"]
     token, n = None, 0
     while n < limit:
-        p = {"part": "snippet", "playlistId": uploads, "maxResults": 50, "key": key}
+        p = {"part": "snippet", "playlistId": uploads, "maxResults": 50}
         if token:
             p["pageToken"] = token
-        data = fetcher.get(f"{api}/playlistItems", params=p, use_cache=False).json()
+        data = fetcher.get(f"{api}/playlistItems", params=p, headers=hdr, use_cache=False).json()
         for it in data.get("items", []):
             sn = it["snippet"]
             if _before(sn.get("publishedAt"), since):
@@ -324,10 +346,12 @@ def _pull_x(fetcher: Fetcher, acc: dict, since: str, limit: int):
     token = os.environ.get("X_BEARER_TOKEN")
     if not token:
         return
+    if not valid_handle("x", acc.get("handle")):
+        return
     hdr = {"Authorization": f"Bearer {token}"}
     u = fetcher.get(f"https://api.x.com/2/users/by/username/{acc['handle']}", headers=hdr, use_cache=False).json()
-    uid = (u.get("data") or {}).get("id")
-    if not uid:
+    uid = str((u.get("data") or {}).get("id") or "")
+    if not uid.isdigit() or len(uid) > 20:
         return
     params = {"max_results": 100, "tweet.fields": "created_at", "exclude": "replies,retweets",
               "start_time": since[:10] + "T00:00:00Z"}

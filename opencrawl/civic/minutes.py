@@ -32,19 +32,19 @@ TITLE_RX = re.compile(r"\b(council\s*(?:member|man|woman|person)|councilmember|c
                       r"alderwoman|mayor\s+pro\s+tem(?:pore)?|mayor|chair(?:man|woman|person)?|vice[- ]chair(?:man|woman)?|"
                       r"member|dr|mr|mrs|ms|post\s+\d+|district\s+\d+|ward\s+\d+)\b\.?\s*", re.I)
 PRESIDING_RX = re.compile(r"\b(mayor(?!\s+pro)|chair(?:man|woman|person)?)\b", re.I)
-NAME = r"(?-i:(?:[A-Z]\.|[A-Z][A-Za-z'’\-]*[A-Za-z])(?:\s+(?:[A-Z]\.|[A-Z][A-Za-z'’\-]*[A-Za-z])){0,3})"
+NAME = r"(?-i:(?:[A-Z]\.|[A-Z][A-Za-z'’\-]{0,30}[A-Za-z])(?:\s{1,3}(?:[A-Z]\.|[A-Z][A-Za-z'’\-]{0,30}[A-Za-z])){0,3})"
 TITLE = (r"(?:(?:council\s*(?:member|man|woman|person)|councilmember|commissioner|alder(?:man|woman)|mayor\s+pro\s+tem(?:pore)?|"
-         r"mayor|chair(?:man|woman|person)?|vice[- ]chair(?:man|woman)?|dr|mr|mrs|ms)\.?\s+)?")
+         r"mayor|chair(?:man|woman|person)?|vice[- ]chair(?:man|woman)?|dr|mr|mrs|ms)\.?\s{1,3})?")
 WHO = TITLE + NAME
-SEC = r"\s*[,.;]?\s*(?:and\s+|with\s+)?(?:a\s+)?(?:seconded|second(?:ed)?)\s+(?:by\s+)?"
+SEC = r"\s{0,3}[,.;]?\s{0,3}(?:and\s{1,3}|with\s{1,3})?(?:a\s{1,3})?(?:seconded|second(?:ed)?)\s{1,3}(?:by\s{1,3})?"
 MOTION_RX = re.compile(
-    r"(?:a\s+)?motion\s+(?:was\s+)?(?:made\s+)?by\s+(?P<mover1>" + WHO + r")" + SEC + r"(?P<sec1>" + WHO + r")\s*[,.;:]?\s*(?:to\s+)?(?P<what1>(?:[^.;]|\.(?=\s?\d))*)"
-    r"|(?:a\s+)?motion\s+(?:was\s+)?(?:made\s+)?by\s+(?P<mover5>" + WHO + r")\s+(?:to\s+)?(?P<what5>(?:[^.;]|\.(?=\s?\d))*)(?:[.;]?" + SEC + r"(?P<sec5>" + WHO + r"))?"
-    r"|(?P<mover2>" + WHO + r")\s+(?:made\s+(?:a|the)\s+motion|moved|motioned)\s*(?:,\s*)?(?:to\s+)?(?P<what2>(?:[^.;]|\.(?=\s?\d))*?)(?:" + SEC + r"(?P<sec2>" + WHO + r"))?\s*[.;](?!\s?\d)"
-    r"|motion\s+(?:to\s+)?(?P<what3>(?:[^.;]|\.(?=\s?\d))*?)\s+(?:was\s+)?made\s+by\s+(?P<mover3>" + WHO + r")(?:" + SEC + r"(?P<sec3>" + WHO + r"))?\s*[.;](?!\s?\d)"
+    r"(?:a\s+)?motion\s+(?:was\s+)?(?:made\s+)?by\s+(?P<mover1>" + WHO + r")" + SEC + r"(?P<sec1>" + WHO + r")\s*[,.;:]?\s*(?:to\s+)?(?P<what1>(?:[^.;]|\.(?=\s?\d)){0,600})"
+    r"|(?:a\s+)?motion\s+(?:was\s+)?(?:made\s+)?by\s+(?P<mover5>" + WHO + r")\s+(?:to\s+)?(?P<what5>(?:[^.;]|\.(?=\s?\d)){0,600})(?:[.;]?" + SEC + r"(?P<sec5>" + WHO + r"))?"
+    r"|(?P<mover2>" + WHO + r")\s+(?:made\s+(?:a|the)\s+motion|moved|motioned)\s*(?:,\s*)?(?:to\s+)?(?P<what2>(?:[^.;]|\.(?=\s?\d)){0,600}?)(?:" + SEC + r"(?P<sec2>" + WHO + r"))?\s*[.;](?!\s?\d)"
+    r"|motion\s+(?:to\s+)?(?P<what3>(?:[^.;]|\.(?=\s?\d)){0,600}?)\s+(?:was\s+)?made\s+by\s+(?P<mover3>" + WHO + r")(?:" + SEC + r"(?P<sec3>" + WHO + r"))?\s*[.;](?!\s?\d)"
     r"|motion\s*:\s*(?P<mover4>" + WHO + r")\s*[,.;]\s*second(?:ed)?\s*:\s*(?P<sec4>" + WHO + r")\s*[,.;]",
     re.I)
-SEC2_RX = re.compile(r"(?P<sec>" + WHO + r")\s+(?:seconded(?:\s+the\s+motion)?|provided\s+the\s+second|offered\s+(?:a|the)\s+second)\b", re.I)
+SEC2_RX = re.compile(r"(?P<sec>" + WHO + r")\s{1,3}(?:seconded(?:\s+the\s+motion)?|provided\s+the\s+second|offered\s+(?:a|the)\s+second)\b", re.I)
 SECBY_RX = re.compile(r"second(?:ed)?\s+(?:was\s+)?(?:by|from)\s+(?P<sec>" + WHO + r")", re.I)
 LIST_RX = re.compile(r"^\s*(?:\(?\d{1,3}[.)]|\(?[A-Za-z][.)]|[IVXLC]+\.)\s+")
 PROCEDURAL_RX = re.compile(r"\b(adjourn|recess|executive\s+session|approve\s+(?:the\s+)?(?:minutes|agenda|consent\s+agenda)|"
@@ -59,9 +59,9 @@ AYES_RX = re.compile(r"\b(?:ayes?|yeas?|yes|in\s+favor|voting\s+(?:yes|aye|in\s+
 NAYS_RX = re.compile(r"\b(?:nays?|noes?|no|against|opposed|voting\s+(?:no|nay|against))\s*[:\-–]\s*(?P<names>[^.;]+?)"
                      r"(?=\s*(?:\b(?:ayes?|yeas?|abstain\w*|absent)\b\s*[:\-–]|[.;]|$))", re.I)
 ABSTAIN_RX = re.compile(r"\b(?:abstain(?:ed|ing|s)?|abstentions?)\s*[:\-–]\s*(?P<names>[^.;]+?)(?=[.;]|$)", re.I)
-OPPOSED_RX = re.compile(r"\(?\s*(?P<names>" + NAME + r"(?:\s*(?:,|and)\s*" + NAME + r")*)\s+(?:opposed|voting\s+no|voted\s+no|"
+OPPOSED_RX = re.compile(r"\(?\s{0,3}(?P<names>" + NAME + r"(?:\s{0,3}(?:,|and)\s{0,3}" + NAME + r"){0,8})\s{1,3}(?:opposed|voting\s+no|voted\s+no|"
                         r"against|dissenting|voting\s+nay)\s*\)?", re.I)
-ROLLCALL_RX = re.compile(r"(?P<name>" + NAME + r")\s*[-–:]\s*(?P<vote>yes|no|aye|nay|yea|abstain(?:ed)?|absent|recused?)\b", re.I)
+ROLLCALL_RX = re.compile(r"(?P<name>" + NAME + r")\s{0,3}[-–:]\s{0,3}(?P<vote>yes|no|aye|nay|yea|abstain(?:ed)?|absent|recused?)\b", re.I)
 PRESENT_RX = re.compile(r"\b(?:members?\s+|those\s+|council\s+members?\s+|commissioners?\s+)?present(?:\s+were|\s+was|\s+included)?"
                         r"\s*[:\-–]?\s*(?P<names>[^.]{5,600}?)(?:\.\s|\n\s*\n|\babsent\b|\balso\s+present\b)", re.I | re.S)
 ORD_RX = re.compile(r"\b(ordinance|resolution)\s*(?:no\.?|number|#)?\s*([0-9]{2,4}[-–][0-9A-Za-z]{1,6}|[0-9]{1,5})\b", re.I)

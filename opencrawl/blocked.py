@@ -97,6 +97,9 @@ class BlockList:
         return rec
 
     def add(self, url: str, reason: str, source_id: str | None = None) -> dict:
+        from . import redact
+
+        url, reason = redact.url(url), redact.text(reason)
         h = self.host(url)
         now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
         with self._lock:
@@ -109,21 +112,26 @@ class BlockList:
             rec["alternatives"] = ALTERNATIVES.get(h.removeprefix("www."), [
                 "check whether the site offers an API, RSS feed or bulk download (the discover step tries these)",
                 "manual capture + `opencrawl ocr`, or an open records request (template in data/manual_tasks.md)"])
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.write_text(json.dumps(self.data, indent=2))
+            self._save()
         return rec
+
+    def _save(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.path.with_name(self.path.name + ".tmp")
+        tmp.write_text(json.dumps(self.data, indent=2))
+        tmp.replace(self.path)
 
     def note_source(self, host: str, source_id: str):
         with self._lock:
             rec = self.data.get(host)
             if rec is not None and source_id not in rec["sources"]:
                 rec["sources"].append(source_id)
-                self.path.write_text(json.dumps(self.data, indent=2))
+                self._save()
 
     def clear(self, host: str):
         with self._lock:
             if self.data.pop(host, None) is not None:
-                self.path.write_text(json.dumps(self.data, indent=2))
+                self._save()
 
 
 def records_request_template(name: str = "<jurisdiction>", requester: str = "[your name / organization]",

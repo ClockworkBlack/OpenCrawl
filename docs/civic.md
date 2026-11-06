@@ -22,7 +22,7 @@ Kinds: `county`, `city`, `town`, `consolidated` (a city-county), `village`, `bor
 Crawl tiers come from population (a: counties and ≥10k; b: 1k–10k; c: under 1k; school boards b/c). FIPS codes are
 optional for municipalities (a one-query Wikidata lookup uses them when present); Wikipedia links are the fallback.
 
-`examples/colorado-civic/scripts/build_registry.py` builds both files from three small pipe-separated text files
+`opencrawl/examples/colorado-civic/scripts/build_registry.py` builds both files from three small pipe-separated text files
 (counties, municipalities, school districts) that any state's Wikipedia lists or Census files provide:
 
 ```bash
@@ -62,15 +62,17 @@ Municode links are recorded by seed but never crawled: its library blocks crawle
 | press | press releases and news-flash items | `appointment` (who, to what, by whom, term) |
 | guides | voter guides, scorecards, endorsement pages (`config/guides.yaml`) | `endorsement`, `rating`, `questionnaire` records, and `connection` records on matched subjects |
 
-Ballot-question types cover sales/use/lodging/excise taxes, mill levies, debt and revenue-retention questions, bonds,
-charter amendments, annexation and incorporation, and the Southern "local option sales tax" names (SPLOST, LOST...).
+Ballot-question types cover bonds, sales/use/lodging/excise taxes, homestead exemptions, property taxes and levies,
+debt and revenue-limit questions, alcohol, charter amendments, annexation and incorporation, government structure,
+recalls and constitutional amendments. Add your state's own kinds, tried first, in `settings.yaml civic.ballot_types`
+(`{label, pattern}`; the Colorado example adds TABOR revenue-retention questions and metro districts).
 
 ## Official YouTube channels
 
 A channel becomes a source only when the government points to it — a link on its official website found by seed, or
 a hand check in `config/overrides.yaml` as `youtube_checked` — and the channel is plainly the government's (it names
 the place or reads as a government channel; nothing marking a chamber, news outlet, station, party or residents'
-group). Videos from any other channel go to **Rumor Mill – Video** (`data/rumor_mill/videos.jsonl`), never into the
+group). Videos from any other channel go to the video quarantine (`data/quarantine/videos.jsonl`), never into the
 records; to promote one, check it by hand and add it to overrides.
 
 ## Public records requests
@@ -78,7 +80,8 @@ records; to promote one, check it by hand and add it to overrides.
 See the README's **Open records requests** section. `settings.yaml openrecords:` names the law, its citation, the
 response deadline in business days and the cost cap the letter asks about; `opencrawl records plan --show` prints the
 letter that would go out. The crawler asks only jurisdictions whose code it could not crawl, only at addresses or
-portals printed on their official sites, at most `daily_limit` a day, never twice within `cooldown_days`.
+portals printed on their official sites, at most `daily_limit` a day, never twice within `cooldown_days`. Replies
+count only from the domain the request went to or `openrecords.trusted_reply_domains`; others are kept for review.
 
 ## Campaign finance
 

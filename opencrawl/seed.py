@@ -237,7 +237,6 @@ def follow_pages(home_html: str, home_url: str) -> list[str]:
     return out
 
 
-meeting_pages = follow_pages   # older name
 
 
 RECORDS_LINK = re.compile(r"open[\s-]*records|public[\s-]*records|records[\s-]*request|right[\s-]*to[\s-]*know|"

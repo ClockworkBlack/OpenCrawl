@@ -8,17 +8,18 @@ dist/bundle/
   targets/<id>.json             that target's records grouped by kind
   subjects.json                 subject index with record counts
   subjects/<id>.json            a subject's records (primary/reported only; never unverified)
-  packets/<id>.json             research packets: opened sources in {t,u,d} form, votes by topic, mentions,
-                                statements, endorsements, money, posts, leads, rumors, profile (research module)
-  profiles/<id>.json            profile supplements: ideology markers, positions by issue, statements, ratings,
-                                endorsements, votes, bills, career, money — each item with its source
+  packets/<id>.json             research packets: opened sources ({title, url, date, ...}), votes by topic, mentions,
+                                statements, endorsements, money, posts, leads, quarantined claims, profile
+  profiles/<id>.json            profiles: ideology markers, positions by issue, statements, ratings,
+                                endorsements, votes, bills, career, money — each item with its sources
   connections.json              the donors / organizations / subjects / offices graph and its patterns
   organizations.json            what each organization is, who runs it, who it funds (sourced)
-  screenshots.json              the Screenshots box: submitted screenshots by box, all needs-review
+  screenshots.json              the screenshot inbox: submitted screenshots by box, all needs-review
   verified_posts.json           every post in the verified-posts registry, with status and evidence
-  rumor_mill.json               unverified items, kept apart, each with status + corroboration trail
-  rumor_mill_video.json         videos from channels not confirmed as a target's official account
   blocked.json                  hosts that refused the crawler and the suggested manual route
+only with settings.yaml privacy.export_quarantine: true (unverified claims about people are for review, not to publish):
+  quarantine.json               unverified claims, kept apart, each with status + corroboration trail
+  quarantine_videos.json        videos from channels not confirmed as a target's official account
 civic module, written when there is anything to put in them:
   councils/<id>.json            how often each pair of council members voted the same way (non-unanimous votes)
   elections.json                locally run election results and qualifying lists
@@ -38,13 +39,14 @@ from pathlib import Path
 
 from . import __version__
 from .blocked import BlockList
-from .research.subjects import RumorMill, load_subjects
+from .research.quarantine import Quarantine, VideoQuarantine
+from .research.subjects import load_subjects
 from .scheduler import Progress
 from .store import Store
 from .targets import all_sources, targets
 from .verified_posts import Registry
 
-SCHEMA_VERSION = "3.0"
+SCHEMA_VERSION = "1.0"
 SLIM = {"rid", "key", "first_seen", "thash"}
 
 SCHEMA_MD = """# OpenCrawl bundle — field reference (schema {version})
@@ -55,31 +57,32 @@ SCHEMA_MD = """# OpenCrawl bundle — field reference (schema {version})
 | id | stable id (hash of source, kind, url and the record's own id): use as the upsert key |
 | hash | content hash: changes when the record's content changes |
 | version | how many times the content has changed since first seen |
-| source_id | crawl source (`springfield:site`, `springfield:legistar`, `subj:jane-doe`) |
-| target | target id (`springfield`), or empty for sources that belong to no target |
+| source_id | crawl source (`example-city:site`, `example-city:legistar`, `subj:example-person`) |
+| target | target id (`example-city`), or empty for sources that belong to no target |
 | kind | page, document, feed_item, post, article, ocr, transcript, video, ordinance, matter, meeting, agenda_item, vote, official, statement, mention, social_mention, connection, lead... |
 | url | the page or API resource that was opened (or a link that resource itself gave); never built from a pattern |
 | title, text, markdown | content (`markdown` only when it differs from `text`); articles keep excerpts only |
 | published | date from the source when it gave one |
 | channel | how it was fetched: api, wp_json, feed, sitemap, html, browser, pdf, ocr, import, store |
-| evidence | primary (a target's own record / the subject's own channel), reported (listed news outlet), lead (not opened; never cite). Unverified items are only in rumor_mill.json |
+| evidence | primary (a target's own record / the subject's own channel), reported (listed news outlet), lead (not opened; never cite). Unverified items are only in the quarantine |
 | fetched_at, changed_at | when this content was fetched / last changed |
 | meta | kind-specific: adapter ids, vote lists, topics, OCR confidence, outlet, contribution details, opened_url |
 
 ## Research packet (packets/<id>.json)
-key, subject_id, name, targets, note, counts, sources[{{t,u,d,kind,evidence,opened_at,excerpt}}] (t title, u url, d date),
-votes[{{d,item,vote,result,matter,topics,src}}], vote_topics{{topic:{{yes,no,other,examples}}}}, mentions, articles,
-statements, endorsements, finance, posts, social_mentions, leads (not opened), rumors (unverified; kept apart).
-`src` lists are 0-based indexes into `sources`.
+subject_id, external_id, name, targets, note, counts, sources[{{title,url,date,kind,evidence,opened_at,excerpt,known}}],
+votes[{{date,item,vote,result,matter,topics,refs}}], vote_topics{{topic:{{yes,no,other,examples}}}}, mentions, articles,
+statements, endorsements, finance, posts, social_mentions, leads (not opened), quarantined (unverified; kept apart).
+`refs` lists are 0-based indexes into `sources`.
 
-## Profile supplement (profiles/<id>.json)
-ideology + isrc, positions[{{topic,stance,d,src,basis,evidence}}], statements[{{d,text,src}}], ratings[{{org,rating,year,src}}],
-endorsements[] + esrc (+ endorsement_items with direction and basis), votes[{{bill,session,title,vote,d,src,basis}}],
-bills[{{number,session,caption,role,src}}], ordinances_supported / ordinances_opposed, affiliations,
-career[{{d,to,kind,role,body,how,src,basis}}], money{{total_raised,donors,organizations,employers,patterns}}, inference_inputs, depth.
+## Profile (profiles/<id>.json)
+ideology + ideology_refs, positions[{{topic,stance,date,refs,basis,evidence}}], statements[{{date,text,refs}}],
+ratings[{{org,rating,year,refs}}], endorsements[] + endorsement_refs (+ endorsement_items with direction and basis),
+votes[{{bill,session,title,vote,date,refs,basis}}], bills[{{number,session,caption,role,refs}}], ordinances_supported /
+ordinances_opposed, affiliations, career[{{date,end_date,kind,role,body,how,refs,basis}}],
+money{{total_raised,donors,organizations,employers,patterns}}, evidence_count, depth.
 
 ## Connections (connections.json)
-nodes[{{id,kind,name,attrs}}], edges[{{a,b,type,src,amount,date,role,evidence}}] (contributed, paid, funds, officer_of, employed_by,
+nodes[{{id,kind,name,attrs}}], edges[{{a,b,type,source,amount,date,role,evidence}}] (contributed, paid, funds, officer_of, employed_by,
 committee_of, connected_to, endorsed, serves, sponsored, appointed_to, member_of), patterns[] (shared_donor, employer_cluster,
 org_chain, officer_overlap, donor_official, shared_endorser, donor_matter [evidence lead: verify first]).
 
@@ -188,11 +191,11 @@ def export(root: Path, out: Path, log=print, store: Store | None = None, cfg: di
     for t in all_t:
         counts = by_target_counts.get(t["id"], {})
         if counts:
-            votes = _write_target(out / "targets" / f"{t['id']}.json", t, store, counts)
+            votes = _write_target(out / "targets" / f"{_safe(t['id'])}.json", t, store, counts)
             if votes:
                 al = council_alignment(votes)
                 if al["votes_counted"]:
-                    (out / "councils" / f"{t['id']}.json").write_text(json.dumps({"target": t["id"], **al}, indent=1))
+                    (out / "councils" / f"{_safe(t['id'])}.json").write_text(json.dumps({"target": t["id"], **al}, indent=1))
         total_records.update({k: v for k, v in counts.items()})
         entry = {k: v for k, v in t.items() if k not in ("hints", "site_error", "wikipedia_error", "wikidata_error", "lookup_error")}
         entry["sources"] = status_by_target.get(t["id"], [])
@@ -200,21 +203,21 @@ def export(root: Path, out: Path, log=print, store: Store | None = None, cfg: di
         index.append(entry)
     (out / "targets.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
 
-    # ---- subjects (only those with something found), profile supplements and packets.
+    # ---- subjects (only those with something found), profiles and packets.
     # Each subject's records are read once and feed all three outputs.
     subjects = load_subjects(root, cfg)
-    rm = RumorMill(root)
-    rumors = rm.all()
-    rumors_by = defaultdict(list)
-    for r in rumors:
-        rumors_by[r["subject_id"]].append(r)
+    privacy = (cfg or {}).get("privacy") or {}
+    claims = Quarantine(root).all()
+    claims_by = defaultdict(list)
+    for r in claims:
+        claims_by[r["subject_id"]].append(r)
     sindex = []
     subject_sources = set(s for s in store.sources() if s.startswith("subj:"))
     n_packets = n_profiles = 0
     graph_counts = {}
     pb, profiles = None, []
     if packets:
-        from .research.packets import packet_for, slug, write_packet_index
+        from .research.packets import file_name, packet_for, write_packet_index
         from .research.profiles import ProfileBuilder
 
         legis = _load_json(root / "state" / "legis_people.json")
@@ -228,8 +231,8 @@ def export(root: Path, out: Path, log=print, store: Store | None = None, cfg: di
             grouped = {k: [_slim(r) for r in v] for k, v in records.items()}
             counts = {k: len(v) for k, v in grouped.items()}
             total_records.update(counts)
-            slim_c = {k: v for k, v in c.items() if k not in ("variants", "profile_urls")}
-            (out / "subjects" / f"{c['id']}.json").write_text(
+            slim_c = {k: v for k, v in c.items() if k not in ("variants", "known_urls")}
+            (out / "subjects" / f"{_safe(c['id'])}.json").write_text(
                 json.dumps({"subject": slim_c, "exported_at": _now(), "records": grouped}, ensure_ascii=False), encoding="utf-8")
             sindex.append({**slim_c, "record_counts": counts})
         if pb is None:
@@ -237,9 +240,10 @@ def export(root: Path, out: Path, log=print, store: Store | None = None, cfg: di
         prof = pb.profile(c, records)
         if prof:
             profiles.append(prof)
-        pk = packet_for(c, records, rumors_by.get(c["id"], []), prof) if (records or rumors_by.get(c["id"])) else None
+        held = claims_by.get(c["id"], []) if privacy.get("export_quarantine") else []
+        pk = packet_for(c, records, held, prof) if (records or held) else None
         if pk:
-            (out / "packets" / f"{slug(c.get('key') or c['id'])}.json").write_text(
+            (out / "packets" / f"{file_name(c)}.json").write_text(
                 json.dumps(pk, ensure_ascii=False, indent=1), encoding="utf-8")
             n_packets += 1
     (out / "subjects.json").write_text(json.dumps(sindex, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -266,8 +270,8 @@ def export(root: Path, out: Path, log=print, store: Store | None = None, cfg: di
         from .civic.elections import export_elections, export_qualifying
 
         els, qual = export_elections(store, t_by_id), export_qualifying(store)
-        (out / "elections.json").write_text(json.dumps({"note": "Locally run election results (eids prefixed x); contests "
-                                                        "with sub 'question' are ballot questions.", "elections": els,
+        (out / "elections.json").write_text(json.dumps({"note": "Locally run election results; contests of type "
+                                                        "'question' are ballot questions.", "elections": els,
                                                         "qualifying": qual}, ensure_ascii=False), encoding="utf-8")
         civic["elections"], civic["qualifying"] = len(els), len(qual)
     if kinds_present & {"ballot_question", "election_result"}:
@@ -279,25 +283,28 @@ def export(root: Path, out: Path, log=print, store: Store | None = None, cfg: di
                                                                "questions": qs}, ensure_ascii=False), encoding="utf-8")
         civic["ballot_questions"] = len(qs)
 
-    # ---- the Screenshots box (inbox items, grouped by box)
+    # ---- the screenshot inbox (items grouped by box)
     from .screens import Inbox
 
-    box = Inbox.box_export(store)
+    box = Inbox.box_export(store, include_text=privacy.get("export_screenshot_text", True))
     (out / "screenshots.json").write_text(json.dumps({"note": "Screenshots people submitted, read by OCR. Each item "
                                                       "needs review: open the original page or post before citing it.",
                                                       "boxes": box}, ensure_ascii=False, indent=1), encoding="utf-8")
 
-    # ---- posts, rumors, blocked
+    # ---- posts, quarantine (opt-in), blocked
     posts = Registry(root / "data" / "verified").posts()
     (out / "verified_posts.json").write_text(json.dumps(posts, ensure_ascii=False, indent=1), encoding="utf-8")
-    (out / "rumor_mill.json").write_text(json.dumps(rumors, ensure_ascii=False, indent=1), encoding="utf-8")
-    from .research.rumor_video import VideoRumorMill
-
-    rumor_videos = VideoRumorMill(root).all()
-    (out / "rumor_mill_video.json").write_text(json.dumps({
-        "note": "Rumor Mill - Video: videos from YouTube channels not confirmed as a target's official account "
-                "(reason per row). Never cite these; confirm the channel by hand first.",
-        "videos": rumor_videos}, ensure_ascii=False, indent=1), encoding="utf-8")
+    videos = VideoQuarantine(root).all()
+    for name in ("quarantine.json", "quarantine_videos.json"):
+        (out / name).unlink(missing_ok=True)
+    if privacy.get("export_quarantine"):
+        (out / "quarantine.json").write_text(json.dumps({
+            "note": "Unverified claims, kept apart from every record. Never cite one as fact.", "claims": claims},
+            ensure_ascii=False, indent=1), encoding="utf-8")
+        (out / "quarantine_videos.json").write_text(json.dumps({
+            "note": "Videos from YouTube channels not confirmed as a target's official account (reason per row). "
+                    "Never cite these; confirm the channel by hand first.", "videos": videos},
+            ensure_ascii=False, indent=1), encoding="utf-8")
     blocked = BlockList(root / "state" / "blocked.json").data
     (out / "blocked.json").write_text(json.dumps(blocked, ensure_ascii=False, indent=1), encoding="utf-8")
     (out / "schema.md").write_text(SCHEMA_MD.format(version=SCHEMA_VERSION), encoding="utf-8")
@@ -307,11 +314,12 @@ def export(root: Path, out: Path, log=print, store: Store | None = None, cfg: di
         "targets": len(index), "targets_with_website": sum(1 for t in index if t.get("website")),
         "targets_with_records": sum(1 for t in index if t["record_counts"]),
         "councils_with_vote_alignment": len(list((out / "councils").glob("*.json"))),
-        "subjects_with_records": len(sindex), "research_packets": n_packets, "profile_supplements": n_profiles,
+        "subjects_with_records": len(sindex), "research_packets": n_packets, "profiles": n_profiles,
         "connections": graph_counts,
         "verified_posts": sum(1 for p in posts if p["status"] == "verified"),
-        "rumor_mill": dict(Counter(r["status"] for r in rumors)), "blocked_hosts": len(blocked),
-        "screenshots": {k: len(v) for k, v in box.items()}, "rumor_mill_videos": len(rumor_videos),
+        "quarantine": {"claims": dict(Counter(r["status"] for r in claims)), "videos": len(videos),
+                       "exported": bool(privacy.get("export_quarantine"))},
+        "blocked_hosts": len(blocked), "screenshots": {k: len(v) for k, v in box.items()},
         **civic,
         "records_by_kind": dict(total_records), "records_total": store.total(),
     }
@@ -320,6 +328,15 @@ def export(root: Path, out: Path, log=print, store: Store | None = None, cfg: di
         store.close()
     log(json.dumps(manifest, indent=1))
     return manifest
+
+
+def _safe(name: str) -> str:
+    """A file name for an id: ids are validated when loaded (targets.safe_id), this is the last line of defense."""
+    from .targets import safe_id
+
+    if not safe_id(name):
+        raise ValueError(f"unsafe id for a file name: {name[:60]!r}")
+    return name
 
 
 def _load_json(p: Path):

@@ -10,7 +10,7 @@ Where transcripts come from (all on official sites or official video platforms, 
                captions, so those are recorded as `video` with transcript_status "read on the video page".
                Only official channels: the government links to it (its own website, or a hand check in
                config/overrides.yaml) and the channel is plainly the government's (official_channel). Videos from
-               any other channel go to the Rumor Mill - Video bucket (rumor_video.py), never into the records.
+               any other channel go to the video quarantine (research/quarantine.py), never into the records.
 
 Records: kind `transcript` — text is the whole transcript; meta.segments is [[seconds, char_offset], ...] so a
 mention can be cited with its time code. Nothing is built from a URL pattern: transcript links are taken from
@@ -34,7 +34,7 @@ from .store import Record
 TIME_RX = re.compile(r"(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?")
 VTT_CUE = re.compile(r"(\d{1,2}:\d{2}(?::\d{2})?[.,]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}(?::\d{2})?[.,]\d{1,3})")
 TAG_RX = re.compile(r"<[^>]+>")
-TRANSCRIPT_LINK = re.compile(r"TranscriptViewer\.php[^\"'\s<>]*|[^\"'\s<>]+\.(?:vtt|srt)(?:\?[^\"'\s<>]*)?|[^\"'\s<>]*(?:caption|transcript)s?[^\"'\s<>]*\.(?:vtt|srt|txt)", re.I)
+TRANSCRIPT_LINK = re.compile(r"TranscriptViewer\.php[^\"'\s<>]{0,300}|(?<![^\"'\s<>=(])[^\"'\s<>]{1,300}\.(?:vtt|srt)(?:\?[^\"'\s<>]{0,300})?|(?<![^\"'\s<>=(])[^\"'\s<>]{0,200}(?:caption|transcript)s?[^\"'\s<>]{0,200}\.(?:vtt|srt|txt)", re.I)
 VIDEO_PAGE = re.compile(r"granicus\.com/(?:MediaPlayer|player/clip)|clip_id=|/MediaPlayer\.php", re.I)
 MEDIA_EXT = re.compile(r"\.(mp3|m4a|wav|mp4|m4v|webm|ogg)(?:$|[?#])", re.I)
 MAX_MARKERS = 1500  # time markers kept per transcript (5 s apart up to ~2 h, wider for longer meetings)
@@ -230,7 +230,7 @@ YT_API = "https://www.googleapis.com/youtube/v3"
 NOT_GOVERNMENT = re.compile(r"chamber|news|church|ministr|foundation|visit|touris|cvb|convention|realt|democrat|"
                             r"republican|\bgop|party|unofficial|fan|alumni|booster|\bpta\b|radio|times|herald|patch|"
                             r"podcast|watchdog|citizens\s+for|friends\s+of|residents|neighbors|taxpayers", re.I)
-CALL_SIGN = re.compile(r"\b[WK][A-Z]{2,3}(?:-(?:TV|FM|AM|DT))?\b")    # broadcast stations (WSB-TV, WXIA, ...)
+CALL_SIGN = re.compile(r"\b[WK][A-Z]{2,3}(?:-(?:TV|FM|AM|DT))?\b")    # US broadcast call signs (KXYZ-TV, WABC...)
 GOVERNMENT = re.compile(r"\b(city|county|town|village|government|gov|govt|commission|council|board|schools?|"
                         r"district|consolidated|unified|municipal|clerk)\b|gov(?:t)?\b", re.I)
 
@@ -253,9 +253,10 @@ def youtube_channel(fetcher, handle_or_url: str) -> dict | None:
     else:
         name = (h or (path[-1] if path and path[0] not in ("c", "user") else (path[1] if len(path) > 1 else ""))).lstrip("@")
         if name:
-            tries += [{"forHandle": "@" + name}, {"forUsername": name}]   # bare youtube.com/name: a handle or a legacy name
+            tries += [{"forHandle": "@" + name}, {"forUsername": name}]   # bare youtube.com/name: a handle or an old-style user name
     for t in tries:
-        data = fetcher.get(f"{YT_API}/channels", params={"part": "snippet,contentDetails", "key": key, **t}, use_cache=False).json()
+        data = fetcher.get(f"{YT_API}/channels", params={"part": "snippet,contentDetails", **t},
+                           headers={"X-goog-api-key": key}, use_cache=False).json()
         items = data.get("items") or []
         if items:
             it = items[0]
@@ -306,10 +307,10 @@ def youtube_videos(fetcher, handle_or_url: str, since: str = "2016-01-01", limit
         return []
     token, n, out = None, 0, []
     while n < limit:
-        p = {"part": "snippet", "playlistId": ch["uploads"], "maxResults": 50, "key": key}
+        p = {"part": "snippet", "playlistId": ch["uploads"], "maxResults": 50}
         if token:
             p["pageToken"] = token
-        data = fetcher.get(f"{YT_API}/playlistItems", params=p, use_cache=False).json()
+        data = fetcher.get(f"{YT_API}/playlistItems", params=p, headers={"X-goog-api-key": key}, use_cache=False).json()
         for it in data.get("items", []):
             sn = it["snippet"]
             if (sn.get("publishedAt") or "")[:10] < since[:10]:
@@ -328,23 +329,23 @@ MEETING_TITLE = re.compile(r"council|commission|meeting|hearing|work session|boa
 
 
 def youtube_records(fetcher, sid: str, target: str, channel_url: str, since: str = "2016-01-01",
-                    target_name: str = "", basis: str = "", rumors=None):
+                    target_name: str = "", basis: str = "", quarantine=None):
     """Meeting videos of an official channel as records; a channel that is not confirmed official goes to the
-    Rumor Mill - Video bucket instead (nothing from it becomes a record)."""
+    video quarantine instead (nothing from it becomes a record)."""
     ch = youtube_channel(fetcher, channel_url)
     if not ch:
         return
     ok, why = official_channel(ch, target_name or target, basis)
     videos = [v for v in youtube_videos(fetcher, channel_url, since, channel=ch) if MEETING_TITLE.search(v["title"])]
     if not ok:
-        if rumors is None:
+        if quarantine is None:
             from .config import ROOT
-            from .research.rumor_video import VideoRumorMill
+            from .research.quarantine import VideoQuarantine
 
-            rumors = VideoRumorMill(ROOT)
+            quarantine = VideoQuarantine(ROOT)
         for v in videos:
-            rumors.add(target, ch, why, v)
-        rumors.flush()
+            quarantine.add(target, ch, why, v)
+        quarantine.flush()
         return
     for v in videos:
         yield Record(sid, "video", v["url"], title=v["title"], text=v["description"], published=v["published"], channel="api",
@@ -361,22 +362,19 @@ def transcribe_media(fetcher, url: str, max_mb: int = 300, model_size: str = "ba
         from faster_whisper import WhisperModel
     except ImportError:
         return None
-    if not fetcher.allowed(url) or fetcher.blocklist.is_blocked(url):
-        return None
-    fetcher.limiter.wait(url, fetcher.robots.crawl_delay(url))
-    with tempfile.NamedTemporaryFile(suffix=Path(urlsplit(url).path).suffix or ".mp4", delete=False) as tmp:
-        path = Path(tmp.name)
+    suffix = Path(urlsplit(url).path).suffix.lower()
+    if suffix not in (".mp3", ".mp4", ".m4a", ".wav", ".ogg", ".oga", ".webm", ".aac", ".flac", ".mov", ".m4v"):
+        suffix = ".media"
+    fd, name = tempfile.mkstemp(suffix=suffix, prefix="opencrawl-media-")
+    os.close(fd)
+    path = Path(name)
     try:
-        with fetcher.session.get(url, stream=True, timeout=120) as resp:
-            if resp.status_code != 200:
-                return None
-            size = 0
-            with open(path, "wb") as fh:
-                for chunk in resp.iter_content(1 << 20):
-                    size += len(chunk)
-                    if size > max_mb * 1e6:
-                        return None
-                    fh.write(chunk)
+        try:
+            got = fetcher.download(url, path, max_bytes=int(max_mb * 1_000_000))
+        except Exception:  # noqa: BLE001 — disallowed, blocked, too large, network: no transcript this time
+            return None
+        if got["status"] != 200 or not got["bytes"]:
+            return None
         model = WhisperModel(model_size, compute_type="int8")
         segments, _info = model.transcribe(str(path), vad_filter=True)
         t0, cues = time.monotonic(), []

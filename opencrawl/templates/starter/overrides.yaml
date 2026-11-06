@@ -1,0 +1,10 @@
+# Hand edits that win over targets.yaml, a jurisdiction registry and state/discovered.json.
+# Keyed by target id. Any target field is allowed; the useful ones: website, portals (youtube, legistar,
+# agenda_center, granicus, civicclerk, boarddocs, ecode360, amlegal...), tier (a|b|c), enabled (false to skip),
+# include/exclude, notes. `youtube_checked` records why a YouTube channel is believed to be the target's own.
+targets: {}
+#  example-org:
+#    website: https://www.example.org/
+#    portals: {youtube: "https://www.youtube.com/@exampleorg"}
+#    youtube_checked: "2026-01-01: linked from the footer of example.org"
+#    notes: "the old domain redirects here"

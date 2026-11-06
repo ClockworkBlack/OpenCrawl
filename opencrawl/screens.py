@@ -44,6 +44,7 @@ DEVICES = {
     "desktop": {"viewport": {"width": 1280, "height": 900}, "device_scale_factor": 1, "is_mobile": False, "has_touch": False,
                 "user_agent_suffix": ""},
 }
+MAX_FILE_BYTES = 60_000_000   # one screenshot or PDF in the inbox
 TILE = 2200          # OCR tile height (px, after preprocessing) — tesseract is faster and better on bounded tiles
 TILE_OVERLAP = 160
 STATUS_LINE = re.compile(r"^(\d{1,2}:\d{2}(\s?[AP]M)?|.*\b(LTE|5G|4G|3G|Wi-?Fi)\b.*|.*\d{1,3}\s?%\s*$|[\W_]{1,4})$", re.I)
@@ -62,13 +63,13 @@ PLATFORMS = [  # (name, patterns that suggest it) — scored, best wins
     ("threads", [r"\bthreads\.(net|com)/"]),
     ("linkedin", [r"\blinkedin\.com/", r"\bConnect\b.*\bMessage\b", r"\bReactions?\b"]),
 ]
-URL_RX = re.compile(r"\b((?:https?://)?(?:www\.|m\.)?(?:[a-z0-9-]+\.)+(?:com|org|net|gov|us|app|social|be|co|io|news|info)"
+URL_RX = re.compile(r"\b((?:https?://)?(?:www\.|m\.)?(?<![a-z0-9.-])(?:[a-z0-9-]{1,63}\.){1,6}(?:com|org|net|gov|us|app|social|be|co|io|news|info)"
                     r"(?:/[^\s<>\"')\]]*)?)", re.I)
 HANDLE_RX = re.compile(r"(?<![\w.])@([A-Za-z0-9_.]{2,30})")
 DATE_RX = re.compile(r"\b((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}(?:,\s*\d{4})?"
                      r"|\d{1,2}/\d{1,2}/\d{2,4}|\d{4}-\d{2}-\d{2}|\d+\s?(?:[smhdw]|min|hr|hrs|mins|days?|weeks?)\b(?:\s+ago)?"
                      r"|Yesterday at \d{1,2}:\d{2}\s?[AP]M|Today at \d{1,2}:\d{2}\s?[AP]M)", re.I)
-COUNT_RX = re.compile(r"\b(\d[\d,.]*\s?[KkMm]?)\s+(likes?|comments?|shares?|reposts?|retweets?|views?|reactions?)\b", re.I)
+COUNT_RX = re.compile(r"(?<![\d,.])(\d[\d,.]{0,12}\s?[KkMm]?)\s{1,3}(likes?|comments?|shares?|reposts?|retweets?|views?|reactions?)\b", re.I)
 
 
 # ----------------------------------------------------------------------------- image helpers
@@ -197,9 +198,11 @@ def merge_overlap(prev: list[str], cur: list[str], min_run: int = 2) -> list[str
 
 # ----------------------------------------------------------------------------- reading one screenshot
 def read_screenshot(data: bytes, subjects: list[dict] | None = None) -> dict:
-    from PIL import Image, ImageOps
+    from PIL import ImageOps
 
-    img = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
+    from .ingest import open_image
+
+    img = ImageOps.exif_transpose(open_image(data))
     if getattr(img, "n_frames", 1) > 1:
         img.seek(0)
     img = img.convert("RGB")
@@ -310,16 +313,18 @@ class Inbox:
                note: str = "", move: bool = True) -> dict:
         if files is None:  # imports/screens/ and its box subfolders (ordinances/, posts/, text/)
             files = [p for d in [self.dir] + [self.dir / b for b in BOXES] for p in d.glob("*")
-                     if p.is_file() and p.suffix.lower() in INBOX_EXT]
+                     if p.is_file() and not p.is_symlink() and p.suffix.lower() in INBOX_EXT]
         files = sorted(files, key=lambda p: (p.parent.name, p.name))
         stats = {"files": len(files), "new": 0, "duplicates": 0, "merged_into_previous": 0, "errors": 0}
         prev = None  # (record, lines so far) of the previous shot, to merge consecutive shots of one scroll
         for f in files:
             try:
+                if f.stat().st_size > MAX_FILE_BYTES:
+                    raise ValueError(f"file over {MAX_FILE_BYTES // 1_000_000} MB")
                 data = f.read_bytes()
                 info = read_pdf(data, self.subjects) if f.suffix.lower() == ".pdf" else read_screenshot(data, self.subjects)
             except Exception as exc:  # noqa: BLE001
-                self.log(f"{f.name}: could not read ({type(exc).__name__}: {exc})")
+                self.log(f"{f.name}: could not read ({type(exc).__name__}: {str(exc)[:200]})")
                 stats["errors"] += 1
                 continue
             dup = self._dupe(info["sha256"], info["dhash"])
@@ -403,13 +408,16 @@ class Inbox:
             shutil.move(str(f), str(dest / f.name))
 
     @staticmethod
-    def box_export(store) -> dict:
-        """The Screenshots box: every inbox item grouped by ordinances / posts / text."""
+    def box_export(store, include_text: bool = True) -> dict:
+        """The screenshot inbox: every item grouped by ordinances / posts / text. Without include_text (settings.yaml
+        privacy.export_screenshot_text: false) the OCR text stays out of exports: screenshots of social media show
+        other people's names and words."""
         out = {b: [] for b in BOXES}
         for r in store.query("kind='screenshot'", order="changed_at DESC"):
             m = r["meta"]
             out.setdefault(m.get("box", "text"), []).append({
-                "id": r["id"], "title": r["title"], "text": r["text"], "box": m.get("box"), "status": m.get("status"),
+                "id": r["id"], "title": r["title"] if include_text else "", "text": r["text"] if include_text else "",
+                "box": m.get("box"), "status": m.get("status"),
                 "platform": m.get("platform"), "handles": m.get("handles"), "dates_seen": m.get("dates_seen"),
                 "urls_seen": m.get("urls_seen"), "posts_linked": m.get("posts_linked", []),
                 "targets": m.get("targets", []), "subjects": m.get("subjects", []),
@@ -422,34 +430,20 @@ class Inbox:
 # ----------------------------------------------------------------------------- automated capture
 def capture_page(url: str, fetcher, device: str = "phone", selector: str | None = None, scroll: bool = True,
                  max_height: int = 20000, wait_ms: int = 1500, save_to: Path | None = None) -> dict:
-    """Screenshot a page the way a person would and read it. Refuses robots-disallowed and blocked hosts."""
-    from .blocked import Blocked
-    from .fetch import Disallowed
-    from .polite import host_of
+    """Screenshot a page the way a person would and read it, in the guarded headless browser (browser.session).
+    Refuses robots-disallowed and blocked hosts."""
+    from . import browser
 
-    bl = fetcher.blocklist.is_blocked(url)
-    if bl:
-        raise Blocked(host_of(url), bl["reason"])
-    if not fetcher.allowed(url):
-        raise Disallowed(url)
-    fetcher.limiter.wait(url, fetcher.robots.crawl_delay(url))
-    from playwright.sync_api import sync_playwright
-
-    from .fetch import launch_browser
-
+    fetcher._admit(url)           # guard, block list, robots.txt: refuse before starting a browser
     d = DEVICES[device]
     t0 = time.monotonic()
-    with sync_playwright() as p:
-        browser = launch_browser(p)
-        ctx = browser.new_context(viewport=d["viewport"], device_scale_factor=d["device_scale_factor"],
-                                  is_mobile=d["is_mobile"], has_touch=d["has_touch"],
-                                  user_agent=fetcher.user_agent + d["user_agent_suffix"])
+    with browser.session(fetcher, block=("media",), viewport=d["viewport"], device_scale_factor=d["device_scale_factor"],
+                         is_mobile=d["is_mobile"], has_touch=d["has_touch"],
+                         user_agent=fetcher.user_agent + d["user_agent_suffix"]) as ctx:
         page = ctx.new_page()
-        resp = page.goto(url, wait_until="networkidle", timeout=60000)
+        resp = browser.goto(page, url, fetcher)
         status = resp.status if resp else 0
         if status != 200:
-            browser.close()
-            fetcher.limiter.record(url, status, time.monotonic() - t0)
             return {"url": url, "status": status}
         if scroll:  # let lazy-loaded content arrive, like a person scrolling down
             last = 0
@@ -467,9 +461,8 @@ def capture_page(url: str, fetcher, device: str = "phone", selector: str | None 
         dom_text = (target.inner_text() if target else page.inner_text("body")) or ""
         title = page.title()
         final = page.url
-        browser.close()
-    fetcher.limiter.record(url, 200, time.monotonic() - t0)
-    info = {"url": final, "status": 200, "title": title, "png": png, "dom_text": dom_text.strip(), "device": device}
+    info = {"url": final, "status": 200, "title": title, "png": png, "dom_text": dom_text.strip(), "device": device,
+            "seconds": round(time.monotonic() - t0, 1)}
     if save_to:
         save_to.mkdir(parents=True, exist_ok=True)
         name = hashlib.sha256(png).hexdigest()[:16] + ".png"
@@ -496,14 +489,14 @@ def capture_record(url: str, fetcher, source_id: str = "capture", device: str = 
 
 
 # ----------------------------------------------------------------------------- simulator
-SIM_PEOPLE = [("Jordan Avery", "jordanavery_co"), ("Casey Morgan", "caseyforcouncil"), ("Riley Brooks", "rileybrooks4mayor")]
+SIM_PEOPLE = [("Rowan Teller", "rowanteller_co"), ("Harper Bennett", "harperforcouncil"), ("Emerson Vance", "emersonvance4mayor")]
 SIM_TEXTS = [
-    "Proud to stand with neighbors at Tuesday's council meeting. We need sidewalks on Elm Street and a real plan for "
-    "stormwater before the next storm season. I will vote no on the rezoning until the traffic study is done.",
-    "Thank you to everyone who came to the town hall! Our water rates should not go up again this year. Read my plan "
-    "for fixing the treatment plant and keeping bills flat.",
-    "The short-term rental ordinance is back on the agenda Monday night. I support registration and noise rules, not "
-    "a ban. Come speak at public comment.",
+    "Thanks to everyone who joined the library board listening session last night. The branch hours survey closes "
+    "Friday, and I will push for evening hours before any new construction is approved.",
+    "Our crosswalk request for Maple Avenue is finally on the transportation committee agenda. Please share your "
+    "experience walking to school there; written comments are due Wednesday at noon.",
+    "The draft budget adds two park rangers and keeps the recycling pickup weekly. I support both and will ask for "
+    "a public workshop on the fee schedule before the second reading.",
 ]
 
 
@@ -562,7 +555,7 @@ def simulate(out: Path, n: int = 6, seed: int = 1) -> list[Path]:
         d.text((210, y + 70), meta, fill=muted, font=f_s)
         y += 190
         body_lines = _wrap(d, body, f_m, W - 120)
-        body_lines += [f"Line {i + 1} of a longer thread about the budget hearing and road repairs." for i in range(extra_lines)]
+        body_lines += [f"Line {i + 1} of a longer thread about the budget workshop and trail repairs." for i in range(extra_lines)]
         for ln in body_lines:
             d.text((60, y), ln, fill=fg, font=f_m)
             y += 70
@@ -570,7 +563,7 @@ def simulate(out: Path, n: int = 6, seed: int = 1) -> list[Path]:
                 break
         y += 40
         foot = {"x": "12 Reposts   48 Likes   2,310 Views", "facebook": "Like    Comment    Share     37 comments",
-                "instagram": "Liked by neighbor_pat and 212 others", "bluesky": "Reposted by 9 people   31 likes"}[platform]
+                "instagram": "Liked by neighbor_sam and 212 others", "bluesky": "Reposted by 9 people   31 likes"}[platform]
         d.text((60, min(y, H - 330)), foot, fill=muted, font=f_s)
         d.text((60, H - 140), "Home  Search  Notifications  Messages", fill=muted, font=f_s)
         return img
@@ -602,7 +595,7 @@ def simulate(out: Path, n: int = 6, seed: int = 1) -> list[Path]:
     y = 120
     for ln in ["NOTICE OF PUBLIC HEARING", "The Mayor and Council will hold a public hearing on November 17, 2026",
                "at 6:00 PM on an ordinance amending the zoning code for short-term rentals.",
-               "Council member Casey Morgan requested the item be placed on the agenda."]:
+               "Council member Harper Bennett requested the item be placed on the agenda."]:
         d.text((60, y), ln, fill=(10, 10, 10), font=_font(38))
         y += 70
     p = out / "desktop_notice.png"

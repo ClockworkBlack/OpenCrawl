@@ -15,8 +15,8 @@ from opencrawl.fetch import Fetcher
 from opencrawl.names import name_variants
 from opencrawl.store import Record, Store
 
-CCDR = """CAMPAIGN CONTRIBUTION DISCLOSURE REPORT
-Candidate Name: Pat Local
+REPORT = """CAMPAIGN CONTRIBUTION DISCLOSURE REPORT
+Candidate Name: Robin Ashby
 Office Sought: City Council Post 2
 Report Type: October 25 Report
 Reporting Period: 07/01/2026 - 09/30/2026
@@ -36,15 +36,15 @@ Payee                        Address                      Purpose               
 Garfield Tribune             200 Main St, Rifle, CO      Advertising                  09/12/2026  $750.00
 
 In-Kind Contributions
-Contributor Name: Kim Post
+Contributor Name: Taylor Calder
 Address: 22 Oak Ave, Rifle, CO 30114
 Occupation: Teacher   Employer: Garfield County Schools
 Date: 09/20/2026   Amount: $300.00   Description: catering for fundraiser
 """
 
 CSV_BULK = """Filer,Contributor Name,Amount,Date,Employer,Occupation,City,State,Type
-Dana Reed for Mayor,"SMITH, JOHN A",250.00,2026-08-20,Smith Law,Attorney,Rifle,CO,Contribution
-Dana Reed for Mayor,Mountain Realtors PAC,1000.00,2026-09-03,,,Denver,CO,Contribution
+Morgan Okafor for Mayor,"SMITH, JOHN A",250.00,2026-08-20,Smith Law,Attorney,Rifle,CO,Contribution
+Morgan Okafor for Mayor,Mountain Realtors PAC,1000.00,2026-09-03,,,Denver,CO,Contribution
 """
 
 FEC_ROUTES = {}
@@ -52,10 +52,10 @@ FEC_ROUTES = {}
 
 def fec_handler(path, qs):
     if path.endswith("/candidates/search/"):
-        return {"results": [{"name": "LOCAL, PAT", "candidate_id": "H0CO09999"}]}
+        return {"results": [{"name": "ASHBY, ROBIN", "candidate_id": "H0CO09999"}]}
     if path.endswith("/committees/"):
         if qs.get("candidate_id"):
-            return {"results": [{"committee_id": "C0001", "name": "PAT LOCAL FOR CONGRESS"}]}
+            return {"results": [{"committee_id": "C0001", "name": "ROBIN ASHBY FOR CONGRESS"}]}
         q = (qs.get("q") or [""])[0].lower()
         if "realtors" in q:
             return {"results": [{"committee_id": "C0002", "name": "MOUNTAIN REALTORS PAC"}]}
@@ -63,7 +63,7 @@ def fec_handler(path, qs):
     if path.endswith("/committee/C0002/"):
         return {"results": [{"committee_id": "C0002", "name": "MOUNTAIN REALTORS PAC", "committee_type_full": "PAC - Nonqualified",
                              "designation_full": "Unauthorized", "organization_type_full": "Trade Association",
-                             "connected_organization_name": "MOUNTAIN ASSOCIATION OF REALTORS", "treasurer_name": "KIM POST",
+                             "connected_organization_name": "MOUNTAIN ASSOCIATION OF REALTORS", "treasurer_name": "TAYLOR CALDER",
                              "city": "DENVER", "state": "CO", "website": ""}]}
     if path.endswith("/schedules/schedule_a/"):
         FEC_ROUTES.setdefault("schedule_a", []).append(qs)
@@ -75,7 +75,7 @@ def fec_handler(path, qs):
                              "sub_id": "4001", "pdf_url": "https://docquery.fec.gov/cgi-bin/fecimg/?4001", "entity_type": "IND"}],
                 "pagination": {"last_indexes": {"last_index": "4001", "last_contribution_receipt_date": "2026-06-01"}}}
     if path.endswith("/schedules/schedule_b/"):
-        return {"results": [{"recipient_name": "FRIENDS OF DANA REED", "disbursement_amount": 2000.0, "disbursement_date": "2026-05-05",
+        return {"results": [{"recipient_name": "FRIENDS OF MORGAN OKAFOR", "disbursement_amount": 2000.0, "disbursement_date": "2026-05-05",
                              "disbursement_description": "CONTRIBUTION", "pdf_url": "https://docquery.fec.gov/cgi-bin/fecimg/?5001"}]}
     return None
 
@@ -135,19 +135,19 @@ def cand(cid, name, office="City Council Post 2", jur="rifle", **kw):
     return c
 
 
-def test_parse_ccdr_and_csv(tmp_path):
-    rows = finance.parse_ccdr_text(CCDR)
+def test_parse_disclosure_report_and_csv(tmp_path):
+    rows = finance.parse_disclosure_text(REPORT)
     by = {r["name"]: r for r in rows}
     assert by["John A. Smith"]["amount"] == 500.0 and by["John A. Smith"]["employer"] == "Smith Law" and by["John A. Smith"]["date"] == "2026-08-14"
     assert by["Mountain Realtors PAC"]["amount"] == 1000.0 and by["Mountain Realtors PAC"]["city"] == "Denver"
     assert by["Garfield Tribune"]["kind"] == "expenditure" and by["Garfield Tribune"]["purpose"] == "Advertising"
-    assert by["Kim Post"]["kind"] == "in_kind" and by["Kim Post"]["employer"] == "Garfield County Schools" and by["Kim Post"]["amount"] == 300.0
+    assert by["Taylor Calder"]["kind"] == "in_kind" and by["Taylor Calder"]["employer"] == "Garfield County Schools" and by["Taylor Calder"]["amount"] == 300.0
     assert "Total Contributions" not in by and "Reporting Period:" not in by
-    assert finance.header_of(CCDR)["candidate"] == "Pat Local"
+    assert finance.header_of(REPORT)["candidate"] == "Robin Ashby"
     p = tmp_path / "bulk.csv"
     p.write_text(CSV_BULK)
     rows = finance.parse_finance_csv(p)
-    assert rows[0]["recipient"] == "Dana Reed for Mayor" and rows[0]["amount"] == 250.0 and rows[0]["date"] == "2026-08-20"
+    assert rows[0]["recipient"] == "Morgan Okafor for Mayor" and rows[0]["amount"] == 250.0 and rows[0]["date"] == "2026-08-20"
 
 
 def test_finance_pipeline_and_connections(server, fetcher, tmp_path, monkeypatch):
@@ -161,36 +161,36 @@ def test_finance_pipeline_and_connections(server, fetcher, tmp_path, monkeypatch
     for f in ("finance.yaml", "organizations.yaml"):
         (root / "config" / f).write_text((Path(__file__).resolve().parent.parent / "config" / f).read_text())
     store = Store(root / "data")
-    # a city posted Pat Local's CCDR; Pat Local also ran for Congress (FEC); Dana Reed is mayor and got money too
-    store.add(Record("canton:site", "document", "https://canton.example/ccdr/local-oct.pdf", title="Campaign Contribution Disclosure Report - Local",
-                     text=CCDR, target="rifle", channel="pdf", evidence="primary", meta={"doc_type": "finance_report"}))
-    # Pat Local voted on a matter naming Acme Development within the window
-    store.add(Record("subj:pat-local", "vote", "https://canton.example/minutes/2026-10-20.pdf", title="Rezoning Z-26-07 for Acme Development, LLC",
+    # a city posted Robin Ashby's disclosure report; Robin Ashby also ran for Congress (FEC); Morgan Okafor is mayor and got money too
+    store.add(Record("canton:site", "document", "https://canton.example/finance/ashby-oct.pdf", title="Campaign Contribution Disclosure Report - Ashby",
+                     text=REPORT, target="rifle", channel="pdf", evidence="primary", meta={"doc_type": "finance_report"}))
+    # Robin Ashby voted on a matter naming Acme Development within the window
+    store.add(Record("subj:robin-ashby", "vote", "https://canton.example/minutes/2026-10-20.pdf", title="Rezoning Z-26-07 for Acme Development, LLC",
                      text="Rezoning Z-26-07 for Acme Development, LLC", published="2026-10-20", target="rifle", evidence="primary",
-                     meta={"vote": "yes", "result": "passed", "subject_id": "pat-local"}))
+                     meta={"vote": "yes", "result": "passed", "subject_id": "robin-ashby"}))
     store.flush()
-    cands = [cand("pat-local", "Pat Local", office="U.S. House District 11"), cand("dana-reed", "Dana Reed", office="Mayor"),
-             cand("kim-post", "Kim Post")]
+    cands = [cand("robin-ashby", "Robin Ashby", office="U.S. House District 11"), cand("morgan-okafor", "Morgan Okafor", office="Mayor"),
+             cand("taylor-calder", "Taylor Calder")]
     fin = finance.Finance(root, {}, fetcher, store, log=lambda *_: None)
     out = fin.run(cands, since="2025-01-01")
     assert out["imported"] == 2 and out["documents"] == {"reports": 1, "rows": 8} and out["fec"] == 1
     assert out["organizations"] >= 1
     contribs = store.query("kind='contribution'")
     assert len(contribs) == 11
-    pat = store.read("subj:pat-local", "contribution")
-    assert len(pat) == 9 and all(c["meta"]["subject_id"] == "pat-local" for c in pat)
+    pat = store.read("subj:robin-ashby", "contribution")
+    assert len(pat) == 9 and all(c["meta"]["subject_id"] == "robin-ashby" for c in pat)
     assert any(c["meta"]["needs_review"] for c in pat) and any(c["meta"]["filing_source"] == "FEC" for c in pat)
-    reed = store.read("subj:dana-reed", "contribution")
-    assert len(reed) == 2 and reed[0]["meta"]["recipient"] == "Dana Reed"       # "Dana Reed for Mayor" -> the candidate
+    reed = store.read("subj:morgan-okafor", "contribution")
+    assert len(reed) == 2 and reed[0]["meta"]["recipient"] == "Morgan Okafor"       # "Morgan Okafor for Mayor" -> the candidate
     # the same John Smith across the city PDF, the state export and the FEC resolves to one entity
     ids = {c["meta"]["donor_entity"] for c in contribs if "smith" in c["meta"]["name"].lower()}
     assert len(ids) == 1
     # the PAC was looked up: what it is, who runs it, who it funds
     orgs = {o["title"]: o for o in store.query("kind='organization'")}
     pac = orgs["Mountain Realtors PAC"]
-    assert pac["meta"]["fec_id"] == "C0002" and pac["meta"]["treasurer"] == "KIM POST"
+    assert pac["meta"]["fec_id"] == "C0002" and pac["meta"]["treasurer"] == "TAYLOR CALDER"
     assert any("Trade Association" in w["text"] for w in pac["meta"]["what"])
-    assert pac["meta"]["recipients"][0]["name"] == "FRIENDS OF DANA REED"
+    assert pac["meta"]["recipients"][0]["name"] == "FRIENDS OF MORGAN OKAFOR"
     assert pac["meta"]["connected_org"] == "MOUNTAIN ASSOCIATION OF REALTORS"
     assert any("501(c)(6)" in w["text"] for w in pac["meta"]["what"])           # ProPublica matched the connected org by prefix? no: by name
     # the graph and its patterns
@@ -200,21 +200,21 @@ def test_finance_pipeline_and_connections(server, fetcher, tmp_path, monkeypatch
     kinds = {p["kind"] for p in pats}
     assert {"shared_donor", "employer_cluster", "officer_overlap", "donor_matter", "org_chain"} <= kinds
     shared = next(p for p in pats if p["kind"] == "shared_donor" and "smith" in p["donor_name"].lower())
-    assert {r["name"] for r in shared["recipients"]} == {"Pat Local", "Dana Reed"} and shared["total"] == 1750.0
+    assert {r["name"] for r in shared["recipients"]} == {"Robin Ashby", "Morgan Okafor"} and shared["total"] == 1750.0
     cluster = next(p for p in pats if p["kind"] == "employer_cluster")
-    assert cluster["recipient_name"] == "Pat Local" and len(cluster["donors"]) == 3 and "Acme" in cluster["employer"]
+    assert cluster["recipient_name"] == "Robin Ashby" and len(cluster["donors"]) == 3 and "Acme" in cluster["employer"]
     officer = next(p for p in pats if p["kind"] == "officer_overlap")
-    assert officer["person_name"] == "Kim Post" and officer["is_subject"]       # the PAC's treasurer is a candidate
+    assert officer["person_name"] == "Taylor Calder" and officer["is_subject"]       # the PAC's treasurer is a candidate
     lead = next(p for p in pats if p["kind"] == "donor_matter")
     assert lead["evidence"] == "lead" and "Acme" in lead["term"] and lead["vote"] == "yes" and lead["days_apart"] == 40
     chain = next(p for p in pats if p["kind"] == "org_chain")
     assert [x["name"] for x in chain["path"]][0] == "Mountain Realtors PAC"
-    money = connections.money_for(g, store, ix, "pat-local", pats)
+    money = connections.money_for(g, store, ix, "robin-ashby", pats)
     assert money["total_raised"] == 6050.0 and money["contributions"] == 8 and money["total_spent"] == 750.0
     assert money["organizations"][0]["name"] in ("Acme Development, LLC", "Mountain Realtors PAC")
     pacd = next(o for o in money["organizations"] if o["name"] == "Mountain Realtors PAC")
-    assert pacd["officers"][0]["name"] == "Kim Post"
-    assert {x["name"] for x in pacd["also_funds"]} == {"Dana Reed", "FRIENDS OF DANA REED"}   # state export + FEC schedule B
+    assert pacd["officers"][0]["name"] == "Taylor Calder"
+    assert {x["name"] for x in pacd["also_funds"]} == {"Morgan Okafor", "FRIENDS OF MORGAN OKAFOR"}   # state export + FEC schedule B
     counts = connections.export_graph(g, pats, tmp_path / "connections.json")
     assert counts["edges"] >= 15
     # second run: nothing re-parsed, nothing re-added

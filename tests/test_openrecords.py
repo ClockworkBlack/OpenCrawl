@@ -1,5 +1,5 @@
 """Open records requests: contact discovery, planning, drafting, sending (fake SMTP), replies (fake IMAP),
-follow-ups, and PDF intake into the Screenshots box. Nothing is ever sent for real."""
+follow-ups, and PDF intake into the screenshot inbox. Nothing is ever sent for real."""
 import datetime as dt
 import email.utils
 import io
@@ -145,7 +145,7 @@ def test_replies_attachments_bounces_and_follow_ups(tmp_path):
                      _reply(to_big, "unrelated", frm="someone@else", subject="Lunch?")]
     FakeIMAP.msgs[2].replace_header("In-Reply-To", "<nothing@x>")
     out = r.check_replies(imap_factory=FakeIMAP, attachments_dir=tmp_path / "inbox")
-    assert out == {"checked": 3, "matched": 2, "attachments": 1}
+    assert out == {"checked": 2, "matched": 2, "attachments": 1}     # the unrelated message: headers only
     assert r.tracker.data["big"]["status"] == "fulfilled" and r.tracker.data["co-small"]["status"] == "bounced"
     saved = list((tmp_path / "inbox").iterdir())
     assert [p.name for p in saved] == ["big__Code_of_Ordinances.pdf"]
@@ -211,3 +211,76 @@ def test_pdf_goes_into_ordinances_box(tmp_path):
     item = box["ordinances"][0]
     assert item["targets"] == ["rifle"] and "Short-term rentals" in item["text"]
     store.close()
+
+
+def test_spoofed_or_unauthenticated_replies_change_nothing(tmp_path):
+    FakeSMTP.sent = []
+    cfg = {"openrecords": {**CFG["openrecords"], "trusted_reply_domains": ["records-portal.example"]}}
+    r = orr.Requests(tmp_path, cfg, orr.Mailbox(ENV), log=lambda *_: None)
+    r.send_batch(J[:1], smtp_factory=FakeSMTP)
+    to_big = FakeSMTP.sent[0]
+    spoof = _reply(to_big, "Here is the code.", attach=_pdf(), frm="Clerk <clerk@bigtown-gov.example>")
+    failed = _reply(to_big, "Here is the code.", attach=_pdf())
+    failed["Authentication-Results"] = "mx.provider.example; spf=fail smtp.mailfrom=bigtown.gov; dkim=none; dmarc=fail"
+    fake_pdf = _reply(to_big, "Code attached", frm="records@bigtown.gov")
+    fake_pdf.add_attachment(b"MZ\x90\x00 not a pdf", maintype="application", subtype="pdf", filename="code.pdf")
+    vendor = _reply(to_big, "Your request is complete: the documents are attached.", attach=_pdf(),
+                    frm="noreply@records-portal.example")
+    FakeIMAP.msgs = [spoof, failed, fake_pdf]
+    out = r.check_replies(imap_factory=FakeIMAP, attachments_dir=tmp_path / "inbox")
+    t = r.tracker.data["big"]
+    assert out["unverified"] == 2 and out["attachments"] == 0 and not (tmp_path / "inbox").exists()
+    assert t["status"] == "acknowledged"                      # only the genuine (if useless) reply counted
+    assert [x["verified"] for x in t["replies"]] == [False, False, True]
+    assert "not a PDF" in t["replies"][2]["refused_attachments"][0]
+    assert len(list((tmp_path / "data" / "openrecords" / "unverified").iterdir())) == 2   # kept for review only
+    FakeIMAP.msgs = [vendor]
+    r.check_replies(imap_factory=FakeIMAP, attachments_dir=tmp_path / "inbox")
+    assert t["status"] == "fulfilled" and len(list((tmp_path / "inbox").iterdir())) == 1
+
+
+def test_reply_excerpt_masks_people_and_addresses_are_validated():
+    ex = orr._excerpt("Thanks, Pat Clerk | pat.clerk@bigtown.gov | (555) 123-4567. The code is attached.")
+    assert "@" not in ex and "123-4567" not in ex and "[email]" in ex and "[phone]" in ex
+    assert orr.valid_address("records@bigtown.gov") and not orr.valid_address("a@b.gov\nBcc: x@y.z")
+    assert not orr.valid_address("no-at-sign.gov") and not orr.valid_address("x@localhost")
+    assert orr.org_domain("ci.boulder.co.us") == "boulder.co.us" and orr.org_domain("mail.bigtown.gov") == "bigtown.gov"
+
+
+def test_imap_uses_verified_tls(monkeypatch):
+    seen = {}
+
+    class IMAP:
+        def __init__(self, host, port, ssl_context=None, timeout=None):
+            seen.update(host=host, port=port, ctx=ssl_context, timeout=timeout)
+
+        def login(self, *a):
+            raise RuntimeError("stop here")
+
+        def logout(self):
+            pass
+
+    monkeypatch.setattr(orr.imaplib, "IMAP4_SSL", IMAP)
+    with pytest.raises(RuntimeError):
+        orr.Mailbox(ENV).fetch_replies(dt.date(2026, 1, 1))
+    import ssl
+    assert seen["port"] == 993 and seen["timeout"] == 60
+    assert seen["ctx"].verify_mode == ssl.CERT_REQUIRED and seen["ctx"].check_hostname
+
+
+def test_discover_contacts(tmp_path):
+    import json
+
+    class F:
+        def get(self, url, **k):
+            class R:
+                status, content_type = 200, "text/html"
+            r = R()
+            r.url = url
+            r.text = ("<html><body><a href='/open-records'>Open Records</a> "
+                      "<a href='mailto:records@bigtown.gov'>records</a></body></html>")
+            return r
+    state = tmp_path / "discovered.json"
+    state.write_text(json.dumps({"big": {"website": "https://www.bigtown.gov/"}}))
+    n = orr.discover_contacts(F(), [{"id": "big", "name": "Bigtown"}], state, log=lambda *_: None)
+    assert n == 1 and json.loads(state.read_text())["big"]["records"]["emails"] == ["records@bigtown.gov"]

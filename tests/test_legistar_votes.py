@@ -41,7 +41,7 @@ class Api:
                       2: [{"EventItemId": 21, "EventItemTitle": "Data center ordinance", "EventItemPassedFlagName": "Pass"},
                           {"EventItemId": 22, "EventItemTitle": "Alcohol license", "EventItemPassedFlagName": "Fail"},
                           {"EventItemId": 23, "EventItemTitle": "Adjourn"}]}
-        self.people = {101: "Pat Local", 102: "Kim Post", 103: "Lee Ward"}
+        self.people = {101: "Robin Ashby", 102: "Taylor Calder", 103: "Jesse Fenwick"}
         self.votes = {101: [(11, "Yea"), (12, "Yea"), (21, "Yea"), (22, "Nay")],
                       102: [(11, "Yea"), (12, "Nay"), (21, "Nay"), (22, "Nay")],
                       103: [(11, "Nay"), (12, "Yea"), (21, "Yea"), (22, "Yea")]}
@@ -98,7 +98,7 @@ def test_full_run_builds_roll_calls_from_person_votes(tmp_path):
     recs = crawl(api, store)
     votes = {r.meta["EventItemId"]: r for r in recs if r.kind == "vote"}
     assert set(votes) == {11, 12, 21, 22}                                   # items with roll calls; none for Pledge/Adjourn
-    assert [(v["person"], v["vote"]) for v in votes[11].meta["votes"]] == [("Pat Local", "Yea"), ("Kim Post", "Yea"), ("Lee Ward", "Nay")]
+    assert [(v["person"], v["vote"]) for v in votes[11].meta["votes"]] == [("Robin Ashby", "Yea"), ("Taylor Calder", "Yea"), ("Jesse Fenwick", "Nay")]
     assert votes[22].meta["result"] == "Fail" and votes[21].url == "https://x.legistar.com/MeetingDetail.aspx?ID=2"
     assert votes[11].meta["opened_url"].endswith("/persons/101/votes")
     assert not any(c.startswith("/eventitems/") for c in api.calls)        # no per-item vote calls
@@ -124,13 +124,13 @@ def test_delta_merges_changed_votes_and_skips_unchanged_meetings(tmp_path):
     crawl(api, store, modified_since="2026-06-01T00:00:00")
     assert not any(c.endswith("/eventitems") for c in api.calls)           # items read today already: not re-read
     assert not any(c.startswith("/eventitems/") for c in api.calls)
-    # Kim Post's vote on item 12 (old meeting) is corrected: only her changed vote comes back, merged into the roll call
+    # Taylor Calder's vote on item 12 (old meeting) is corrected: only her changed vote comes back, merged into the roll call
     api.calls.clear()
     api.votes[102] = [(11, "Yea"), (12, "Yea"), (21, "Nay"), (22, "Nay")]
     api.modified[(102, 12)] = "2026-07-01T00:00:00"
     crawl(api, store, modified_since="2026-06-15T00:00:00")
     v12 = next(r for r in store.query("kind='vote'") if r["meta"]["EventItemId"] == 12)
-    assert {x["person"]: x["vote"] for x in v12["meta"]["votes"]} == {"Pat Local": "Yea", "Kim Post": "Yea", "Lee Ward": "Yea"}
+    assert {x["person"]: x["vote"] for x in v12["meta"]["votes"]} == {"Robin Ashby": "Yea", "Taylor Calder": "Yea", "Jesse Fenwick": "Yea"}
     assert "/events/1/eventitems" in api.calls                             # the affected meeting's agenda was refreshed once
     assert sum(c.startswith("/persons/") for c in api.calls) == 3
     store.close()

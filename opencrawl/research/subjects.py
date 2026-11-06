@@ -3,14 +3,14 @@
 A *subject* is anyone or anything you track by name: a candidate, an official, an executive, an organization,
 a campaign. Subjects come from config/subjects.yaml (see the README). For each, the researcher collects
 statements, articles, mentions in every crawled record, votes and sponsorships (civic), social posts and
-connections, grades every item by evidence, and routes unverified material to the Rumor Mill.
+connections, grades every item by evidence, and routes unverified material to the quarantine.
 
 Evidence levels
   primary     an official record (a vote, an agenda item, a filing, a document on a target's own site) or the
               subject's own channel (its website, a verified social account)
   reported    a news outlet listed in config/outlets.yaml
-  unverified  anything else. Kept in the Rumor Mill (data/rumor_mill/), never in a
-              profile, until corroborated (`opencrawl rumor`)
+  unverified  anything else. Kept in the quarantine (data/quarantine/), never in a
+              profile, until corroborated (`opencrawl quarantine`)
   lead        found in a search index but NOT opened (blocked, paywalled, robots,
               redirect-only links). Never cited; listed so a researcher can open it.
 
@@ -23,7 +23,8 @@ Where things come from (cost per subject in brackets)
   articles        GDELT news index, several names per query; each article opened and checked
                   for the name AND a place / context word before it counts; only excerpts are kept  [shared]
   leads           Google News RSS (links can't be opened directly)       [1 request]
-  social_mentions Bluesky public search                                   [1-3 requests]
+  social_mentions Bluesky public search: posts by anyone that name the subject. Off unless
+                  subjects.bluesky_search is true (it collects what members of the public wrote)  [1-3 requests]
   connections     endorsements on the subject's site; imports/finance/<id>.csv; FEC (federal candidates)
 
 Subject fields (config/subjects.yaml)
@@ -51,7 +52,7 @@ from urllib.parse import quote_plus, urlsplit
 
 import yaml
 
-from .. import channels, extract
+from .. import channels, extract, redact
 from ..blocked import Blocked
 from ..feeds import parse_feed
 from ..fetch import Disallowed, Fetcher
@@ -59,6 +60,7 @@ from ..names import excerpts, name_regex, name_variants
 from ..targets import by_id, load_yaml
 from ..store import Record, Store, utcnow
 from ..verified_posts import Registry, handle_of, platform_of
+from .quarantine import Quarantine
 
 GDELT = "https://api.gdeltproject.org/api/v2/doc/doc"
 GNEWS = "https://news.google.com/rss/search"
@@ -88,7 +90,7 @@ def load_subjects(root: Path, cfg: dict | None = None, imported: list[dict] | No
         out[c["id"]] = c
     p = root / "config" / "subjects.yaml"
     d = load_yaml(p) or {}
-    hand = d.get("subjects") or d.get("candidates") or []
+    hand = d.get("subjects") or []
     for c in hand:
         c = dict(c)
         c["id"] = c.get("id") or _slug(c["name"])
@@ -97,13 +99,34 @@ def load_subjects(root: Path, cfg: dict | None = None, imported: list[dict] | No
         for k in ("websites", "social", "aliases"):  # union list fields
             merged[k] = list(dict.fromkeys((base.get(k) or []) + (c.get(k) or [])))
         out[c["id"]] = merged
+    from ..targets import _warn, safe_id
+
+    for sid in [k for k in out if not safe_id(k)]:
+        _warn(f"subject id {sid[:60]!r} skipped: use lower-case letters, digits, '.', '_' and '-'")
+        out.pop(sid)
+    if ((cfg or {}).get("privacy") or {}).get("public_figures_only", True):
+        for sid in [k for k, c in out.items() if not is_public_figure(c)]:
+            _warn(f"subject {sid!r} skipped: a person is researched only with an office, public_role or title "
+                  "(settings.yaml privacy.public_figures_only)")
+            out.pop(sid)
     for c in out.values():
-        for k in ("aliases", "websites", "social", "news_feeds", "targets", "places", "profile_urls"):
+        for k in ("aliases", "websites", "social", "news_feeds", "targets", "places", "known_urls"):
             c.setdefault(k, [])
         if not c["targets"] and c.get("target"):
             c["targets"] = [c["target"]]
         c["variants"] = c.get("variants") or name_variants(c["name"], c["aliases"])
     return list(out.values())
+
+
+def is_public_figure(c: dict) -> bool:
+    """Organizations, and people who hold or seek a public role: an office (held or run for), a public_role
+    ("spokesperson for X", "CEO of Y") or a title, or `public_figure: true` set on purpose. Research on anyone
+    else (a private individual) is off unless privacy.public_figures_only is false."""
+    kind = str(c.get("kind") or "person").lower()
+    if kind not in ("person", "individual", "people"):
+        return True
+    return bool(c.get("office") or c.get("public_role") or c.get("title") or c.get("public_figure") is True
+                or c.get("races"))
 
 
 def load_outlets(root: Path) -> tuple[set[str], set[str]]:
@@ -161,80 +184,12 @@ class Classifier:
         return "unverified"
 
 
-# ----------------------------------------------------------------------------- rumor mill
-class RumorMill:
-    """Unverified claims about subjects, kept apart from everything verified.
-    Rows are cached in memory and written on flush (rewriting the file per claim doesn't scale)."""
-
-    def __init__(self, root: Path):
-        self.path = root / "data" / "rumor_mill" / "rumors.jsonl"
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._rows: list[dict] | None = None
-        self._index: dict[tuple, dict] = {}
-        self._dirty = False
-        self._lock = threading.RLock()
-
-    def _load(self) -> list[dict]:
-        if self._rows is None:
-            self._rows = [json.loads(l) for l in self.path.read_text(encoding="utf-8").splitlines() if l.strip()] \
-                if self.path.exists() else []
-            self._index = {(r["subject_id"], r["url"].strip().lower()): r for r in self._rows}
-        return self._rows
-
-    def all(self) -> list[dict]:
-        with self._lock:
-            return list(self._load())
-
-    def flush(self):
-        with self._lock:
-            if self._dirty and self._rows is not None:
-                tmp = self.path.with_suffix(".tmp")
-                tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in self._rows), encoding="utf-8")
-                tmp.replace(self.path)
-                self._dirty = False
-
-    def add(self, subject_id: str, url: str, claim: str, origin: str, seen_at: str | None = None,
-            author: str = "", meta: dict | None = None, opened: bool = False) -> dict:
-        with self._lock:
-            rows = self._load()
-            k = (subject_id, url.strip().lower())
-            row = self._index.get(k)
-            if row:
-                row["last_seen"] = utcnow()
-                row["claim"] = row["claim"] or claim[:1000]
-                row["opened"] = row.get("opened", False) or opened
-            else:
-                row = {"id": f"r{len(rows) + 1:05d}", "subject_id": subject_id, "url": url, "domain": domain_of(url),
-                       "claim": claim[:1000], "origin": origin, "author": author, "status": "unverified",
-                       "opened": opened, "first_seen": seen_at or utcnow(), "last_seen": utcnow(), "corroboration": [],
-                       "notes": "", "meta": meta or {}}
-                rows.append(row)
-                self._index[k] = row
-            self._dirty = True
-            return row
-
-    def set_status(self, rumor_id: str, status: str, evidence_url: str = "", note: str = "") -> dict | None:
-        assert status in ("unverified", "corroborated", "debunked", "retracted")
-        with self._lock:
-            for r in self._load():
-                if r["id"] == rumor_id:
-                    r["status"] = status
-                    if evidence_url:
-                        r["corroboration"].append({"url": evidence_url, "at": utcnow(), "note": note})
-                    elif note:
-                        r["notes"] = (r["notes"] + "\n" + note).strip()
-                    self._dirty = True
-                    self.flush()
-                    return r
-        return None
-
-
 # ----------------------------------------------------------------------------- researcher
 class Researcher:
     def __init__(self, root: Path, cfg: dict, fetcher: Fetcher, store: Store, log=print):
         self.root, self.cfg, self.f, self.store, self.log = root, cfg, fetcher, store, log
         self.registry = Registry(root / "data" / "verified")
-        self.rumors = RumorMill(root)
+        self.quarantine = Quarantine(root)
         self.targets = by_id(root)
         self.outlets = load_outlets(root)
         self.opts = (cfg or {}).get("subjects", {})
@@ -303,10 +258,10 @@ class Researcher:
                 return
             rec.evidence = rec.evidence or cls.classify(rec.url)
             if rec.evidence == "unverified":
-                self.rumors.add(c["id"], rec.url, rec.title or rec.text[:300], origin=rec.kind, seen_at=rec.published,
+                self.quarantine.add(c["id"], rec.url, rec.title or rec.text[:300], origin=rec.kind, seen_at=rec.published,
                                 author=rec.meta.get("author", ""), meta={"via": rec.channel},
                                 opened=bool(rec.meta.get("opened")))
-                counts["rumor_mill"] = counts.get("rumor_mill", 0) + 1
+                counts["quarantined"] = counts.get("quarantined", 0) + 1
                 return
             if self.store.add(rec):
                 counts[rec.kind] = counts.get(rec.kind, 0) + 1
@@ -332,7 +287,7 @@ class Researcher:
         add = self._adder(c, cls, counts)
         c.setdefault("variants", name_variants(c["name"], c.get("aliases", [])))
         for name in STEPS:
-            if name in skip:
+            if name in skip or (name == "social_mentions" and not self.opts.get("bluesky_search", False)):
                 continue
             try:
                 if name == "articles":
@@ -340,11 +295,11 @@ class Researcher:
                 else:
                     getattr(self, "_" + name)(c, cls, add, since)
             except (Disallowed, Blocked) as exc:
-                self.log(f"  {name}: skipped ({exc})")
+                self.log(f"  {name}: skipped ({redact.text(exc)[:200]})")
             except Exception as exc:  # noqa: BLE001
-                self.log(f"  {name}: error {type(exc).__name__}: {exc}"[:300])
+                self.log(f"  {name}: error {redact.exc(exc)}")
         self.store.flush()
-        self.rumors.flush()
+        self.quarantine.flush()
         return counts
 
     # ------------------------------------------------------------------ many candidates, budgeted
@@ -356,20 +311,21 @@ class Researcher:
         now = dt.datetime.now(dt.timezone.utc)
         this_year = str(now.year)
 
+        def recent(c) -> bool:      # `last_active`: date of the subject's latest notable activity (a race, a filing)
+            return (str(c.get("last_active") or ""))[:4] >= str(now.year - 1)
+
         def due(c):
             p = progress.get(f"subj:{c['id']}")
             last = p.get("last_ok")
-            recent = (c.get("last_race_date") or "")[:4] >= str(now.year - 1)
-            cad = recent_cadence_days if recent else cadence_days
+            cad = recent_cadence_days if recent(c) else cadence_days
             return not last or (now - dt.datetime.fromisoformat(last)).total_seconds() > cad * 86400
 
         inputs = _profile_inputs(self.root, self.store)   # how much the last profile build could already say per subject
         order = sorted((c for c in cands if due(c)), key=lambda c: (
-            not c.get("priority"),                                              # priority: true (officeholders) first
+            not c.get("priority"),                                              # priority: true first
             bool(progress.get(f"subj:{c['id']}").get("last_ok")),            # never researched first
             min(inputs.get(c["id"], 0), 2) >= 2,                                # then those with the thinnest profiles
-            c.get("profile_depth") not in ("none", "thin", ""),                 # then thin profiles
-            -int((c.get("last_race_date") or "0000")[:4] >= this_year),
+            -int(str(c.get("last_active") or "0000")[:4] >= this_year),
             progress.get(f"subj:{c['id']}").get("last_ok") or ""))
         totals: dict[str, int] = defaultdict(int)
         done = 0
@@ -385,26 +341,26 @@ class Researcher:
                     continue
                 if name in ("posts", "statements") and not (c.get("websites") or c.get("social")):
                     continue
-                if name == "social_mentions" and not self.opts.get("bluesky_search", True):
+                if name == "social_mentions" and not self.opts.get("bluesky_search", False):
                     continue
                 if name == "leads" and not self.opts.get("google_news", True):
                     continue
                 if name == "leads" and self.opts.get("leads_for", "all") == "priority_or_recent" and not (
-                        c.get("priority") or (c.get("last_race_date") or "")[:4] >= str(now.year - 1)):
+                        c.get("priority") or recent(c)):
                     continue  # leads are uncitable pointers: spend the request budget where they matter
                 try:
                     getattr(self, "_" + name)(c, cls, add, since)
                 except (Disallowed, Blocked):
                     pass
                 except Exception as exc:  # noqa: BLE001
-                    self.log(f"  {c['id']} {name}: {type(exc).__name__}: {exc}"[:300])
+                    self.log(f"  {redact.subject_id(c['id'])} {name}: {redact.exc(exc)}")
             for k, v in counts.items():
                 totals[k] += v
             done += 1
             progress.update(f"subj:{c['id']}", last_ok=utcnow(), status="ok", counts=counts)
             if done % 50 == 0:
                 self.store.flush()
-                self.rumors.flush()
+                self.quarantine.flush()
                 self.log(f"  researched {done}/{len(order)}")
         # news, batched by place: several names per query, each article opened once for all of them
         if "articles" not in skip and self.opts.get("gdelt", True):
@@ -424,9 +380,9 @@ class Researcher:
                     except (Disallowed, Blocked):
                         break
                     except Exception as exc:  # noqa: BLE001
-                        self.log(f"  articles: {type(exc).__name__}: {exc}"[:300])
+                        self.log(f"  articles: {redact.exc(exc)}")
         self.store.flush()
-        self.rumors.flush()
+        self.quarantine.flush()
         return {"researched": done, "due": len(order), "added": dict(totals)}
 
     # ------------------------------------------------------------------ official records (no network)
@@ -554,7 +510,7 @@ class Researcher:
             return self._opened[url]
         out = None
         try:
-            r = self.f.get(url)
+            r = self.f.get(url, use_cache=False)      # only excerpts are kept: no full copy in the HTTP cache either
             if r.status == 200 and "html" in r.content_type:
                 title, md = extract.html_to_markdown(r.text, r.url)
                 out = {"url": r.url, "title": title, "text": md}
@@ -679,14 +635,14 @@ class Researcher:
                            meta={"type": "contribution", **row,
                                  "filing_source": c.get("finance_source") or "campaign finance export (CSV import)"}))
         if c.get("fec_id"):
-            key = os.environ.get("FEC_API_KEY", "DEMO_KEY")
-            r = self.f.get(f"{FEC}/committees/", params={"candidate_id": c["fec_id"], "api_key": key}, use_cache=False)
+            hdr = {"X-Api-Key": os.environ.get("FEC_API_KEY") or "DEMO_KEY"}     # api.data.gov reads the key header
+            r = self.f.get(f"{FEC}/committees/", params={"candidate_id": c["fec_id"]}, headers=hdr, use_cache=False)
             for com in (r.json().get("results", []) if r.status == 200 else []):
                 page = 1
                 while page <= 20:
                     rr = self.f.get(f"{FEC}/schedules/schedule_a/", params={
-                        "committee_id": com["committee_id"], "api_key": key, "per_page": 100, "page": page,
-                        "sort": "-contribution_receipt_date", "min_date": since[:10]}, use_cache=False)
+                        "committee_id": com["committee_id"], "per_page": 100, "page": page,
+                        "sort": "-contribution_receipt_date", "min_date": since[:10]}, headers=hdr, use_cache=False)
                     if rr.status != 200:
                         break
                     rows = rr.json().get("results", [])
@@ -708,13 +664,10 @@ class Researcher:
 
 
 def _profile_inputs(root: Path, store: Store | None = None) -> dict:
-    """{subject id: profile inputs} from the last `opencrawl profiles` / export (database kv; older runs: a state file)."""
+    """{subject id: evidence count} from the last `opencrawl profiles` / export (kept in the database)."""
     try:
         raw = store.kv_get("profile_inputs") if store is not None else None
-        if raw:
-            return json.loads(raw)
-        p = root / "state" / "profile_inputs.json"
-        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+        return json.loads(raw) if raw else {}
     except Exception:  # noqa: BLE001
         return {}
 

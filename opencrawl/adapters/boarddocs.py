@@ -36,7 +36,7 @@ from ..store import Record
 BASE_RX = re.compile(r"(https?://[^/]+/[a-z]{2}/[a-z0-9\-]+/Board\.nsf)", re.I)
 ID_RX = r"[A-Z0-9]{6,}"
 ACTION_RX = re.compile(r"\b(action|vote|approv|adopt|resolution|policy|budget|millage|contract|superintendent|personnel|"
-                       r"redistrict|attendance zone|calendar|charter|bond|splost|esplost|curriculum|textbook|book|library|"
+                       r"redistrict|attendance zone|calendar|charter|bond|levy|curriculum|textbook|book|library|"
                        r"discipline|safety|closure|consolidat|salary|tax)\b", re.I)
 DOC_RX = re.compile(r"\b(minutes|resolution|policy|budget|agenda)\b", re.I)
 

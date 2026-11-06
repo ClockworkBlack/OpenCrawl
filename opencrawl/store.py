@@ -20,7 +20,9 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
+import os
 import json
+import re
 import sqlite3
 import threading
 import time
@@ -28,7 +30,23 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 1
+_ORDER = re.compile(r"^[a-z_]+( (asc|desc))?(, ?[a-z_]+( (asc|desc))?)*$", re.I)
+_COLS = re.compile(r"^(\*|[a-z_]+(, ?[a-z_]+)*)$", re.I)
+
+
+class StoreError(ValueError):
+    """A database that doesn't look like an OpenCrawl store, or an unsafe query argument."""
+
+
+def _harden(db: sqlite3.Connection) -> None:
+    """Settings that make a database file from somewhere else (a delta from a parallel runner, a downloaded
+    archive) unable to run code through its schema: no triggers or views calling functions with side effects,
+    no writes to the schema, overwritten free space for deleted rows."""
+    db.execute("PRAGMA trusted_schema=OFF")
+    if hasattr(db, "setconfig") and hasattr(sqlite3, "SQLITE_DBCONFIG_DEFENSIVE"):
+        db.setconfig(sqlite3.SQLITE_DBCONFIG_DEFENSIVE, True)
+    db.execute("PRAGMA secure_delete=FAST")
 
 
 def utcnow() -> str:
@@ -175,6 +193,7 @@ class Store:
         self._lock = threading.RLock()
         self.db = sqlite3.connect(self.path, check_same_thread=False, isolation_level=None, timeout=60)
         self.db.row_factory = sqlite3.Row
+        _harden(self.db)
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("PRAGMA synchronous=NORMAL")
         self.db.execute("PRAGMA temp_store=MEMORY")
@@ -186,21 +205,14 @@ class Store:
         if have < 5:
             self.db.executescript(DDL)
             self.db.execute("INSERT OR IGNORE INTO kv VALUES('schema', ?)", (str(SCHEMA_VERSION),))
-        else:
-            cols = {r[1] for r in self.db.execute("PRAGMA table_info(records)")}
-            if "thash" not in cols:
-                # one-time upgrade of a database made before the column existed (rows get it on their next update)
-                self.db.execute("ALTER TABLE records ADD COLUMN thash TEXT NOT NULL DEFAULT ''")
-            if "target" not in cols and "jurisdiction" in cols:
-                # a database made by an older release that called the target column "jurisdiction"
-                self.db.execute("ALTER TABLE records RENAME COLUMN jurisdiction TO target")
-                self.db.execute("DROP INDEX IF EXISTS records_jur")
-                self.db.execute("CREATE INDEX IF NOT EXISTS records_target ON records(target, kind)")
         self._pending = 0
         self._last_commit = time.monotonic()
         self._commit_every, self._commit_seconds = commit_every, commit_seconds
         self._in_tx = False
-        self._import_legacy_jsonl()
+        try:
+            os.chmod(self.path, 0o600)     # crawled pages and research can hold personal data: owner only
+        except OSError:
+            pass
 
     # ---------------------------------------------------------------- transactions
     def _begin(self):
@@ -284,13 +296,27 @@ class Store:
             rows = self.db.execute(sql, (source_id, kind) + tuple(params) + (int(limit),)).fetchall()
         return [_row_to_dict(r) for r in rows]
 
+    @staticmethod
+    def _cols(cols: str) -> str:
+        if not _COLS.match(cols.strip()):
+            raise StoreError(f"bad column list {cols[:60]!r}")
+        return cols
+
+    @staticmethod
+    def _order(order: str) -> str:
+        if not _ORDER.match(order.strip()):
+            raise StoreError(f"bad order {order[:60]!r}")
+        return order
+
     def raw(self, where: str, params: tuple = (), cols: str = "rid, url, title, text, published, meta") -> list[sqlite3.Row]:
         """Rows without decoding meta: for scans that only need a few columns (decode `meta` with json.loads if needed)."""
+        cols = self._cols(cols)
         with self._lock:
             return self.db.execute(f"SELECT {cols} FROM records WHERE {where} ORDER BY rid", params).fetchall()
 
     def raw_iter(self, where: str, params: tuple = (), cols: str = "*", batch: int = 2000) -> Iterator[sqlite3.Row]:
         """Undecoded rows in rid order, streamed in batches (keyset pagination): exports that copy `meta` through."""
+        cols = self._cols(cols)
         last = 0
         while True:
             with self._lock:
@@ -302,7 +328,7 @@ class Store:
             last = rows[-1]["rid"]
 
     def query(self, where: str = "1", params: tuple = (), order: str = "rid", limit: int | None = None) -> list[dict]:
-        sql = f"SELECT * FROM records WHERE {where} ORDER BY {order}" + (f" LIMIT {int(limit)}" if limit else "")
+        sql = f"SELECT * FROM records WHERE {where} ORDER BY {self._order(order)}" + (f" LIMIT {int(limit)}" if limit else "")
         with self._lock:
             rows = self.db.execute(sql, params).fetchall()
         return [_row_to_dict(r) for r in rows]
@@ -358,8 +384,17 @@ class Store:
         sql = (f"SELECT r.*, snippet(records_fts, 1, '', '', ' … ', {int(snippet_tokens)}) AS snippet, "
                f"bm25(records_fts) AS score FROM records_fts JOIN records r ON r.rid = records_fts.rowid "
                f"WHERE records_fts MATCH ? AND ({where}) ORDER BY score LIMIT {int(limit)}")
-        with self._lock:
-            rows = self.db.execute(sql, (match,) + tuple(params)).fetchall()
+        try:
+            with self._lock:
+                rows = self.db.execute(sql, (match,) + tuple(params)).fetchall()
+        except sqlite3.OperationalError as exc:
+            if "fts5" not in str(exc).lower() and "syntax" not in str(exc).lower() and "no such column" not in str(exc):
+                raise
+            phrase = self.fts_phrase(match)          # FTS query syntax the user didn't mean: search the words instead
+            if not phrase or phrase == match:
+                return []
+            with self._lock:
+                rows = self.db.execute(sql, (phrase,) + tuple(params)).fetchall()
         return [_row_to_dict(r) for r in rows]
 
     def has(self, key: str) -> bool:
@@ -447,21 +482,42 @@ class Store:
             self._maybe_commit(force=True)
         return n
 
-    # ---------------------------------------------------------------- legacy JSONL (v0.1/v0.2 data/<source>/<kind>.jsonl)
-    def _import_legacy_jsonl(self):
-        files = [p for p in self.root.glob("*/*.jsonl") if p.parent.name not in ("verified", "rumor_mill")]
-        if not files or self.db.execute("SELECT v FROM kv WHERE k='legacy_imported'").fetchone():
-            return
-        self.db.execute("INSERT OR REPLACE INTO kv VALUES('legacy_imported', 'started')")
-        for p in files:
-            for line in p.read_text(encoding="utf-8").splitlines():
-                if not line.strip():
-                    continue
-                d = json.loads(line)
-                self.add(Record(d["source_id"], d["kind"], d.get("url", ""), title=d.get("title", ""),
-                                text=d.get("text", ""), markdown=d.get("markdown", ""), published=d.get("published"),
-                                channel=d.get("channel", ""), fetched_at=d.get("fetched_at") or utcnow(),
-                                meta=d.get("meta") or {}, target=d.get("target", ""),
-                                evidence=d.get("evidence", "")))
-        self.db.execute("INSERT OR REPLACE INTO kv VALUES('legacy_imported', ?)", (utcnow(),))
-        self.flush()
+    # ---------------------------------------------------------------- privacy: erasure and retention
+    def erase(self, where: str, params: tuple = ()) -> int:
+        """Delete matching records for good: secure_delete overwrites their pages, the full-text index is
+        optimized so no token of them stays in it, and compact() should follow to drop freed pages from the file."""
+        with self._lock:
+            self.flush()
+            self.db.execute("PRAGMA secure_delete=ON")
+            try:
+                self.db.execute("BEGIN")
+                n = self.db.execute(f"DELETE FROM records WHERE {where}", params).rowcount
+                self.db.execute("COMMIT")
+            finally:
+                self.db.execute("PRAGMA secure_delete=FAST")
+        return n
+
+    def erase_urls(self, where: str, params: tuple = ()) -> int:
+        with self._lock:
+            self.flush()
+            self.db.execute("PRAGMA secure_delete=ON")
+            try:
+                n = self.db.execute(f"DELETE FROM urls WHERE {where}", params).rowcount
+            finally:
+                self.db.execute("PRAGMA secure_delete=FAST")
+        return n
+
+    def compact(self) -> dict:
+        """Merge the full-text index, checkpoint the write-ahead log and rebuild the file (VACUUM), so deleted
+        content is gone from the database file and its -wal companion, not just unlinked."""
+        with self._lock:
+            self.flush()
+            before = self.path.stat().st_size if self.path.exists() else 0
+            self.db.execute("INSERT INTO records_fts(records_fts) VALUES('optimize')")
+            self.db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            self.db.execute("PRAGMA secure_delete=ON")
+            self.db.execute("VACUUM")
+            self.db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            self.db.execute("PRAGMA secure_delete=FAST")
+            after = self.path.stat().st_size if self.path.exists() else 0
+        return {"bytes_before": before, "bytes_after": after}

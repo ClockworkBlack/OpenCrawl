@@ -29,11 +29,11 @@ except ImportError:  # pragma: no cover
 
 ROOT = Path(os.environ.get("OPENCRAWL_ROOT") or (Path.cwd() if (Path.cwd() / "config").exists() else Path(__file__).resolve().parent.parent))
 DEFAULTS = {
-    "enabled": False, "window": {"start": "06:00", "end": "21:30", "timezone": "America/New_York"},
+    "enabled": False, "window": {"start": "08:00", "end": "20:00", "timezone": "UTC"},
     "research_minutes": 100, "finance_minutes": 20, "crawl_minutes": 18,
     "night_shards": 3, "night_minutes": 40,
     "stop": {"never_researched": 0, "quiet_runs": 2, "min_added": 60},
-    "month_minutes_cap": 6000,
+    "month_minutes_cap": 1500,
 }
 
 

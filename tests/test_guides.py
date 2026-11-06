@@ -1,4 +1,4 @@
-"""Endorsements, scorecards and questionnaires -> per-candidate support records -> profile supplement. Fictional."""
+"""Endorsements, scorecards and questionnaires -> per-subject support records -> profile. Fictional."""
 import json
 from pathlib import Path
 
@@ -9,7 +9,7 @@ from opencrawl.names import name_variants
 from opencrawl.store import Record, Store
 
 ROOT = Path(__file__).resolve().parent.parent
-EXAMPLE = ROOT / "examples" / "colorado-civic"
+EXAMPLE = ROOT / "opencrawl" / "examples" / "colorado-civic"
 
 
 def _copy_config(root, names):
@@ -18,42 +18,42 @@ def _copy_config(root, names):
         src = EXAMPLE / "config" / f if f in ("jurisdictions.yaml", "press.yaml", "guides.yaml") else ROOT / "config" / f
         (root / "config" / f).write_text(src.read_text())
 ENDORSE_PAGE = """2026 General Election Endorsements
-The Mountain Chamber is proud to endorse Pat Local for City Council Post 2.
-- Dana Reed – Mayor of Rifle
-- Kim Post (State House District 23)
+The Mountain Chamber is proud to endorse Robin Ashby for City Council Post 2.
+- Morgan Okafor – Mayor of Rifle
+- Taylor Calder (State House District 23)
 Click here to donate.
 """
 SCORECARD = """2025 Legislative Scorecard
 | Legislator | Party | District | Score |
 | --- | --- | --- | --- |
-| Kim Post | R | House 23 | 92% |
-| Pat Local | D | Senate 7 | 45% |
+| Taylor Calder | R | House 23 | 92% |
+| Robin Ashby | D | Senate 7 | 45% |
 """
 QUESTIONNAIRE = """Rifle City Council Post 2 — Candidate Questionnaire
 Question 1: What is your top priority for the city?
-Pat Local: Fixing our roads and keeping taxes flat. I will fight for a six-year paving plan funded by the existing SPLOST.
-Dana Reed: Public safety. We need more officers on patrol and a new fire station on Elm Street.
+Robin Ashby: Fixing our roads and keeping taxes flat. I will fight for a six-year paving plan funded by the existing sales tax.
+Morgan Okafor: Public safety. We need more officers on patrol and a new fire station on Elm Street.
 
 Question 2: Do you support the proposed data center?
-Pat Local: No, not without a water study. I oppose rezoning that parcel until the county finishes the study.
+Robin Ashby: No, not without a water study. I oppose rezoning that parcel until the county finishes the study.
 """
 
 
 def test_parsers():
     e = {x["name"]: x["office"] for x in guides.parse_endorsements(ENDORSE_PAGE)}
-    assert e == {"Pat Local": "City Council Post 2", "Dana Reed": "Mayor of Rifle", "Kim Post": "State House District 23"}
+    assert e == {"Robin Ashby": "City Council Post 2", "Morgan Okafor": "Mayor of Rifle", "Taylor Calder": "State House District 23"}
     r = {x["name"]: x["rating"] for x in guides.parse_ratings(SCORECARD)}
-    assert r == {"Kim Post": "92%", "Pat Local": "45%"}
+    assert r == {"Taylor Calder": "92%", "Robin Ashby": "45%"}
     q = guides.parse_questionnaire(QUESTIONNAIRE)
     assert [x["question"] for x in q] == ["What is your top priority for the city?", "Do you support the proposed data center?"]
-    assert q[1]["answers"][0]["name"] == "Pat Local" and q[1]["answers"][0]["answer"].startswith("No, not without")
+    assert q[1]["answers"][0]["name"] == "Robin Ashby" and q[1]["answers"][0]["answer"].startswith("No, not without")
     assert any(s["id"] == "guide:lwv-co" and s["kind"] == "guide" for s in registry.guide_sources(EXAMPLE))
 
 
 def test_guides_derive_into_profiles(tmp_path):
     root = tmp_path / "proj"
     _copy_config(root, ("jurisdictions.yaml", "outlets.yaml", "topics.yaml", "issues.yaml"))
-    cand = {"id": "pat-local", "name": "Pat Local", "target": "rifle", "targets": ["rifle"], "office": "City Council Post 2",
+    cand = {"id": "robin-ashby", "name": "Robin Ashby", "target": "rifle", "targets": ["rifle"], "office": "City Council Post 2",
             "party": "D"}
     (root / "config" / "subjects.yaml").write_text(json.dumps({"subjects": [cand]}))
     store = Store(root / "data")
@@ -65,18 +65,18 @@ def test_guides_derive_into_profiles(tmp_path):
     store.flush()
     out = derive.run(store, only={"guides"}, context={"root": root, "cfg": {"electo": {"levels": []}}}, log=lambda *_: None)
     assert out["guides"]["derived"] == 3 + 1 + 2 + 1 + 2       # 3 endorsements (+1 candidate link), 2 ratings (+1 link), 2 answers
-    conns = {(r["meta"]["type"], r["meta"]["party"]): r for r in store.read("subj:pat-local", "connection")}
+    conns = {(r["meta"]["type"], r["meta"]["party"]): r for r in store.read("subj:robin-ashby", "connection")}
     assert conns[("endorsement", "Mountain Chamber of Commerce")]["meta"]["basis"] == "endorser's own page"
     assert conns[("rating", "Conservation Voters Alliance")]["meta"]["rating"] == "45%"
-    answers = store.read("subj:pat-local", "guide_answer")
+    answers = store.read("subj:robin-ashby", "guide_answer")
     assert len(answers) == 2 and all(a["meta"]["guide"] == "Civic Voters League" for a in answers)
     unmatched = [r for r in store.query("kind='endorsement'") if not r["meta"]["matched"]]
-    assert {r["meta"]["name"] for r in unmatched} == {"Dana Reed", "Kim Post"}       # listed for review, not invented
-    c = {**cand, "aliases": [], "websites": [], "social": [], "variants": name_variants("Pat Local")}
-    prof = stances.profile_supplement(c, store, root)
+    assert {r["meta"]["name"] for r in unmatched} == {"Morgan Okafor", "Taylor Calder"}       # listed for review, not invented
+    c = {**cand, "aliases": [], "websites": [], "social": [], "variants": name_variants("Robin Ashby")}
+    prof = stances.build_profile(c, store, root)
     assert prof["endorsements"] == ["Mountain Chamber of Commerce (2026)"] and prof["ratings"][0]["rating"] == "45%"
     qa = [p for p in prof["positions"] if p["basis"].startswith("questionnaire")]
     assert qa and any("water study" in p["stance"] for p in qa) and any(p["topic"] in ("Growth and development", "Energy and utilities", "Water") for p in qa)
     assert "Conservation Voters Alliance 45%" in prof["ideology"] and "endorsed by Mountain Chamber of Commerce" in prof["ideology"]
-    assert prof["inference_inputs"] >= 5
+    assert prof["evidence_count"] >= 5
     store.close()

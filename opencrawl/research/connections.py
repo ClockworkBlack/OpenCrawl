@@ -74,7 +74,7 @@ class Graph:
         if key in self._edge_keys:
             return None
         self._edge_keys.add(key)
-        e = {"a": a, "b": b, "type": etype, "src": src, **{k: v for k, v in attrs.items() if v not in (None, "")}}
+        e = {"a": a, "b": b, "type": etype, "source": src, **{k: v for k, v in attrs.items() if v not in (None, "")}}
         self.edges.append(e)
         self.out[a].append(e)
         self.inn[b].append(e)
@@ -143,10 +143,10 @@ def build(store: Store, entities: EntityIndex, targets: dict | None = None) -> G
         for o in m.get("officers") or []:
             if not o.get("name"):
                 continue
-            pid = entities.resolve(o["name"], "person", url=o.get("src"))
+            pid = entities.resolve(o["name"], "person", url=o.get("source"))
             if pid:
                 g.node(pid)
-                g.edge(pid, oid, "officer_of", o.get("src") or r["url"], role=o.get("role", ""), evidence="primary")
+                g.edge(pid, oid, "officer_of", o.get("source") or r["url"], role=o.get("role", ""), evidence="primary")
         if m.get("connected_org"):
             cid = entities.resolve(m["connected_org"], "org", url=r["url"])
             if cid:
@@ -156,17 +156,17 @@ def build(store: Store, entities: EntityIndex, targets: dict | None = None) -> G
             if not rc.get("name"):
                 continue
             kind = "committee" if is_org(rc["name"]) else "person"
-            rid = entities.resolve(rc["name"], kind, url=rc.get("src"))
+            rid = entities.resolve(rc["name"], kind, url=rc.get("source"))
             if rid:
                 g.node(rid)
-                g.edge(oid, rid, "funds", rc.get("src") or r["url"], amount=rc.get("amount"), date=rc.get("date"),
+                g.edge(oid, rid, "funds", rc.get("source") or r["url"], amount=rc.get("amount"), date=rc.get("date"),
                        purpose=rc.get("purpose"), evidence="primary")
                 cn = committee_candidate(rc["name"]) if kind == "committee" else None
                 if cn:
-                    pid = entities.resolve(cn, "person", url=rc.get("src"))
+                    pid = entities.resolve(cn, "person", url=rc.get("source"))
                     if pid:
                         g.node(pid)
-                        g.edge(rid, pid, "committee_of", rc.get("src") or r["url"], evidence="primary")
+                        g.edge(rid, pid, "committee_of", rc.get("source") or r["url"], evidence="primary")
     # endorsements (candidate research) and memberships
     for r in store.iter_query("kind='connection'"):
         m = r["meta"]
@@ -245,7 +245,7 @@ def patterns(g: Graph, store: Store | None = None) -> list[dict]:
         if len(rcps) >= 2:
             out.append({"kind": "shared_donor", "donor": donor, "donor_name": name(donor),
                         "recipients": [{"id": r, "name": name(r), "total": round(t, 2)} for r, t in sorted(rcps.items(), key=lambda kv: -kv[1])],
-                        "total": round(sum(rcps.values()), 2), "n": len(es), "src": sorted({e["src"] for e in es})[:20],
+                        "total": round(sum(rcps.values()), 2), "n": len(es), "sources": sorted({e["source"] for e in es})[:20],
                         "evidence": "primary", "note": "filings list the same donor giving to several candidates or committees"})
     # employer clusters
     for rcp, es in by_rcp.items():
@@ -258,7 +258,7 @@ def patterns(g: Graph, store: Store | None = None) -> list[dict]:
             if len(donors) >= 3:
                 out.append({"kind": "employer_cluster", "recipient": rcp, "recipient_name": name(rcp), "employer": ees[0]["employer"],
                             "donors": [{"id": d, "name": name(d)} for d in donors], "total": round(sum(e.get("amount") or 0 for e in ees), 2),
-                            "src": sorted({e["src"] for e in ees})[:20], "evidence": "primary",
+                            "sources": sorted({e["source"] for e in ees})[:20], "evidence": "primary",
                             "note": "several donors to one recipient list the same employer"})
     # org chains: org -> org/committee -> candidate (contributed or funds edges)
     money = [e for e in g.edges if e["type"] in ("contributed", "funds")]
@@ -273,7 +273,7 @@ def patterns(g: Graph, store: Store | None = None) -> list[dict]:
                     out.append({"kind": "org_chain", "path": [{"id": e1["a"], "name": name(e1["a"])}, {"id": mid, "name": name(mid)},
                                                               {"id": e2["b"], "name": name(e2["b"])}],
                                 "amounts": [e1.get("amount"), e2.get("amount")], "dates": [e1.get("date"), e2.get("date")],
-                                "src": [e1["src"], e2["src"]], "evidence": "primary",
+                                "sources": [e1["source"], e2["source"]], "evidence": "primary",
                                 "note": "money recorded moving from one organization to another and on to a candidate"})
     # officer overlap and officers who are candidates/office-holders
     officer_of: dict[str, list[dict]] = defaultdict(list)
@@ -291,7 +291,7 @@ def patterns(g: Graph, store: Store | None = None) -> list[dict]:
             out.append({"kind": "officer_overlap", "person": pid, "person_name": name(pid), "is_subject": pnode.get("kind") == "subject",
                         "organizations": [{"id": o, "name": name(o), "roles": [e.get("role", "") for e in es if e["b"] == o]} for o in orgs],
                         "organizations_gave_to": [{"id": r, "name": name(r)} for r in gave_to],
-                        "src": sorted({e["src"] for e in es})[:20], "evidence": "primary",
+                        "sources": sorted({e["source"] for e in es})[:20], "evidence": "primary",
                         "note": "one person listed as an officer of these organizations (registries / filings)"})
     # donors who are themselves candidates or office-holders
     serves = {e["a"] for e in g.edges if e["type"] in ("serves", "sponsored")}
@@ -300,7 +300,7 @@ def patterns(g: Graph, store: Store | None = None) -> list[dict]:
         if k == "subject" or donor in serves:
             out.append({"kind": "donor_official", "donor": donor, "donor_name": name(donor), "is_subject": k == "subject",
                         "recipients": [{"id": e["b"], "name": name(e["b"]), "amount": e.get("amount"), "date": e.get("date")} for e in es],
-                        "src": sorted({e["src"] for e in es})[:20], "evidence": "primary",
+                        "sources": sorted({e["source"] for e in es})[:20], "evidence": "primary",
                         "note": "a candidate or office-holder appears as a donor"})
     # shared endorsers
     endo: dict[str, set] = defaultdict(set)
@@ -308,11 +308,11 @@ def patterns(g: Graph, store: Store | None = None) -> list[dict]:
     for e in g.edges:
         if e["type"] == "endorsed":
             endo[e["a"]].add(e["b"])
-            endo_src[e["a"]].add(e["src"])
+            endo_src[e["a"]].add(e["source"])
     for org, cands in endo.items():
         if len(cands) >= 2:
             out.append({"kind": "shared_endorser", "endorser": org, "endorser_name": name(org),
-                        "candidates": [{"id": c, "name": name(c)} for c in cands], "src": sorted(endo_src[org])[:20],
+                        "candidates": [{"id": c, "name": name(c)} for c in cands], "sources": sorted(endo_src[org])[:20],
                         "evidence": "primary", "note": "the same organization or person endorsed these candidates"})
     # donor names in matters the recipient voted on (lead: verify)
     if store is not None:
@@ -383,7 +383,7 @@ def donor_matter_leads(g: Graph, store: Store, by_rcp: dict) -> list[dict]:
                                 "recipient": rcp, "recipient_name": node.get("name"), "amount": e.get("amount"), "gift_date": e.get("date"),
                                 "matter": v["title"], "vote": json.loads(v["meta"] or "{}").get("vote"), "vote_date": v["published"],
                                 "days_apart": abs((vd - d0).days) if d0 and vd else None,
-                                "src": [e["src"], v["url"]], "evidence": "lead",
+                                "sources": [e["source"], v["url"]], "evidence": "lead",
                                 "note": "a donor's or employer's name appears in a matter the recipient voted on; "
                                         "open both records and confirm it is the same entity before citing"})
     return out
@@ -399,13 +399,13 @@ def money_for(g: Graph, store: Store, entities: EntityIndex, subject_id: str, pa
     by_donor: dict[str, dict] = {}
     for e in ins:
         d = by_donor.setdefault(e["a"], {"id": e["a"], "name": g.nodes[e["a"]]["name"], "kind": g.nodes[e["a"]]["kind"], "total": 0.0,
-                                         "n": 0, "first": e.get("date"), "last": e.get("date"), "src": []})
+                                         "n": 0, "first": e.get("date"), "last": e.get("date"), "sources": []})
         d["total"] += e.get("amount") or 0
         d["n"] += 1
         d["first"] = min(x for x in (d["first"], e.get("date")) if x) if (d["first"] or e.get("date")) else None
         d["last"] = max(x for x in (d["last"], e.get("date")) if x) if (d["last"] or e.get("date")) else None
-        if e["src"] not in d["src"] and len(d["src"]) < 5:
-            d["src"].append(e["src"])
+        if e["source"] not in d["sources"] and len(d["sources"]) < 5:
+            d["sources"].append(e["source"])
         if e.get("employer"):
             d.setdefault("employer", e["employer"])
         if e.get("occupation"):
@@ -417,9 +417,9 @@ def money_for(g: Graph, store: Store, entities: EntityIndex, subject_id: str, pa
             n = g.nodes.get(d["id"], {}).get("attrs", {})
             d["what"] = n.get("what", "")
             d["org_kind"] = n.get("org_kind", "")
-            d["officers"] = [{"name": g.nodes[e["a"]]["name"], "role": e.get("role", ""), "src": e["src"]}
+            d["officers"] = [{"name": g.nodes[e["a"]]["name"], "role": e.get("role", ""), "source": e["source"]}
                              for e in g.inn.get(d["id"], ()) if e["type"] == "officer_of"][:12]
-            d["also_funds"] = [{"name": g.nodes[e["b"]]["name"], "amount": e.get("amount"), "src": e["src"]}
+            d["also_funds"] = [{"name": g.nodes[e["b"]]["name"], "amount": e.get("amount"), "source": e["source"]}
                                for e in g.out.get(d["id"], ()) if e["type"] in ("funds", "contributed") and e["b"] != eid][:12]
             orgs.append(d)
     employers = defaultdict(float)
@@ -434,7 +434,7 @@ def money_for(g: Graph, store: Store, entities: EntityIndex, subject_id: str, pa
             "donors": sorted(by_donor.values(), key=lambda d: -d["total"])[:60],
             "organizations": sorted(orgs, key=lambda d: -d["total"])[:40],
             "employers": [{"employer": k, "total": round(v, 2)} for k, v in sorted(employers.items(), key=lambda kv: -kv[1])[:20]],
-            "patterns": related[:40], "sources": sorted({e["src"] for e in ins + outs})[:200]}
+            "patterns": related[:40], "sources": sorted({e["source"] for e in ins + outs})[:200]}
 
 
 def export_graph(g: Graph, pats: list[dict], out: Path) -> dict:

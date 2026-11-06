@@ -15,6 +15,12 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+MAX_RETRY_AFTER = 900        # seconds: a Retry-After longer than this ends the run's work on that host instead
+ROBOTS_MAX_BYTES = 512 * 1024  # RFC 9309: at least 500 KiB must be parsed; anything after that is ignored
+
+
+class TooLate(Exception):
+    """Waiting for this host's next slot would run past the deadline."""
 
 
 def host_of(url: str) -> str:
@@ -129,14 +135,18 @@ class RateLimiter:
         base = max(self.base_interval(host), crawl_delay or 0.0)
         return base * st.multiplier
 
-    def wait(self, url: str, crawl_delay: float | None = None) -> float:
+    def wait(self, url: str, crawl_delay: float | None = None, deadline: float | None = None) -> float:
         """Block until this host may be hit again. Safe across threads: each
-        host hands out slots in order, so workers on the same host serialize."""
+        host hands out slots in order, so workers on the same host serialize.
+        With a `deadline` (monotonic time), a slot later than it raises TooLate
+        instead of sleeping (the slot is not taken)."""
         host = host_of(url)
         st = self._state(host)
         with st.lock:
             now = self._clock()
             slot = max(now, st.next_ok)
+            if deadline is not None and slot > deadline:
+                raise TooLate(f"{host}: next request allowed in {slot - now:.0f}s, after the run's deadline")
             st.next_ok = slot + self.interval(host, crawl_delay)
         delay = max(0.0, slot - self._clock())
         if delay:
@@ -157,7 +167,7 @@ class RateLimiter:
             if st.baseline_latency and status < 400:
                 st.baseline_latency = 0.9 * st.baseline_latency + 0.1 * latency
         if retry_after:
-            st.next_ok = max(st.next_ok, self._clock() + retry_after)
+            st.next_ok = max(st.next_ok, self._clock() + min(retry_after, MAX_RETRY_AFTER))
 
 
 def parse_retry_after(value: str | None) -> float | None:
@@ -165,7 +175,7 @@ def parse_retry_after(value: str | None) -> float | None:
         return None
     value = value.strip()
     if value.isdigit():
-        return float(value)
+        return float(min(int(value[:9]), 10 ** 8))
     try:
         from email.utils import parsedate_to_datetime
 
@@ -195,14 +205,14 @@ class Window:
 
 @dataclass
 class Schedule:
-    """'Good times' to crawl: when government sites see the least human traffic."""
+    """'Good times' to crawl: when the sites being crawled see the least human traffic."""
 
     tz: ZoneInfo
     windows: list[Window] = field(default_factory=list)
 
     @classmethod
     def from_config(cls, cfg: dict) -> "Schedule":
-        tz = ZoneInfo(cfg.get("timezone", "America/New_York"))
+        tz = ZoneInfo(cfg.get("timezone") or "UTC")
         wins = []
         for w in cfg.get("windows", []):
             days = [d.lower()[:3] for d in w.get("days", DAYS)]

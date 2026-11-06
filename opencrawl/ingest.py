@@ -17,12 +17,27 @@ import hashlib
 import io
 import re
 import statistics
+import time
 from pathlib import Path
 
 from .extract import ORDINANCE_HEADING
 from .store import Record
 
 LOW_CONF = 70
+MAX_PIXELS = 80_000_000      # an image (or a rendered PDF page) larger than this is refused / rendered smaller
+MAX_PDF_PAGES = 2000         # pages read from one PDF; later pages are left out (meta.truncated)
+MAX_PDF_SECONDS = 180        # wall time for one PDF's text layer and OCR before the rest is left out
+
+
+def open_image(data: bytes):
+    """Pillow image from untrusted bytes, refusing decompression bombs before any pixel is decoded."""
+    from PIL import Image
+
+    Image.MAX_IMAGE_PIXELS = MAX_PIXELS
+    img = Image.open(io.BytesIO(data))
+    if img.width * img.height > MAX_PIXELS:
+        raise ValueError(f"image too large ({img.width}x{img.height} pixels)")
+    return img
 
 
 def _sha256(data: bytes) -> str:
@@ -36,7 +51,10 @@ def preprocess(img):
     img = ImageOps.exif_transpose(img).convert("L")
     if img.width < 1600:
         scale = 1600 / img.width
-        img = img.resize((int(img.width * scale), int(img.height * scale)))
+        if img.width * img.height * scale * scale > MAX_PIXELS:      # a sliver 10 px wide must not become a bomb
+            scale = (MAX_PIXELS / max(1, img.width * img.height)) ** 0.5
+        if scale > 1.01:
+            img = img.resize((int(img.width * scale), int(img.height * scale)))
     # dark-mode screenshots: invert so text is dark on light
     hist = img.histogram()
     dark = sum(hist[:128]) > sum(hist[128:])
@@ -117,7 +135,7 @@ def image_to_record(path_or_bytes, source_id: str = "manual", kind: str = "ocr",
     from PIL import Image
 
     data = Path(path_or_bytes).read_bytes() if not isinstance(path_or_bytes, (bytes, bytearray)) else bytes(path_or_bytes)
-    img = preprocess(Image.open(io.BytesIO(data)))
+    img = preprocess(open_image(data))
     lines = _lines_from_tesseract(img)
     text, md = lines_to_markdown(lines)
     confs = [l["conf"] for l in lines]
@@ -151,8 +169,13 @@ def pdf_to_record(path_or_bytes, source_id: str = "manual", kind: str = "documen
 
     data = Path(path_or_bytes).read_bytes() if not isinstance(path_or_bytes, (bytes, bytearray)) else bytes(path_or_bytes)
     pages_md, pages_txt, ocr_pages, confs = [], [], [], []
+    t_start = time.monotonic()
     with pdfplumber.open(io.BytesIO(data)) as pdf:
+        n_pages = len(pdf.pages)
         for i, page in enumerate(pdf.pages, 1):
+            if i > MAX_PDF_PAGES or time.monotonic() - t_start > MAX_PDF_SECONDS:
+                truncated = True
+                break
             txt = page.extract_text() or ""
             if len(txt.strip()) >= ocr_min_chars:
                 lines = [{"block": 0, "par": n, "text": l.strip(), "conf": 100.0, "top": 0}
@@ -161,14 +184,15 @@ def pdf_to_record(path_or_bytes, source_id: str = "manual", kind: str = "documen
                 truncated = True
                 lines = [{"block": 0, "par": 0, "text": txt.strip(), "conf": 0.0, "top": 0}] if txt.strip() else []
             else:
-                img = page.to_image(resolution=300).original
+                w_in, h_in = max(1.0, float(page.width) / 72), max(1.0, float(page.height) / 72)
+                dpi = int(min(300, (MAX_PIXELS / (w_in * h_in)) ** 0.5))     # a poster-sized page renders smaller
+                img = page.to_image(resolution=max(36, dpi)).original
                 lines = _lines_from_tesseract(preprocess(img))
                 ocr_pages.append(i)
                 confs += [l["conf"] for l in lines]
             t, m = lines_to_markdown(lines)
             pages_txt.append(t)
             pages_md.append(m)
-        n_pages = len(pdf.pages)
     text = "\n\n".join(pages_txt)
     return Record(
         source_id=source_id, kind=kind, url=url, channel="ocr" if ocr_pages else "pdf",
@@ -206,26 +230,18 @@ def _reflow(txt: str) -> list[str]:
 
 
 def capture(url: str, fetcher, source_id: str = "capture", wait_ms: int = 2500) -> Record:
-    """Render a page in a headless browser and OCR a full-page screenshot.
+    """Render a page in the guarded headless browser and OCR a full-page screenshot.
 
     Only for pages robots.txt allows whose text isn't in the DOM (image notices,
-    canvas viewers). Refuses disallowed URLs.
+    canvas viewers). Refuses disallowed and blocked URLs.
     """
-    from .fetch import Disallowed
+    from . import browser
 
-    if not fetcher.allowed(url):
-        raise Disallowed(url)
-    fetcher.limiter.wait(url, fetcher.robots.crawl_delay(url))
-    from playwright.sync_api import sync_playwright
-
-    from .fetch import launch_browser
-
-    with sync_playwright() as p:
-        browser = launch_browser(p)
-        page = browser.new_page(user_agent=fetcher.user_agent, viewport={"width": 1280, "height": 2000})
-        page.goto(url, wait_until="networkidle", timeout=60000)
+    fetcher._admit(url)           # guard, block list, robots.txt: refuse before starting a browser
+    with browser.session(fetcher, block=("media",), viewport={"width": 1280, "height": 2000}) as ctx:
+        page = ctx.new_page()
+        browser.goto(page, url, fetcher)
         page.wait_for_timeout(wait_ms)
         png = page.screenshot(full_page=True)
-        browser.close()
     rec = image_to_record(png, source_id=source_id, url=url, captured_by="browser")
     return rec

@@ -1,4 +1,4 @@
-"""Registry, discovery parsing, block handling, scheduler, subject grading, rumor mill, export — all offline."""
+"""Registry, discovery parsing, block handling, scheduler, subject grading, quarantine, export — all offline."""
 import datetime as dt
 import http.server
 import json
@@ -12,7 +12,8 @@ import yaml
 from opencrawl import seed
 from opencrawl.civic import registry
 from opencrawl.blocked import BlockList, Blocked, looks_blocked, manual_tasks_md
-from opencrawl.research.subjects import Classifier, RumorMill, Researcher, domain_of, load_subjects
+from opencrawl.research.quarantine import Quarantine
+from opencrawl.research.subjects import Classifier, Researcher, domain_of, load_subjects
 from opencrawl.fetch import Fetcher
 from opencrawl.scheduler import Progress, due, run_sources
 from opencrawl.store import Record, Store
@@ -89,7 +90,7 @@ def fetcher(tmp_path):
 
 
 # ----------------------------------------------------------------------------- registry
-EXAMPLE = ROOT / "examples" / "colorado-civic"
+EXAMPLE = ROOT / "opencrawl" / "examples" / "colorado-civic"
 
 
 def test_registry_is_complete():
@@ -168,7 +169,7 @@ def test_inspect_site_finds_agenda_center_and_feed(server, fetcher):
     # portals linked only from the council page are found too (Granicus, BoardDocs)
     assert out["portals"]["granicus"].startswith("https://testville.granicus.com") and "boarddocs" in out["portals"]
     assert out["section_page"] == server + "/government/city-council"
-    pages = seed.meeting_pages(CITY_HOME.decode(), server + "/")
+    pages = seed.follow_pages(CITY_HOME.decode(), server + "/")
     assert pages == [server + "/AgendaCenter", server + "/government/city-council"]          # agendas first; parks never
 
 
@@ -223,8 +224,8 @@ def test_run_sources_records_progress(server, server2, fetcher, tmp_path):
     assert recs and recs[0]["target"] == "testville" and recs[0]["evidence"] == "primary"
 
 
-# ----------------------------------------------------------------------------- candidates + rumor mill
-def test_classifier_and_rumor_mill(tmp_path):
+# ----------------------------------------------------------------------------- subjects + quarantine
+def test_classifier_and_quarantine(tmp_path):
     reg = Registry(tmp_path / "verified")
     acc = reg.add_account("Jane Doe", "https://bsky.app/profile/jane.bsky.social", "https://janedoe.org")
     reg.mark_subject(acc["id"], "jane-doe")
@@ -240,14 +241,14 @@ def test_classifier_and_rumor_mill(tmp_path):
     assert cls.excluded("https://ballotpedia.org/Jane_Doe") and not cls.excluded("https://apnews.com/x")
     assert domain_of("https://amp.news.example.co.uk/a") == "example.co.uk"
 
-    rm = RumorMill(tmp_path)
+    rm = Quarantine(tmp_path)
     r = rm.add("jane-doe", "https://someblog.example/post", "Doe took a bribe", origin="article", author="anon")
     assert r["status"] == "unverified" and rm.add("jane-doe", "https://someblog.example/post", "", "article")["id"] == r["id"]
     rm.set_status(r["id"], "debunked", evidence_url="https://apnews.com/fact-check", note="no such payment")
     assert rm.all()[0]["status"] == "debunked" and rm.all()[0]["corroboration"][0]["url"].endswith("fact-check")
 
 
-def test_research_routes_unverified_to_rumor_mill(server, fetcher, tmp_path, monkeypatch):
+def test_research_routes_unverified_to_quarantine(server, fetcher, tmp_path, monkeypatch):
     # a tiny project root: real outlets.yaml, a registry with one target, one candidate
     root = tmp_path / "proj"
     (root / "config").mkdir(parents=True)
@@ -255,7 +256,7 @@ def test_research_routes_unverified_to_rumor_mill(server, fetcher, tmp_path, mon
     (root / "config" / "jurisdictions.yaml").write_text(yaml.safe_dump({"counties": [], "municipalities": [
         {"id": "testville", "name": "Testville", "kind": "city", "fips": "0800001", "counties": ["Baca"], "population": 100}]}))
     (root / "config" / "subjects.yaml").write_text(yaml.safe_dump({"subjects": [
-        {"id": "jane-doe", "name": "Jane Doe", "target": "testville", "websites": [server + "/campaign"],
+        {"id": "jane-doe", "name": "Jane Doe", "office": "Council Member", "target": "testville", "websites": [server + "/campaign"],
          "social": ["https://bsky.app/profile/jane.bsky.social"]}]}))
     store = Store(root / "data")
     # an official record that mentions her, as the target crawl would have stored it
@@ -267,8 +268,8 @@ def test_research_routes_unverified_to_rumor_mill(server, fetcher, tmp_path, mon
     assert counts.get("statement", 0) >= 1 and counts.get("mention") == 1 and counts.get("connection") == 1
     conn = store.read("subj:jane-doe", "connection")[0]
     assert conn["meta"]["type"] == "endorsement" and "Firefighters" in conn["meta"]["party"]
-    # unverified article -> rumor mill, reported article -> store
-    r.rumors = RumorMill(root)
+    # unverified article -> quarantine, reported article -> store
+    r.quarantine = Quarantine(root)
     cls = Classifier(root, cand, None, r.registry)
     counts2 = {}
     rec_bad = Record("", "article", "https://randomblog.example/doe", title="Doe did a bad thing")
@@ -276,21 +277,26 @@ def test_research_routes_unverified_to_rumor_mill(server, fetcher, tmp_path, mon
     for rec in (rec_bad, rec_good):
         rec.source_id = "subj:jane-doe"; rec.meta["subject_id"] = "jane-doe"; rec.evidence = cls.classify(rec.url)
         if rec.evidence == "unverified":
-            r.rumors.add("jane-doe", rec.url, rec.title, "article")
+            r.quarantine.add("jane-doe", rec.url, rec.title, "article")
         else:
             store.add(rec)
-    r.rumors.flush()
-    assert [x["url"] for x in r.rumors.all()] == ["https://randomblog.example/doe"]
+    r.quarantine.flush()
+    assert [x["url"] for x in r.quarantine.all()] == ["https://randomblog.example/doe"]
     assert [x["url"] for x in store.read("subj:jane-doe", "article")] == ["https://apnews.com/politics/doe"]
 
     from opencrawl.export import export
 
     man = export(root, root / "dist", log=lambda *_: None, store=store)
-    assert man["targets"] == 1 and man["subjects_with_records"] == 1 and man["rumor_mill"] == {"unverified": 1}
+    assert man["targets"] == 1 and man["subjects_with_records"] == 1
+    assert man["quarantine"] == {"claims": {"unverified": 1}, "videos": 0, "exported": False}
+    assert not (root / "dist" / "quarantine.json").exists()          # unverified claims stay out of exports by default
+    assert json.loads((root / "dist" / "packets" / "jane-doe.json").read_text())["quarantined"] == []
+    man = export(root, root / "dist", log=lambda *_: None, store=store, cfg={"privacy": {"export_quarantine": True}})
+    assert man["quarantine"]["exported"] and json.loads((root / "dist" / "quarantine.json").read_text())["claims"]
     bundle = json.loads((root / "dist" / "subjects" / "jane-doe.json").read_text())
     assert set(bundle["records"]) >= {"statement", "mention", "article", "connection"}
     assert all(rec["evidence"] != "unverified" for k in bundle["records"] for rec in bundle["records"][k])
     assert json.loads((root / "dist" / "targets.json").read_text())[0]["record_counts"] == {"agenda_item": 1}
     packet = json.loads((root / "dist" / "packets" / "jane-doe.json").read_text())
-    assert packet["sources"] and all(s["u"] and "opened_at" in s for s in packet["sources"])
-    assert packet["rumors"][0]["status"] == "unverified" and packet["counts"]["mentions"] == 1
+    assert packet["sources"] and all(s["url"] and "opened_at" in s for s in packet["sources"])
+    assert packet["quarantined"][0]["status"] == "unverified" and packet["counts"]["mentions"] == 1

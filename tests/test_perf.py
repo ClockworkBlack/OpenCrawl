@@ -28,36 +28,6 @@ def test_meta_only_update_keeps_fts_and_skips_reindex(tmp_path):
     s.close()
 
 
-def test_old_database_is_upgraded_on_open(tmp_path):
-    p = tmp_path / "old" / "crawl.db"
-    p.parent.mkdir()
-    s = Store(p.parent)
-    s.add(Record("x:site", "page", "https://x/1", title="t", text="old text"))
-    s.flush()
-    s.close()
-    # simulate a database made before the column existed
-    db = sqlite3.connect(p)
-    db.executescript("""
-      CREATE TABLE r2 AS SELECT rid,key,id,hash,source_id,target,kind,url,title,text,markdown,published,channel,
-                                evidence,meta,fetched_at,first_seen,changed_at,version FROM records;
-    """)
-    cols = [r[1] for r in db.execute("PRAGMA table_info(records)")]
-    db.execute("DROP TRIGGER records_au")
-    db.execute("ALTER TABLE records DROP COLUMN thash")
-    db.execute("""CREATE TRIGGER records_au AFTER UPDATE OF title, text ON records BEGIN
-      INSERT INTO records_fts(records_fts, rowid, title, text) VALUES ('delete', old.rid, old.title, old.text);
-      INSERT INTO records_fts(rowid, title, text) VALUES (new.rid, new.title, new.text); END""")
-    db.commit()
-    db.close()
-    assert "thash" in cols
-    s = Store(p.parent)
-    assert "thash" in {r[1] for r in s.db.execute("PRAGMA table_info(records)")}
-    assert s.add(Record("x:site", "page", "https://x/1", title="t", text="new text"))
-    s.flush()
-    assert s.search('"new text"')
-    s.close()
-
-
 def test_graph_adjacency_matches_scan(tmp_path):
     s = Store(tmp_path / "data")
     for i in range(30):

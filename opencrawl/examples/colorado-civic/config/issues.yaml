@@ -26,4 +26,4 @@ issues:
   Seniors: '\b(seniors?\b|elderly|retire\w*|social security|aging|nursing homes?|long[- ]term care|senior homestead)\b'
   Gambling: '\b(gambling|casinos?|sports betting|lottery|gaming)\b'
   Cannabis and psychedelics: '\b(cannabis|marijuana|dispensar\w*|hemp|thc|psilocybin|natural medicine|legaliz\w*|decriminaliz\w*)\b'
-  Local control: '\b(home rule|local control|preemption|state mandate|cityhood|consolidation|metro districts?)\b'
+  Local control: '\b(home rule|local control|preemption|state mandate|incorporation|consolidation|metro districts?)\b'

@@ -61,18 +61,6 @@ def test_store_frontier_cursors_and_concurrent_reader(tmp_path):
     s.close()
 
 
-def test_store_imports_legacy_jsonl(tmp_path):
-    d = tmp_path / "data" / "canton:site"
-    d.mkdir(parents=True)
-    (d / "page.jsonl").write_text(json.dumps({"id": "old", "source_id": "canton:site", "kind": "page", "url": "http://c/1",
-                                              "title": "Old", "text": "legacy text", "meta": {}}) + "\n")
-    s = Store(tmp_path / "data")
-    assert s.read("canton:site", "page")[0]["title"] == "Old"
-    s.close()
-    assert Store(tmp_path / "data").total() == 1  # not imported twice
-
-
-# ----------------------------------------------------------------------------- resumable Legistar backfill
 class FakeResult:
     def __init__(self, body, status=200, ctype="application/json", url="http://x"):
         self.status, self.content, self.content_type, self.url = status, body, ctype, url
@@ -294,12 +282,12 @@ def test_name_variants_and_matching():
     v = name_variants('Robert "Bob" Example Jr.')
     assert "Robert Example" in v and "Bob Example" in v and not any("Jr" in x for x in v)
     assert name_variants("DOE, JANE A")[0] == "Jane A Doe" and "Jane Doe" in name_variants("DOE, JANE A")
-    assert name_variants("KIM POST (NORTH COUNTY)") == ["Kim Post"]
+    assert name_variants("TAYLOR CALDER (NORTH COUNTY)") == ["Taylor Calder"]
     assert name_variants("Cher") == []                                   # never a single name
-    rx = name_regex(name_variants("Pat A. Local"))
-    assert rx.search("said Pat A. Local on Monday") and rx.search("PAT LOCAL") and not rx.search("Pat Locals")
-    ex = excerpts("x " * 300 + "Commissioner Pat Local voted no. " + "y " * 300, rx)
-    assert len(ex) == 1 and "Pat Local voted no" in ex[0] and ex[0].startswith("…")
+    rx = name_regex(name_variants("Robin A. Ashby"))
+    assert rx.search("said Robin A. Ashby on Monday") and rx.search("ROBIN ASHBY") and not rx.search("Robin Ashbys")
+    ex = excerpts("x " * 300 + "Commissioner Robin Ashby voted no. " + "y " * 300, rx)
+    assert len(ex) == 1 and "Robin Ashby voted no" in ex[0] and ex[0].startswith("…")
 
 
 def test_topic_tags():
@@ -320,9 +308,10 @@ def test_council_alignment():
 
 
 # ----------------------------------------------------------------------------- subjects import (synthetic data only)
-SUBJECTS_CSV = """id,name,aliases,kind,target,targets,places,websites,social,priority,races
-pat-local,Pat Local,Pat L. Local,person,springfield,springfield;co-baca,Baca County,https://patforcouncil.example/,https://bsky.app/profile/pat.example,true,
-sam-state,Sam State,,person,,,,,,,
+SUBJECTS_CSV = """id,name,aliases,kind,target,targets,places,websites,social,priority,office,races
+robin-ashby,Robin Ashby,Robin L. Ashby,person,springfield,springfield;co-baca,Baca County,https://robinforcouncil.example/,https://bsky.app/profile/robin.example,true,Council Member,
+sam-state,Sam State,,person,,,,,,,State Senator,
+pat-private,Pat Private,,person,,,,,,,,
 """
 
 
@@ -331,7 +320,7 @@ def _project(tmp: Path) -> Path:
     (root / "config").mkdir(parents=True)
     for f in ("outlets.yaml", "topics.yaml"):
         (root / "config" / f).write_text((ROOT / "config" / f).read_text())
-    (root / "config" / "jurisdictions.yaml").write_text((ROOT / "examples" / "colorado-civic" / "config" / "jurisdictions.yaml").read_text())
+    (root / "config" / "jurisdictions.yaml").write_text((ROOT / "opencrawl" / "examples" / "colorado-civic" / "config" / "jurisdictions.yaml").read_text())
     (root / "subjects.csv").write_text(SUBJECTS_CSV)
     from opencrawl.research.importers import import_subjects
 
@@ -342,19 +331,19 @@ def _project(tmp: Path) -> Path:
 def test_subjects_import_csv_and_merge_with_hand_entries(tmp_path):
     root = _project(tmp_path)
     (root / "config" / "subjects.yaml").write_text(yaml.safe_dump({"subjects": [
-        {"id": "pat-local", "websites": ["https://www.patforcouncil.example/about"], "office": "Council Member Ward 1"},
-        {"name": "Kim Post", "target": "co-baca"}]}))
+        {"id": "robin-ashby", "websites": ["https://www.robinforcouncil.example/about"], "office": "Council Member Ward 1"},
+        {"name": "Taylor Calder", "target": "co-baca", "public_role": "county commission candidate"}]}))
     subs = {c["id"]: c for c in load_subjects(root, {})}
-    assert set(subs) == {"pat-local", "sam-state", "kim-post"}
-    pat = subs["pat-local"]
-    assert pat["aliases"] == ["Pat L. Local"] and pat["targets"] == ["springfield", "co-baca"] and pat["priority"] is True
-    assert pat["websites"] == ["https://patforcouncil.example/", "https://www.patforcouncil.example/about"]   # union, imported first
-    assert pat["office"] == "Council Member Ward 1" and "Pat L. Local" in pat["variants"] and pat["places"] == ["Baca County"]
-    assert subs["kim-post"]["targets"] == ["co-baca"] and subs["sam-state"]["targets"] == []
+    assert set(subs) == {"robin-ashby", "sam-state", "taylor-calder"}       # pat-private: no public role, not researched
+    pat = subs["robin-ashby"]
+    assert pat["aliases"] == ["Robin L. Ashby"] and pat["targets"] == ["springfield", "co-baca"] and pat["priority"] is True
+    assert pat["websites"] == ["https://robinforcouncil.example/", "https://www.robinforcouncil.example/about"]   # union, imported first
+    assert pat["office"] == "Council Member Ward 1" and "Robin L. Ashby" in pat["variants"] and pat["places"] == ["Baca County"]
+    assert subs["taylor-calder"]["targets"] == ["co-baca"] and subs["sam-state"]["targets"] == []
     from opencrawl.research.importers import import_subjects
 
     meta = import_subjects(root / "subjects.csv", root, log=lambda *_: None)
-    assert meta["subjects"] == 2
+    assert meta["subjects"] == 3 and meta["from"] == "subjects.csv"     # the file name only, not its path
 
 
 def test_votes_and_mentions_from_store_and_packet(tmp_path, fetcher):
@@ -362,22 +351,22 @@ def test_votes_and_mentions_from_store_and_packet(tmp_path, fetcher):
     store = Store(root / "data")
     store.add(Record("springfield:legistar", "vote", "https://x.legistar.com/MeetingDetail.aspx?ID=9", title="Rezoning of 12 acres",
                      target="springfield", meta={"EventItemId": 5, "result": "Pass", "topics": ["Housing and land use"],
-                                                 "votes": [{"person": "Pat Local", "vote": "Nay"}, {"person": "Other Person", "vote": "Yea"}]}))
+                                                 "votes": [{"person": "Robin Ashby", "vote": "Nay"}, {"person": "Other Person", "vote": "Yea"}]}))
     store.add(Record("springfield:agendas", "document", "https://springfield.example/minutes.pdf", title="Minutes",
-                     text="Council member Pat Local asked about the water rates.", target="springfield"))
+                     text="Council member Robin Ashby asked about the water rates.", target="springfield"))
     store.add(Record("pueblo:site", "page", "https://pueblo.example/p", title="Other city",
-                     text="A different Pat Local spoke.", target="pueblo"))   # other target: not attributed
+                     text="A different Robin Ashby spoke.", target="pueblo"))   # other target: not attributed
     store.flush()
-    cand = {c["id"]: c for c in load_subjects(root, {})}["pat-local"]
+    cand = {c["id"]: c for c in load_subjects(root, {})}["robin-ashby"]
     r = Researcher(root, {}, fetcher, store, log=lambda *_: None)
     counts = r.research(cand, skip={"posts", "statements", "articles", "leads", "social_mentions", "connections"})
     assert counts == {"mention": 1, "vote": 1}
-    votes = store.read("subj:pat-local", "vote")
+    votes = store.read("subj:robin-ashby", "vote")
     assert votes[0]["meta"]["vote"] == "Nay" and votes[0]["meta"]["topics"] == ["Housing and land use"]
-    recs = {k: store.read("subj:pat-local", k) for k in store.kinds("subj:pat-local")}
-    pk = build_packet(cand, recs, [], {norm_url("https://www.patforcouncil.example/about")})
-    assert pk["key"] == "pat-local" and pk["vote_topics"]["Housing and land use"]["no"] == 1
-    assert all(s["opened_at"] for s in pk["sources"]) and pk["votes"][0]["src"] == [0]
+    recs = {k: store.read("subj:robin-ashby", k) for k in store.kinds("subj:robin-ashby")}
+    pk = build_packet(cand, recs, [], {norm_url("https://www.robinforcouncil.example/about")})
+    assert pk["subject_id"] == "robin-ashby" and pk["vote_topics"]["Housing and land use"]["no"] == 1
+    assert all(s["opened_at"] for s in pk["sources"]) and pk["votes"][0]["refs"] == [0]
     assert pk["targets"] == ["springfield", "co-baca"]
     store.close()
 
@@ -387,15 +376,15 @@ def test_articles_batch_opens_and_verifies(tmp_path, monkeypatch):
     store = Store(root / "data")
     gdelt = {"articles": [
         {"url": "https://apnews.com/a1", "title": "Springfield council votes", "domain": "apnews.com", "seendate": "20261101T000000Z"},
-        {"url": "https://apnews.com/a2", "title": "Pat Local in Ohio", "domain": "apnews.com", "seendate": "20261101T000000Z"},
-        {"url": "https://paywalled.example/a3", "title": "Pat Local profile", "domain": "paywalled.example", "seendate": "20261102"},
-        {"url": "https://blog.example/a4", "title": "Rumor about Pat Local", "domain": "blog.example", "seendate": "20261103"}]}
+        {"url": "https://apnews.com/a2", "title": "Robin Ashby in Ohio", "domain": "apnews.com", "seendate": "20261101T000000Z"},
+        {"url": "https://paywalled.example/a3", "title": "Robin Ashby profile", "domain": "paywalled.example", "seendate": "20261102"},
+        {"url": "https://blog.example/a4", "title": "Unsourced claim about Robin Ashby", "domain": "blog.example", "seendate": "20261103"}]}
     pages = {
-        "https://apnews.com/a1": "<html><body><main><p>In Springfield, Baca County, council member Pat Local said the "
+        "https://apnews.com/a1": "<html><body><main><p>In Springfield, Baca County, council member Robin Ashby said the "
                                   "budget needs work.</p>" + "<p>filler text here.</p>" * 20 + "</main></body></html>",
-        "https://apnews.com/a2": "<html><body><main><p>Pat Local of Columbus, Ohio, opened a bakery.</p>"
+        "https://apnews.com/a2": "<html><body><main><p>Robin Ashby of Columbus, Ohio, opened a bakery.</p>"
                                   + "<p>filler</p>" * 20 + "</main></body></html>",
-        "https://blog.example/a4": "<html><body><main><p>Word is Pat Local of Springfield, Colorado is quitting.</p>"
+        "https://blog.example/a4": "<html><body><main><p>Word is Robin Ashby of Springfield, Colorado is quitting.</p>"
                                    + "<p>filler</p>" * 20 + "</main></body></html>"}
 
     class F:
@@ -406,17 +395,17 @@ def test_articles_batch_opens_and_verifies(tmp_path, monkeypatch):
                 return FakeResult(pages[url].encode(), ctype="text/html", url=url)
             return FakeResult(b"paywall", status=403, ctype="text/html", url=url)
 
-    cand = {c["id"]: c for c in load_subjects(root, {})}["pat-local"]
+    cand = {c["id"]: c for c in load_subjects(root, {})}["robin-ashby"]
     r = Researcher(root, {}, F(), store, log=lambda *_: None)
     counts = r.research(cand, skip={"mentions", "votes", "posts", "statements", "leads", "social_mentions", "connections"})
-    arts = store.read("subj:pat-local", "article")
+    arts = store.read("subj:robin-ashby", "article")
     assert [a["url"] for a in arts] == ["https://apnews.com/a1"]          # Ohio namesake rejected (no place match)
     assert arts[0]["evidence"] == "reported" and "budget needs work" in arts[0]["text"]
-    leads = store.read("subj:pat-local", "lead")
+    leads = store.read("subj:robin-ashby", "lead")
     assert [l["url"] for l in leads] == ["https://paywalled.example/a3"] and leads[0]["evidence"] == "lead"
-    r.rumors.flush()
-    assert [x["url"] for x in r.rumors.all()] == ["https://blog.example/a4"] and r.rumors.all()[0]["opened"] is True
-    assert counts.get("rumor_mill") == 1
+    r.quarantine.flush()
+    assert [x["url"] for x in r.quarantine.all()] == ["https://blog.example/a4"] and r.quarantine.all()[0]["opened"] is True
+    assert counts.get("quarantined") == 1
     store.close()
 
 
@@ -452,7 +441,10 @@ def test_user_agent_contact(monkeypatch):
     from opencrawl.config import _user_agent
     monkeypatch.delenv("OPENCRAWL_USER_AGENT", raising=False)
     monkeypatch.delenv("OPENCRAWL_CONTACT", raising=False)
-    monkeypatch.setenv("ORR_FROM", "records@project.example")
-    assert _user_agent({"user_agent": "Bot/1 (+https://x)"}) == "Bot/1 (+https://x; records@project.example)"
-    monkeypatch.delenv("ORR_FROM")
+    monkeypatch.setenv("ORR_FROM", "records@project.example")   # the records mailbox is never borrowed
     assert _user_agent({"user_agent": "Bot/1 (+https://x)"}) == "Bot/1 (+https://x)"
+    monkeypatch.setenv("OPENCRAWL_CONTACT", "crawler@project.example")
+    assert _user_agent({"user_agent": "Bot/1 (+https://x)"}) == "Bot/1 (+https://x; crawler@project.example)"
+    monkeypatch.delenv("OPENCRAWL_CONTACT")
+    assert _user_agent({"user_agent": "Bot/1 (+https://x)", "contact": "bot@project.example"}) == \
+        "Bot/1 (+https://x; bot@project.example)"

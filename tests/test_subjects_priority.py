@@ -6,7 +6,8 @@ from opencrawl.research.subjects import load_subjects
 def test_priority_field_kept(tmp_path: Path):
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "subjects.yaml").write_text(
-        "subjects:\n- {id: a, name: Ann Able, priority: true, websites: ['https://example.org']}\n- {id: b, name: Bob Baker}\n")
+        "subjects:\n- {id: a, name: Ann Able, office: Mayor, priority: true, websites: ['https://example.org']}\n"
+        "- {id: b, name: Bob Baker, kind: organization}\n")
     c = {x["id"]: x for x in load_subjects(tmp_path)}
     assert c["a"]["priority"] is True and not c["b"].get("priority")
     assert c["a"]["websites"] == ["https://example.org"]
