@@ -1,0 +1,66 @@
+# Colorado counties: name|county FIPS (3 digits)|county seat|population (2020 census)
+# Source: Wikipedia, "List of counties in Colorado" (CC BY-SA), populations from the 2020 census.
+Adams County|001|Brighton|554668
+Alamosa County|003|Alamosa|16688
+Arapahoe County|005|Littleton|673820
+Archuleta County|007|Pagosa Springs|14306
+Baca County|009|Springfield|3347
+Bent County|011|Las Animas|5716
+Boulder County|013|Boulder|328560
+City and County of Broomfield|014|Broomfield|79174
+Chaffee County|015|Salida|20831
+Cheyenne County|017|Cheyenne Wells|1713
+Clear Creek County|019|Georgetown|8994
+Conejos County|021|Conejos|7529
+Costilla County|023|San Luis|3679
+Crowley County|025|Ordway|5677
+Custer County|027|Westcliffe|5590
+Delta County|029|Delta|32178
+City and County of Denver|031|Denver|740613
+Dolores County|033|Dove Creek|2466
+Douglas County|035|Castle Rock|399396
+Eagle County|037|Eagle|54291
+El Paso County|041|Colorado Springs|757040
+Elbert County|039|Kiowa|30534
+Fremont County|043|Cañon City|50039
+Garfield County|045|Glenwood Springs|63474
+Gilpin County|047|Central City|6073
+Grand County|049|Hot Sulphur Springs|16496
+Gunnison County|051|Gunnison|17439
+Hinsdale County|053|Lake City|753
+Huerfano County|055|Walsenburg|7011
+Jackson County|057|Walden|1211
+Jefferson County|059|Golden|580451
+Kiowa County|061|Eads|1412
+Kit Carson County|063|Burlington|7069
+La Plata County|067|Durango|56898
+Lake County|065|Leadville|7552
+Larimer County|069|Fort Collins|377292
+Las Animas County|071|Trinidad|14391
+Lincoln County|073|Hugo|5645
+Logan County|075|Sterling|20654
+Mesa County|077|Grand Junction|162845
+Mineral County|079|Creede|910
+Moffat County|081|Craig|13122
+Montezuma County|083|Cortez|26678
+Montrose County|085|Montrose|44591
+Morgan County|087|Fort Morgan|30306
+Otero County|089|La Junta|17683
+Ouray County|091|Ouray|5265
+Park County|093|Fairplay|18314
+Phillips County|095|Holyoke|4420
+Pitkin County|097|Aspen|16625
+Prowers County|099|Lamar|11884
+Pueblo County|101|Pueblo|169277
+Rio Blanco County|103|Meeker|6683
+Rio Grande County|105|Del Norte|11087
+Routt County|107|Steamboat Springs|25329
+Saguache County|109|Saguache|6732
+San Juan County|111|Silverton|813
+San Miguel County|113|Telluride|7753
+Sedgwick County|115|Julesburg|2247
+Summit County|117|Breckenridge|31517
+Teller County|119|Cripple Creek|24756
+Washington County|121|Akron|4732
+Weld County|123|Greeley|378426
+Yuma County|125|Wray|9896

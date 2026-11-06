@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/
+# the database is persisted as a release asset (see .github/workflows/crawl.yml), not in git
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.db.gz
+data/*.db.zst
+deltas/
+dist/
+state/http_cache/
+state/*.tmp
+simulated_screens/
+# rebuilt every run or kept in the database
+state/entities.json
+state/orgs.json
+state/profile_inputs.json
+state/research_last.json

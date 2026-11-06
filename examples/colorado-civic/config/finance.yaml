@@ -1,0 +1,32 @@
+# Campaign finance sources for Colorado.
+state: CO
+
+# Colorado's state and local candidates and committees file through the Secretary of State's TRACER system
+# (Transparency in Contribution and Expenditure Reporting). Some home-rule municipalities keep their own
+# filings on their clerks' pages (the crawler parses posted disclosure PDFs as doc_type finance_report).
+#
+# The crawler never guesses a search URL. `opencrawl finance probe` lists what TRACER's front page links to
+# (state/finance_portal.json); once a person has confirmed the right search page and its query format, put it in
+# search_url with {last} / {first} / {name} placeholders and set confirmed: true. Bulk CSV exports from TRACER go
+# in imports/finance/<subject-id>.csv (or a bulk file with a recipient column).
+state_commission:
+  name: Colorado Secretary of State TRACER
+  home: https://tracer.sos.colorado.gov/
+  search_url: null
+  confirmed: false
+
+# FEC (federal candidates and PACs): api.open.fec.gov. Set FEC_API_KEY as a GitHub secret (DEMO_KEY works for small volumes).
+fec:
+  enabled: true
+
+# ProPublica Nonprofit Explorer (IRS 990 data): no key needed.
+propublica:
+  enabled: true
+
+# OpenCorporates (Colorado corporate registry data: incorporation, status, officers). Needs OPENCORPORATES_API_KEY.
+opencorporates:
+  enabled: true
+
+# Organization lookups per run (biggest money first; each is re-checked after recheck_days).
+org_limit: 40
+recheck_days: 90

@@ -1,0 +1,21 @@
+# Topic tags for ordinances, agenda items, votes and documents. A record gets every
+# topic whose pattern matches its title/text (case-insensitive regular expressions).
+# Used to group a council member's votes by subject in the research packets.
+topics:
+  Zoning and land use: '\b(rezon\w*|zoning|variance|land use|annex\w*|subdivision|special use permit|conditional use|comprehensive plan|future land use|overlay district|pud\b|planned unit development)\b'
+  Housing: '\b(housing|affordable|apartment\w*|multi-?family|townhome\w*|short[- ]term rental\w*|airbnb|homeless\w*|accessory dwelling|adu\b)\b'
+  Development and incentives: '\b(urban renewal|tax increment|tif\b|incentive\w*|economic development|redevelopment|metropolitan district|metro district|data cent(er|re)s?)\b'
+  Budget and taxes: '\b(budget|mill lev(y|ies)|property tax\w*|sales tax|use tax|lodging tax|tabor|de-?bruce|fee schedule|fiscal year|appropriation\w*|audit)\b'
+  Public safety: '\b(police|sheriff|public safety|fire (department|station|rescue|district)|ems\b|911|crime|surveillance|license plate reader\w*|flock)\b'
+  Alcohol and cannabis: '\b(alcohol\w*|beer|wine|liquor|distill\w*|brew\w*|marijuana|cannabis|dispensar\w*|hemp|psilocybin|natural medicine)\b'
+  Roads and transportation: '\b(road\w*|street\w*|sidewalk\w*|traffic|transit|rtd\b|transportation|paving|bridge\w*|trail\w*|bike (lane|path)s?|parking)\b'
+  Water and utilities: '\b(water|sewer|stormwater|utilit\w*|wastewater|electric\w*|natural gas|solid waste|sanitation|garbage|recycling|water rights|augmentation)\b'
+  Parks and recreation: '\b(parks?\b|recreation|playground|open space|greenspace|green space|library|libraries|trails?)\b'
+  Environment: '\b(tree ordinance|environment\w*|flood\w*|erosion|wetland\w*|conservation|pollution|landfill|wildfire|wildland|air quality|oil and gas|fracking|drilling)\b'
+  Elections and ethics: '\b(election\w*|ethics|campaign|term limit\w*|redistrict\w*|voting|ballot (issue|question|measure)|petition\w*)\b'
+  Government operations: '\b(charter amendment|home rule|personnel|salar(y|ies)|compensation|pension|contract\w*|procurement|purchase|intergovernmental agreement|iga\b)\b'
+  Business licensing: '\b(business license|vendor\w*|food truck\w*|signage|signs?\b|massage|pawn|tattoo|sales tax license)\b'
+  Noise and nuisance: '\b(noise|nuisance|curfew|loiter\w*|blight\w*|code enforcement|junk|abandoned|weeds?)\b'
+  Animals: '\b(animal\w*|dogs?\b|cats?\b|chickens?\b|livestock|leash|wildlife|bears?\b)\b'
+  Health and social services: '\b(health|hospital|mental health|opioid\w*|senior center|social services|food bank|behavioral health)\b'
+  Schools and youth: '\b(school\w*|education|youth|students?\b|teachers?\b|board of education)\b'

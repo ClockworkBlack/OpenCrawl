@@ -1,0 +1,119 @@
+# How the crawler behaves. What it crawls lives in targets.yaml (things to cover), sources.yaml (individual
+# websites, feeds and APIs), overrides.yaml (hand edits that win over discovery) and subjects.yaml (people
+# and organizations to research by name). Every value here has a sensible default; delete what you don't need.
+
+http:
+  # Identify honestly. Point to your repository so site admins can see what this is and reach you.
+  # Wikimedia and others require a descriptive User-Agent for automated clients.
+  user_agent: "OpenCrawl/1.0 (+https://github.com/your-org/your-repo)"
+  contact: ""                  # optional project contact address (never a personal one); also OPENCRAWL_CONTACT
+  min_interval_seconds: 3      # per host; robots.txt Crawl-delay wins if larger
+  host_intervals:              # per-host floors (seconds between requests to that host)
+    webapi.legistar.com: 0.5   # APIs built for machine traffic can go faster
+    api.civicclerk.com: 1
+    public.api.bsky.app: 1
+    api.gdeltproject.org: 5.5  # GDELT asks for at most one request every 5 seconds
+    news.google.com: 3
+    en.wikipedia.org: 1
+    query.wikidata.org: 2
+  # Public APIs whose operators invite programmatic use with an identifying User-Agent. robots.txt (written
+  # for crawlers indexing pages) isn't applied to exactly these endpoints; spacing, back-off and the block list
+  # still are. Nothing else bypasses robots.txt.
+  api_endpoints:
+    - query.wikidata.org/sparql
+    - en.wikipedia.org/w/api.php
+    - www.wikidata.org/wiki/Special:EntityData
+    - api.open.fec.gov/v1
+    - projects.propublica.org/nonprofits/api
+    - api.opencorporates.com
+  timeout_seconds: 30
+  max_bytes: 25000000
+  blocked_ttl_days: 7          # a host that refuses the crawler is left alone this long
+
+# "Good times": when the sites you crawl see the least human traffic. Page crawling (HTML / sitemap / browser)
+# only runs inside these windows; APIs and feeds run any time. No windows = crawl whenever a run starts.
+schedule:
+  timezone: America/New_York
+  api_anytime: true
+  windows:
+    - {days: [mon, tue, wed, thu, fri], start: "23:00", end: "06:00"}
+    - {days: [sat, sun], start: "21:00", end: "08:00"}
+
+# How often each target is re-crawled, by tier (set `tier` on a target; civic registries derive it from population).
+cadence_days: {a: 2, b: 7, c: 30}
+
+frontier:
+  document_ttl_days: 3650      # PDFs and other documents: fetched once (they don't change after posting)
+  page_revisit_days: 7         # HTML pages below the listing pages: at most weekly
+
+workers: 8                     # sources crawled at once (different hosts; per-host spacing still applies)
+recheck_days: 14               # re-time channels every two weeks; immediately if one fails
+max_minutes: 300               # stop a run after this long; progress resumes next run
+
+limits:
+  since: "2016-01-01"          # how far back structured sources and feeds are read on the first run
+  max_pages: 200               # pages per source per run (a source can set its own)
+  meeting_lookback_days: 45    # civic: delta runs also re-read meetings this recent (minutes arrive late)
+
+crawl:
+  # Which links are followed first (hot) and which are skipped (cold) on HTML and sitemap crawls. The built-in
+  # lists suit organization and government sites; add your own words with extra_hot / extra_cold (regex
+  # alternations), or replace them entirely with hot_links / cold_links.
+  extra_hot: ""
+  extra_cold: ""
+  # tag_kinds: [page, document, post]   # record kinds that get topic tags from topics.yaml (default: most kinds)
+
+# Evidence grading for subject research: a URL on the target's own site, the subject's own site, a verified social
+# account or one of these domains / suffixes counts as `primary`; outlets.yaml domains count as `reported`;
+# everything else is `unverified` and goes to the Rumor Mill.
+evidence:
+  primary_suffixes: [".gov", ".mil"]
+  primary_domains: []
+
+subjects:
+  max_minutes: 60              # research budget per run; due subjects resume next run
+  cadence_days: 30             # re-research subjects this often
+  recent_cadence_days: 3       # subjects marked recent (a race this year or last) this often
+  max_mentions: 150            # record mentions kept per subject
+  max_articles_per_query: 60
+  gdelt: true                  # news search (several names per query; each article opened and checked)
+  google_news: true            # leads only: Google News links can't be opened directly
+  leads_for: all               # or priority_or_recent: news-lead searches only for priority / recent subjects
+  bluesky_search: true
+  places: []                   # words an article must contain besides a subject's name (a state, a region)
+
+# Which derivers turn crawled pages into structured records (`opencrawl derive`). Unset = the civic set:
+# elections, minutes (-> votes), ballot questions, press releases (-> appointments), voter guides.
+# derivers: [opencrawl.civic.press, myproject.derive_reports]
+
+# Local transcription of recordings posted on crawled sites (audio/video files), with the open-source
+# faster-whisper model. Off by default: it needs `pip install faster-whisper` and real CPU time.
+transcribe:
+  enabled: false
+  model: base                  # tiny | base | small (bigger = better, slower)
+  per_run: 2
+  max_mb: 300
+  budget_seconds: 900
+
+# Civic module: the state a jurisdiction registry covers (only needed with config/jurisdictions.yaml).
+civic:
+  state_fips: ""               # two-digit state FIPS code, e.g. "08"; needed for the Wikidata lookup by FIPS
+  state_name: ""               # e.g. Colorado
+  state_abbr: ""               # e.g. CO
+
+# Public records requests for codes of ordinances (`opencrawl records ...`, civic module). Nothing is sent until
+# enabled is true, requester is set, and the mailbox secrets exist (ORR_SMTP_HOST, ORR_SMTP_PORT, ORR_USER,
+# ORR_PASSWORD, ORR_FROM, optional ORR_IMAP_HOST). The law cited comes from here too.
+openrecords:
+  enabled: false
+  requester: ""                # the name requests are signed with (a project name, not a person)
+  law: "the applicable public records law"
+  citation: ""                 # e.g. "C.R.S. § 24-72-201 et seq."
+  response_days: 10            # business days the law gives for a response (drives follow-ups)
+  cost_cap: "$25.00"           # ask for an estimate above this
+  daily_limit: 10              # new requests per day (keeps a new mailbox out of spam folders)
+  cooldown_days: 180           # never ask the same jurisdiction twice inside this
+  follow_up_after_business_days: 5
+
+data_dir: data                 # the database lives at data/crawl.db (override with OPENCRAWL_DB)
+state_dir: state

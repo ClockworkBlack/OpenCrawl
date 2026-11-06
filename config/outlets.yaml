@@ -1,0 +1,33 @@
+# News outlets whose reporting counts as "reported" evidence in subject research (as opposed to "primary" =
+# a target's own records / the subject's own channels, and "unverified" = everything else, which lands in the
+# Rumor Mill). Match is by registered domain (and subdomains). Add the outlets that cover your targets.
+outlets:
+  - apnews.com
+  - reuters.com
+  - npr.org
+  - pbs.org
+  - bbc.com
+  - nytimes.com
+  - washingtonpost.com
+  - wsj.com
+  - bloomberg.com
+  - axios.com
+  - politico.com
+  - propublica.org
+
+# Domains never used as evidence or leads: aggregators, AI summaries, wikis, content farms.
+exclude_domains:
+  - ballotpedia.org
+  - wikipedia.org
+  - wikidata.org
+  - facebook.com
+  - x.com
+  - twitter.com
+  - instagram.com
+  - tiktok.com
+  - reddit.com
+  - quora.com
+  - medium.com
+  - substack.com
+  - perplexity.ai
+  - chatgpt.com

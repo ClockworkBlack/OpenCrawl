@@ -1,0 +1,35 @@
+# Official newsrooms crawled as press releases (kind press_release, evidence primary).
+# Only official domains; the crawler starts at each home page and follows links that match `include`
+# (so no deep URL is guessed). Feeds are auto-detected from the pages themselves.
+# Appointments are derived from these releases (opencrawl.civic.press): who was appointed to what, by whom.
+press:
+  - id: press:governor
+    name: Office of the Governor of Colorado
+    url: https://governorsoffice.colorado.gov/
+    include: ["/news", "press", "release"]
+    tier: a
+  - id: press:sos
+    name: Colorado Secretary of State
+    url: https://www.coloradosos.gov/
+    include: ["newsRoom", "pressReleases", "elections", "news"]
+    tier: a
+  - id: press:ag
+    name: Colorado Attorney General
+    url: https://coag.gov/
+    include: ["press-releases", "news"]
+    tier: b
+  - id: press:legislature
+    name: Colorado General Assembly
+    url: https://leg.colorado.gov/
+    include: ["press", "news", "committees", "bills"]
+    tier: b
+  - id: press:cde
+    name: Colorado Department of Education
+    url: https://www.cde.state.co.us/
+    include: ["communications", "news", "press", "state-board"]
+    tier: c
+  - id: press:puc
+    name: Colorado Public Utilities Commission
+    url: https://puc.colorado.gov/
+    include: ["news", "press", "commissioners"]
+    tier: c

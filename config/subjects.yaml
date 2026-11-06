@@ -1,0 +1,25 @@
+# Subjects: people and organizations to research by name across everything crawled, the news and social media
+# (`opencrawl subjects research`). Also importable from a CSV/JSON with `opencrawl subjects import FILE`.
+#
+# Fields
+#   id, name, aliases[]      who; aliases are other spellings, former names, nicknames
+#   kind                     person | organization
+#   target, targets[]        the target(s) whose records are searched first; their names also disambiguate news
+#   places[]                 words an article must contain besides the name (a city, a state, an employer)
+#   websites[], social[]     the subject's own channels (primary evidence; the first website is the proof page
+#                            that social accounts are checked against)
+#   search_terms[], news_feeds[]   extra news queries and feeds
+#   priority: true           researched before everyone else
+#   office, party            civic: what they hold or ran for
+#   finance_csv, fec_id      civic: a campaign-finance export, an FEC candidate id
+#   races[]                  civic: contests ({eid, d, office, party, votes, pct, outcome, level, u}) for the career timeline
+subjects:
+  - id: jane-example
+    name: Jane Example
+    kind: person
+    aliases: ["Jane Q. Example"]
+    target: example-org
+    places: ["Example Organization"]
+    websites: []
+    social: []
+    priority: false

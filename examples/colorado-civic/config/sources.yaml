@@ -1,0 +1,19 @@
+# Extra one-off sources beyond the jurisdiction registry (state agencies, a county's separate elections site,
+# a regional council of governments...). Same fields as config/sources.yaml in the starter: id, url, kind, since,
+# include/exclude, max_pages, depth, render: browser, legistar: <client>, feeds: [...], channel/endpoint to pin.
+# An entry whose id matches a registry source (e.g. "denver:site") overrides it.
+sources:
+  - id: co-sos-elections
+    url: https://www.coloradosos.gov/pubs/elections/
+    kind: page
+    tier: a
+    include: ["/pubs/elections", "/elections", "Results", "results", "candidates", "ballot"]
+    max_pages: 80
+    enabled: true
+  - id: co-sos-historical-results
+    url: https://historicalelectiondata.coloradosos.gov/
+    kind: election
+    tier: b
+    include: ["/eng/", "/results", "/elections", "/files/serve"]
+    max_pages: 100
+    enabled: true

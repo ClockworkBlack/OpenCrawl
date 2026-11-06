@@ -1,0 +1,300 @@
+name: crawl
+
+# Nightly crawl + weekly discovery and subject research, entirely from config/ (nothing here is project-specific).
+#
+# Cost: private repositories get a monthly allowance of Actions minutes (about 2,000 on GitHub Free, 3,000 on Pro);
+# public repositories are free. Every step below has a time cap, not a fixed cost: once a backfill is done a step
+# finishes early. Nightly: N crawl runners side by side (CRAWL_SHARDS x CRAWL_MINUTES), plus small caps for derive,
+# transcripts, Legistar sponsors and a share of the weekly research budget. Weekly: seed, a long research block and
+# campaign finance. The browser comes from the runner's own Chrome and the database moves as zstd, so setup stays short.
+# Raise throughput with repository variables (Settings > Secrets and variables > Actions > Variables):
+#   CRAWL_SHARDS   parallel crawl runners (default 2)    CRAWL_MINUTES      crawl budget per runner (default 18)
+#   SEED_MINUTES   weekly discovery budget (default 20)   RESEARCH_NIGHTLY_MINUTES research per night (13); RESEARCH_MINUTES on demand (90)
+#   DERIVE_MINUTES, TRANSCRIPT_MINUTES, SPONSOR_MINUTES, FINANCE_MINUTES, YOUTUBE_MINUTES (defaults 5, 4, 3, 15, 10)
+# A self-hosted runner (runs-on: self-hosted) costs no minutes at all.
+#
+# Data: the database (data/crawl.db) and the export bundle live as assets of the "crawl-data" release; small state
+# files, the records-request tracker and any records received by email are committed back to this repository.
+#
+# Secrets (Settings > Secrets and variables > Actions > New repository secret; see README "Secrets and API keys"):
+#   YOUTUBE_API_KEY, FEC_API_KEY, X_BEARER_TOKEN, OPENCORPORATES_API_KEY (all optional)
+#   ORR_SMTP_HOST, ORR_SMTP_PORT, ORR_USER, ORR_PASSWORD, ORR_FROM, ORR_IMAP_HOST  (the project mailbox for public
+#   records requests; nothing is sent until settings.yaml openrecords.enabled is true and a requester is set)
+
+on:
+  schedule:
+    - cron: "7 4 * * *"      # nightly 04:07 UTC: inside most US off-peak windows
+    - cron: "41 9 * * 0"     # Sundays 09:41 UTC: seed (re-discover sites/portals) + subject research
+    - cron: "17 11 * * *"    # 11:17 UTC: starts the day's backfill chain while config/backfill.json has it on
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "What to run"
+        type: choice
+        default: crawl
+        options: [crawl, seed, subjects, all, export-only, backfill]
+      source:
+        description: "crawl: only this source or target id (blank = everything due)"
+        required: false
+      tier:
+        description: "crawl: only this tier (a, b, c)"
+        required: false
+      force:
+        description: "crawl: ignore the off-peak window and cadence"
+        type: boolean
+        default: false
+      full:
+        description: "crawl: full re-crawl from the start of history instead of a delta"
+        type: boolean
+        default: false
+      reseed:
+        description: "seed: re-inspect every target now, not only entries older than 30 days"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write        # a backfill run dispatches the next one
+
+concurrency:
+  group: crawl
+  cancel-in-progress: false
+
+env:
+  OPENCRAWL_USER_AGENT: "OpenCrawl/1.0 (+https://github.com/${{ github.repository }})"
+  GH_TOKEN: ${{ github.token }}
+  ORR_FROM: ${{ secrets.ORR_FROM }}
+  DATA_TAG: crawl-data
+  WEEKLY: ${{ github.event.schedule == '41 9 * * 0' }}
+  OPTIMIZE_FTS: ${{ github.event.schedule == '41 9 * * 0' }}
+  NIGHTLY: ${{ github.event.schedule == '7 4 * * *' }}
+  BACKFILL: ${{ inputs.job == 'backfill' || github.event.schedule == '17 11 * * *' }}
+  OPENCRAWL_BROWSER_CHANNEL: chrome      # GitHub's runners ship Google Chrome: no Playwright browser download per run
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    outputs:
+      shards: ${{ steps.plan.outputs.shards }}
+      n: ${{ steps.plan.outputs.n }}
+      started: ${{ steps.plan.outputs.started }}
+      crawl: ${{ steps.plan.outputs.crawl }}
+      research: ${{ steps.plan.outputs.research }}
+      skip: ${{ steps.plan.outputs.skip }}
+      minutes: ${{ steps.plan.outputs.minutes }}
+      research_minutes: ${{ steps.plan.outputs.research_minutes }}
+      finance_minutes: ${{ steps.plan.outputs.finance_minutes }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - name: Install (only when this job runs the crawler, for seeding)
+        if: env.WEEKLY == 'true' || inputs.job == 'seed' || inputs.job == 'all'
+        run: pip install -q -e .
+      - id: plan
+        run: |
+          N="${{ vars.CRAWL_SHARDS || '2' }}"; MIN="${{ vars.CRAWL_MINUTES || '18' }}"
+          # daytime backfill (config/backfill.json, state/backfill.json); stdlib only, nothing installed yet
+          eval "$(python -m opencrawl.backfill plan | sed 's/^/BF_/')"
+          echo "backfill: active=$BF_active go=$BF_go ($BF_why)"
+          JOB="${{ inputs.job || '' }}"
+          CRAWL=false; RESEARCH=false; SKIP=false
+          if [ "$JOB" = "" ] || [ "$JOB" = "crawl" ] || [ "$JOB" = "all" ]; then CRAWL=true; fi
+          if [ "$WEEKLY" = "true" ] || [ "$JOB" = "subjects" ] || [ "$JOB" = "all" ]; then RESEARCH=true; fi
+          if [ "$BACKFILL" = "true" ]; then
+            if [ "$BF_go" = "true" ]; then CRAWL=true; RESEARCH=true; N=1; MIN=$BF_crawl_minutes; else CRAWL=false; SKIP=true; fi
+          elif [ "$NIGHTLY" = "true" ] && [ "$BF_active" = "true" ]; then
+            N=$BF_night_shards; MIN=$BF_night_minutes    # more page crawling inside the off-peak window while a backfill runs
+          fi
+          echo "n=$N" >> "$GITHUB_OUTPUT"; echo "minutes=$MIN" >> "$GITHUB_OUTPUT"
+          echo "shards=$(python -c "import json;print(json.dumps(list(range($N))))")" >> "$GITHUB_OUTPUT"
+          echo "started=$(date -u +%Y-%m-%dT%H:%M:%S+00:00)" >> "$GITHUB_OUTPUT"
+          echo "crawl=$CRAWL" >> "$GITHUB_OUTPUT"; echo "research=$RESEARCH" >> "$GITHUB_OUTPUT"; echo "skip=$SKIP" >> "$GITHUB_OUTPUT"
+          echo "research_minutes=$BF_research_minutes" >> "$GITHUB_OUTPUT"; echo "finance_minutes=$BF_finance_minutes" >> "$GITHUB_OUTPUT"
+      - name: Seed (re-discover websites, portals, feeds; entries older than 30 days)
+        if: env.WEEKLY == 'true' || inputs.job == 'seed' || inputs.job == 'all'
+        run: |
+          if [ "${{ inputs.reseed }}" = "true" ]; then
+            opencrawl seed --refresh --max-minutes 55 --workers 16
+          else
+            opencrawl seed --max-age-days 30 --max-minutes ${{ vars.SEED_MINUTES || '20' }} --workers 16
+          fi
+      - run: mkdir -p state && touch state/.keep
+      - uses: actions/upload-artifact@v4
+        with: {name: state-base, path: state/, retention-days: 1, include-hidden-files: true}
+
+  crawl:
+    needs: prepare
+    if: needs.prepare.outputs.crawl == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340   # the crawl stops itself at CRAWL_MINUTES (at the next request of any source still running)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJson(needs.prepare.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - name: Install
+        run: |
+          # the runner's package lists are usually fresh enough; refresh only if the install needs it
+          sudo apt-get install -y -qq tesseract-ocr || (sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr)
+          pip install -q -e .
+          # script-rendered pages use the runner's Chrome; download Playwright's browser only if there isn't one
+          command -v google-chrome >/dev/null || python -m playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with: {name: state-base, path: state}
+      - name: Fetch database
+        run: bash scripts/ci_db.sh pull
+      - name: Crawl
+        timeout-minutes: 120
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}   # targets' YouTube channels (listing uses 1-unit calls)
+        run: |
+          ARGS="--shard ${{ matrix.shard }}/${{ needs.prepare.outputs.n }} --max-minutes ${{ needs.prepare.outputs.minutes }}"
+          [ -n "${{ inputs.source }}" ] && ARGS="$ARGS --source ${{ inputs.source }}"
+          [ -n "${{ inputs.tier }}" ] && ARGS="$ARGS --tier ${{ inputs.tier }}"
+          [ "${{ inputs.force }}" = "true" ] && ARGS="$ARGS --force"
+          [ "${{ inputs.full }}" = "true" ] && ARGS="$ARGS --full"
+          # watchdog: the crawler checks its budget between requests, but one long OCR or page render can outlast it.
+          # SIGINT lets it flush what it has (the delta below still runs); a hard kill only if it ignores that.
+          MIN=${{ needs.prepare.outputs.minutes }}
+          timeout -s INT -k 2m "$((MIN + 6))m" opencrawl run $ARGS || echo "crawl stopped by the watchdog after $((MIN + 6)) minutes"
+      - name: Delta
+        run: |
+          mkdir -p out/deltas out/state
+          opencrawl delta --since "${{ needs.prepare.outputs.started }}" --out out/deltas/shard-${{ matrix.shard }}.db
+          cp state/progress.json state/channels.json state/blocked.json out/state/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        with: {name: "shard-${{ matrix.shard }}", path: out/, retention-days: 1}
+
+  merge:
+    needs: [prepare, crawl]
+    if: always() && needs.prepare.result == 'success' && needs.prepare.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 200    # a backfill run's research block is 100 minutes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -q -e .
+      - uses: actions/download-artifact@v4
+        with: {name: state-base, path: state}
+      - uses: actions/download-artifact@v4
+        if: needs.crawl.result != 'skipped'
+        with: {pattern: "shard-*", path: shards}
+      - name: Fetch database
+        run: bash scripts/ci_db.sh pull
+      - name: Merge shards
+        run: |
+          shopt -s nullglob
+          DELTAS=(shards/*/deltas/*.db); STATES=(shards/*/state)
+          if [ ${#DELTAS[@]} -gt 0 ]; then opencrawl merge "${DELTAS[@]}" --state "${STATES[@]}"; fi
+      - name: Derive (results, minutes -> votes, ballot questions, appointments, guides, your own derivers)
+        run: opencrawl derive --max-minutes ${{ vars.DERIVE_MINUTES || '5' }}
+      - name: Transcripts and Legistar sponsors
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          opencrawl transcripts --max-minutes ${{ vars.TRANSCRIPT_MINUTES || '4' }} || true
+          opencrawl sponsors --max-minutes ${{ vars.SPONSOR_MINUTES || '3' }} || true
+      - name: YouTube channels (Data API, any time of day)
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          # channels due tonight (the shards list them too); the first run with a key lists all
+          [ -n "$YOUTUBE_API_KEY" ] && opencrawl run --kind video --max-minutes ${{ vars.YOUTUBE_MINUTES || '10' }} || echo "no YOUTUBE_API_KEY"
+          opencrawl transcripts --max-minutes 3 || true
+      - name: Subject research (every night, a share of the weekly budget; a full block when asked for)
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+        run: |
+          for k in FEC_API_KEY YOUTUBE_API_KEY X_BEARER_TOKEN; do [ -n "${!k}" ] && echo "$k: set" || echo "$k: missing (README: Secrets and API keys)"; done
+          opencrawl posts verify || true
+          if [ "$BACKFILL" = "true" ]; then
+            M=${{ needs.prepare.outputs.research_minutes }}  # daytime backfill block
+          elif [ "${{ needs.prepare.outputs.research }}" = "true" ] && [ "$WEEKLY" != "true" ]; then
+            M=${{ vars.RESEARCH_MINUTES || '90' }}          # asked for (job subjects / all)
+          else
+            M=${{ vars.RESEARCH_NIGHTLY_MINUTES || '13' }}  # nightly: about the same minutes a week as one 90-minute block
+          fi
+          opencrawl subjects research --max-minutes "$M"
+      - name: Campaign finance and organizations
+        if: needs.prepare.outputs.research == 'true'
+        env:
+          FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+          OPENCORPORATES_API_KEY: ${{ secrets.OPENCORPORATES_API_KEY }}
+        run: opencrawl finance --max-minutes ${{ env.BACKFILL == 'true' && needs.prepare.outputs.finance_minutes || vars.FINANCE_MINUTES || '15' }} || true
+      - name: Public records requests (contacts, replies, follow-ups, new batch) from the project mailbox
+        env:
+          ORR_SMTP_HOST: ${{ secrets.ORR_SMTP_HOST }}
+          ORR_SMTP_PORT: ${{ secrets.ORR_SMTP_PORT }}
+          ORR_USER: ${{ secrets.ORR_USER }}
+          ORR_PASSWORD: ${{ secrets.ORR_PASSWORD }}
+          ORR_FROM: ${{ secrets.ORR_FROM }}
+          ORR_IMAP_HOST: ${{ secrets.ORR_IMAP_HOST }}
+        run: |
+          # every step is a no-op until settings.yaml openrecords.enabled is true, a requester is set and the secrets exist
+          opencrawl records contacts --max-minutes 10 || true
+          opencrawl records check || true
+          opencrawl records follow-up || true
+          opencrawl records send || true
+          opencrawl records status
+      - name: Screenshot inbox (imports/screens/)
+        run: |
+          shopt -s nullglob nocaseglob
+          F=(imports/screens/*.{png,jpg,jpeg,webp,pdf} imports/screens/{ordinances,posts,text}/*.{png,jpg,jpeg,webp,pdf})
+          if [ ${#F[@]} -gt 0 ]; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr
+            opencrawl screens ingest
+          else
+            echo "inbox empty"
+          fi
+      - name: Task list, status, export bundle
+        run: |
+          opencrawl tasks
+          opencrawl status
+          opencrawl export --out dist/bundle
+      - name: Store database and bundle (release assets)
+        run: |
+          bash scripts/ci_db.sh push
+          tar -cf - -C dist bundle | gzip -1 > bundle.tar.gz   # fast level: built every night
+          gh release upload "$DATA_TAG" bundle.tar.gz --clobber
+      - name: Backfill (this run's minutes, and the next daytime run)
+        if: always()
+        run: |
+          # billable minutes of this run so far: each job rounded up to the minute, as GitHub bills them
+          M=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --jq '.jobs[] | [.started_at, .completed_at] | @tsv' |
+              python -c "import sys,datetime as d,math
+          n=d.datetime.now(d.timezone.utc); t=0
+          for l in sys.stdin:
+              a,b=(l.rstrip('\n').split('\t')+[''])[:2]
+              if not a or a=='null': continue
+              s=d.datetime.fromisoformat(a.replace('Z','+00:00')); e=d.datetime.fromisoformat(b.replace('Z','+00:00')) if b and b!='null' else n
+              t+=max(1,math.ceil((e-s).total_seconds()/60))
+          print(t)" || echo 0)
+          FLAG=""; [ "$BACKFILL" = "true" ] && FLAG="--backfill"
+          opencrawl backfill next --minutes "$M" --run-id "${{ github.run_id }}" $FLAG --github-output "$GITHUB_OUTPUT.bf" || true
+          if [ "$BACKFILL" = "true" ] && grep -q "go=true" "$GITHUB_OUTPUT.bf" 2>/dev/null; then
+            gh workflow run crawl.yml --ref "${{ github.ref_name }}" -f job=backfill && echo "next backfill run queued"
+          fi
+      - name: Commit state (progress, discoveries, records-request tracker, received records, rumor mill)
+        if: always()
+        run: |
+          git config user.name "opencrawl-bot"
+          git config user.email "opencrawl-bot@users.noreply.github.com"
+          # add each path only if it exists: one missing path makes `git add` refuse everything
+          # (entity ids, organization lookups and profile input counts live in the database)
+          for p in state/progress.json state/channels.json state/blocked.json state/discovered.json \
+                   state/subject_progress.json state/screens_seen.json state/finance_portal.json state/backfill.json \
+                   state/subjects_imported.json imports/screens data/openrecords \
+                   data/manual_tasks.md data/verified data/rumor_mill; do
+            if [ -e "$p" ]; then git add -A "$p"; fi
+          done
+          git diff --cached --quiet || git commit -m "crawl: $(date -u +%Y-%m-%dT%H:%MZ)"
+          # files the run rewrites but does not keep (rebuilt each run) must not block the rebase
+          for i in 1 2 3; do git pull --rebase --autostash -q && git push && break; sleep 5; done
