@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69"]
+requires = ["setuptools>=84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -17,10 +17,10 @@ dependencies = [
   "beautifulsoup4>=4.12",
   "lxml>=5.3.0",
   "PyYAML>=6.0.1",
-  "Pillow>=11.3.0",
+  "Pillow>=13.0.0",
   "pdfplumber>=0.11.8",
   "pdfminer.six>=20251107",
-  "cryptography>=44.0.0",
+  "cryptography>=50.0.2",
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -30,11 +30,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-browser = ["playwright>=1.49"]          # script-rendered pages and screenshots (`opencrawl capture`, render: browser)
+browser = ["playwright>=1.64.1"]          # script-rendered pages and screenshots (`opencrawl capture`, render: browser)
 ocr = ["pytesseract>=0.3.10"]           # scanned PDFs and screenshots (needs the tesseract program)
-transcribe = ["faster-whisper>=1.0"]    # local transcription of posted recordings
-all = ["playwright>=1.49", "pytesseract>=0.3.10"]
-dev = ["pytest>=8", "reportlab>=4"]
+transcribe = ["faster-whisper>=1.2.1"]    # local transcription of posted recordings
+all = ["playwright>=1.64.1", "pytesseract>=0.3.10"]
+dev = ["pytest>=9.2.0", "reportlab>=5.1.0"]
 
 [project.scripts]
 opencrawl = "opencrawl.cli:main"
