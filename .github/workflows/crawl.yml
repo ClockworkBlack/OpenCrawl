@@ -1,0 +1,408 @@
+name: crawl
+
+# Scheduled crawl, weekly discovery and subject research, entirely from config/. Off until the repository owner
+# opts in: Settings > Secrets and variables > Actions > Variables > OPENCRAWL_ENABLED = true. A fork or a fresh copy
+# never crawls on a schedule by itself.
+#
+# Required secret: OPENCRAWL_DATA_KEY (`opencrawl vault keygen`). Everything this workflow stores (the database,
+# state, received records, the export bundle; the artifacts passed between jobs) is encrypted with it: release
+# assets and artifacts of a public repository can be downloaded by anyone. Without it the run stops.
+#
+# Optional secrets (see README "Secrets and API keys"), each given only to the step that uses it:
+#   YOUTUBE_API_KEY, FEC_API_KEY, X_BEARER_TOKEN, OPENCORPORATES_API_KEY, LEGISTAR_TOKENS
+#   ORR_SMTP_HOST, ORR_SMTP_PORT, ORR_USER, ORR_PASSWORD, ORR_FROM, ORR_IMAP_HOST, ORR_IMAP_PORT (the project mailbox
+#   for public records requests; nothing is sent until settings.yaml openrecords.enabled is true and a requester is set)
+#
+# Optional variables:
+#   CRAWL_SHARDS (2), CRAWL_MINUTES (18), SEED_MINUTES (20), RESEARCH_NIGHTLY_MINUTES (13), RESEARCH_MINUTES (90),
+#   DERIVE_MINUTES (5), TRANSCRIPT_MINUTES (4), SPONSOR_MINUTES (3), FINANCE_MINUTES (15), YOUTUBE_MINUTES (10)
+#   COMMIT_STATE = true    also commit small state files, the records-request tracker and received records to the
+#                          repository (plain text: on a public repository they become public)
+#   PUBLIC_BUNDLE = true   also publish the export bundle unencrypted (bundle.tar.gz) for a site to read
+#
+# Hardening: actions pinned to commit SHAs; read-only jobs except `publish`; credentials never persisted in a
+# checkout that processes crawled content; every value from inputs and variables validated by scripts/ci_plan.py
+# and passed through environment variables; workflow commands switched off while crawled text is printed.
+
+on:
+  schedule:
+    - cron: "23 5 * * *"     # nightly
+    - cron: "37 8 * * 6"     # Saturdays: re-discover sites and portals, longer subject research, campaign finance
+    - cron: "13 13 * * *"    # starts the day's backfill chain while config/backfill.json has it on
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "What to run"
+        type: choice
+        default: crawl
+        options: [crawl, seed, subjects, all, export-only, backfill]
+      source:
+        description: "crawl: only this source or target id (blank = everything due)"
+        required: false
+      tier:
+        description: "crawl: only this tier (a, b, c)"
+        required: false
+      force:
+        description: "crawl: ignore the off-peak window and cadence"
+        type: boolean
+        default: false
+      full:
+        description: "crawl: full re-crawl from the start of history instead of a delta"
+        type: boolean
+        default: false
+      reseed:
+        description: "seed: re-inspect every target now, not only entries older than 30 days"
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: crawl-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  NIGHTLY_CRON: "23 5 * * *"
+  WEEKLY_CRON: "37 8 * * 6"
+  BACKFILL_CRON: "13 13 * * *"
+  DATA_TAG: crawl-data
+  OPENCRAWL_USER_AGENT: "OpenCrawl/1.0 (+https://github.com/${{ github.repository }})"
+  OPENCRAWL_BROWSER_CHANNEL: chrome      # the runner's Google Chrome: no browser download per run
+  OPENCRAWL_REDACT_LOGS: "1"             # workflow logs of a public repository are public: no subject ids in them
+  PYTHONPATH: ${{ github.workspace }}
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  prepare:
+    if: vars.OPENCRAWL_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    permissions:
+      contents: read
+    outputs:
+      n: ${{ steps.plan.outputs.n }}
+      minutes: ${{ steps.plan.outputs.minutes }}
+      shards: ${{ steps.plan.outputs.shards }}
+      started: ${{ steps.plan.outputs.started }}
+      crawl: ${{ steps.plan.outputs.crawl }}
+      research: ${{ steps.plan.outputs.research }}
+      skip: ${{ steps.plan.outputs.skip }}
+      weekly: ${{ steps.plan.outputs.weekly }}
+      backfill: ${{ steps.plan.outputs.backfill }}
+      source: ${{ steps.plan.outputs.source }}
+      tier: ${{ steps.plan.outputs.tier }}
+      force: ${{ steps.plan.outputs.force }}
+      full: ${{ steps.plan.outputs.full }}
+      research_minutes: ${{ steps.plan.outputs.research_minutes }}
+      finance_minutes: ${{ steps.plan.outputs.finance_minutes }}
+      derive_minutes: ${{ steps.plan.outputs.derive_minutes }}
+      transcript_minutes: ${{ steps.plan.outputs.transcript_minutes }}
+      sponsor_minutes: ${{ steps.plan.outputs.sponsor_minutes }}
+      youtube_minutes: ${{ steps.plan.outputs.youtube_minutes }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with: {python-version: "3.13"}
+      - name: Install
+        run: |
+          pip install -q --only-binary=:all: -r requirements.txt
+      - name: Restore data (encrypted release asset)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPENCRAWL_DATA_KEY: ${{ secrets.OPENCRAWL_DATA_KEY }}
+        run: bash scripts/ci_data.sh pull
+      - id: plan
+        name: Plan this run (validates inputs and variables)
+        env:
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          IN_JOB: ${{ inputs.job }}
+          IN_SOURCE: ${{ inputs.source }}
+          IN_TIER: ${{ inputs.tier }}
+          IN_FORCE: ${{ inputs.force }}
+          IN_FULL: ${{ inputs.full }}
+          IN_RESEED: ${{ inputs.reseed }}
+          CRAWL_SHARDS: ${{ vars.CRAWL_SHARDS }}
+          CRAWL_MINUTES: ${{ vars.CRAWL_MINUTES }}
+          SEED_MINUTES: ${{ vars.SEED_MINUTES }}
+          RESEARCH_MINUTES: ${{ vars.RESEARCH_MINUTES }}
+          RESEARCH_NIGHTLY_MINUTES: ${{ vars.RESEARCH_NIGHTLY_MINUTES }}
+          FINANCE_MINUTES: ${{ vars.FINANCE_MINUTES }}
+          DERIVE_MINUTES: ${{ vars.DERIVE_MINUTES }}
+          TRANSCRIPT_MINUTES: ${{ vars.TRANSCRIPT_MINUTES }}
+          SPONSOR_MINUTES: ${{ vars.SPONSOR_MINUTES }}
+          YOUTUBE_MINUTES: ${{ vars.YOUTUBE_MINUTES }}
+        run: python scripts/ci_plan.py
+      - name: Check settings (doctor)
+        run: python -m opencrawl doctor --ci
+        env:
+          OPENCRAWL_DATA_KEY: ${{ secrets.OPENCRAWL_DATA_KEY }}
+      - name: Seed (re-discover websites, portals, feeds)
+        if: steps.plan.outputs.seed == 'true'
+        env:
+          RESEED: ${{ steps.plan.outputs.reseed }}
+          SEED_MINUTES: ${{ steps.plan.outputs.seed_minutes }}
+        run: |
+          T=$(python -c "import secrets;print(secrets.token_hex(16))"); echo "::stop-commands::$T"
+          if [ "$RESEED" = "true" ]; then
+            python -m opencrawl seed --refresh --max-minutes 55 --workers 16 || echo "seed stopped early"
+          else
+            python -m opencrawl seed --max-age-days 30 --max-minutes "$SEED_MINUTES" --workers 16 || echo "seed stopped early"
+          fi
+          echo "::$T::"
+      - name: Seal state for the other jobs
+        env:
+          OPENCRAWL_DATA_KEY: ${{ secrets.OPENCRAWL_DATA_KEY }}
+        run: mkdir -p state && bash scripts/ci_data.sh seal state state-base.ocv
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with: {name: state-base, path: state-base.ocv, retention-days: 1, if-no-files-found: error}
+
+  crawl:
+    needs: prepare
+    if: needs.prepare.outputs.crawl == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJson(needs.prepare.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with: {python-version: "3.13"}
+      - name: Install
+        run: |
+          sudo apt-get install -y -qq tesseract-ocr || (sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr)
+          pip install -q --only-binary=:all: -r requirements.txt
+          command -v google-chrome >/dev/null || python -m playwright install --with-deps chromium
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with: {name: state-base, path: .ci-in}
+      - name: Restore data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPENCRAWL_DATA_KEY: ${{ secrets.OPENCRAWL_DATA_KEY }}
+        run: |
+          bash scripts/ci_data.sh pull
+          bash scripts/ci_data.sh open .ci-in/state-base.ocv .
+      - name: Crawl
+        timeout-minutes: 320
+        env:
+          SHARD: ${{ matrix.shard }}
+          N: ${{ needs.prepare.outputs.n }}
+          MIN: ${{ needs.prepare.outputs.minutes }}
+          SOURCE: ${{ needs.prepare.outputs.source }}
+          TIER: ${{ needs.prepare.outputs.tier }}
+          FORCE: ${{ needs.prepare.outputs.force }}
+          FULL: ${{ needs.prepare.outputs.full }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          LEGISTAR_TOKENS: ${{ secrets.LEGISTAR_TOKENS }}
+        run: |
+          ARGS=(--shard "$SHARD/$N" --max-minutes "$MIN")
+          [ -n "$SOURCE" ] && ARGS+=(--source "$SOURCE")
+          [ -n "$TIER" ] && ARGS+=(--tier "$TIER")
+          [ "$FORCE" = "true" ] && ARGS+=(--force)
+          [ "$FULL" = "true" ] && ARGS+=(--full)
+          T=$(python -c "import secrets;print(secrets.token_hex(16))"); echo "::stop-commands::$T"
+          # the crawler checks its budget between requests; SIGINT lets it flush if one render or OCR outlasts it
+          timeout -s INT -k 2m "$((MIN + 6))m" python -m opencrawl run "${ARGS[@]}" || echo "crawl stopped after $((MIN + 6)) minutes"
+          echo "::$T::"
+      - name: Delta
+        env:
+          STARTED: ${{ needs.prepare.outputs.started }}
+          SHARD: ${{ matrix.shard }}
+          OPENCRAWL_DATA_KEY: ${{ secrets.OPENCRAWL_DATA_KEY }}
+        run: |
+          mkdir -p out/deltas out/state
+          python -m opencrawl delta --since "$STARTED" --out "out/deltas/shard-$SHARD.db"
+          cp state/progress.json state/channels.json state/blocked.json out/state/ 2>/dev/null || true
+          bash scripts/ci_data.sh seal out "shard-$SHARD.ocv"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with: {name: "shard-${{ matrix.shard }}", path: "shard-${{ matrix.shard }}.ocv", retention-days: 1, if-no-files-found: error}
+
+  merge:
+    needs: [prepare, crawl]
+    if: always() && needs.prepare.result == 'success' && needs.prepare.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 200
+    permissions:
+      contents: read
+      actions: read          # this run's job times, for the backfill's minute count
+    outputs:
+      dispatch: ${{ steps.backfill.outputs.go }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with: {python-version: "3.13"}
+      - name: Install
+        run: |
+          sudo apt-get install -y -qq tesseract-ocr || (sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr)
+          pip install -q --only-binary=:all: -r requirements.txt
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with: {name: state-base, path: .ci-in}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        if: needs.crawl.result != 'skipped'
+        with: {pattern: "shard-*", path: .ci-in/shards, merge-multiple: true}
+      - name: Restore data and merge shards
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPENCRAWL_DATA_KEY: ${{ secrets.OPENCRAWL_DATA_KEY }}
+        run: |
+          bash scripts/ci_data.sh pull
+          bash scripts/ci_data.sh open .ci-in/state-base.ocv .
+          shopt -s nullglob
+          for f in .ci-in/shards/*.ocv; do d=".ci-in/shards/$(basename "$f" .ocv)"; bash scripts/ci_data.sh open "$f" "$d"; done
+          DELTAS=(.ci-in/shards/*/out/deltas/*.db); STATES=(.ci-in/shards/*/out/state)
+          if [ ${#DELTAS[@]} -gt 0 ]; then python -m opencrawl merge "${DELTAS[@]}" --state "${STATES[@]}"; fi
+      - name: Derive, transcripts, sponsors, YouTube channels
+        env:
+          DERIVE_MINUTES: ${{ needs.prepare.outputs.derive_minutes }}
+          TRANSCRIPT_MINUTES: ${{ needs.prepare.outputs.transcript_minutes }}
+          SPONSOR_MINUTES: ${{ needs.prepare.outputs.sponsor_minutes }}
+          YOUTUBE_MINUTES: ${{ needs.prepare.outputs.youtube_minutes }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          LEGISTAR_TOKENS: ${{ secrets.LEGISTAR_TOKENS }}
+        run: |
+          T=$(python -c "import secrets;print(secrets.token_hex(16))"); echo "::stop-commands::$T"
+          python -m opencrawl derive --max-minutes "$DERIVE_MINUTES" || echo "derive stopped early"
+          python -m opencrawl transcripts --max-minutes "$TRANSCRIPT_MINUTES" || true
+          python -m opencrawl sponsors --max-minutes "$SPONSOR_MINUTES" || true
+          if [ -n "$YOUTUBE_API_KEY" ]; then python -m opencrawl run --kind video --max-minutes "$YOUTUBE_MINUTES" || true; fi
+          echo "::$T::"
+      - name: Subject research
+        env:
+          RESEARCH_MINUTES: ${{ needs.prepare.outputs.research_minutes }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+        run: |
+          T=$(python -c "import secrets;print(secrets.token_hex(16))"); echo "::stop-commands::$T"
+          python -m opencrawl posts verify || true
+          [ "$RESEARCH_MINUTES" -gt 0 ] && python -m opencrawl subjects research --max-minutes "$RESEARCH_MINUTES" || true
+          echo "::$T::"
+      - name: Campaign finance and organizations
+        if: needs.prepare.outputs.research == 'true'
+        env:
+          FINANCE_MINUTES: ${{ needs.prepare.outputs.finance_minutes }}
+          FEC_API_KEY: ${{ secrets.FEC_API_KEY }}
+          OPENCORPORATES_API_KEY: ${{ secrets.OPENCORPORATES_API_KEY }}
+        run: |
+          T=$(python -c "import secrets;print(secrets.token_hex(16))"); echo "::stop-commands::$T"
+          python -m opencrawl finance --max-minutes "$FINANCE_MINUTES" || true
+          echo "::$T::"
+      - name: Public records requests from the project mailbox
+        env:
+          ORR_SMTP_HOST: ${{ secrets.ORR_SMTP_HOST }}
+          ORR_SMTP_PORT: ${{ secrets.ORR_SMTP_PORT }}
+          ORR_USER: ${{ secrets.ORR_USER }}
+          ORR_PASSWORD: ${{ secrets.ORR_PASSWORD }}
+          ORR_FROM: ${{ secrets.ORR_FROM }}
+          ORR_IMAP_HOST: ${{ secrets.ORR_IMAP_HOST }}
+          ORR_IMAP_PORT: ${{ secrets.ORR_IMAP_PORT }}
+        run: |
+          # each step is a no-op until settings.yaml openrecords.enabled is true, a requester is set and the secrets exist
+          T=$(python -c "import secrets;print(secrets.token_hex(16))"); echo "::stop-commands::$T"
+          python -m opencrawl records contacts --max-minutes 10 || true
+          python -m opencrawl records check || true
+          python -m opencrawl records follow-up || true
+          python -m opencrawl records send || true
+          python -m opencrawl records status
+          echo "::$T::"
+      - name: Screenshot inbox, retention, tasks, export
+        run: |
+          T=$(python -c "import secrets;print(secrets.token_hex(16))"); echo "::stop-commands::$T"
+          python -m opencrawl screens ingest || true
+          python -m opencrawl purge --expired || true
+          python -m opencrawl tasks
+          python -m opencrawl status
+          python -m opencrawl export --out dist/bundle
+          echo "::$T::"
+      - id: backfill
+        name: Backfill bookkeeping (this run's minutes; dispatch the next daytime run?)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          BACKFILL: ${{ needs.prepare.outputs.backfill }}
+        run: |
+          M=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --jq '.jobs[] | [.started_at, .completed_at] | @tsv' |
+              python -c "import sys,datetime as d,math
+          n=d.datetime.now(d.timezone.utc); t=0
+          for l in sys.stdin:
+              a,b=(l.rstrip('\n').split('\t')+[''])[:2]
+              if not a or a=='null': continue
+              s=d.datetime.fromisoformat(a.replace('Z','+00:00')); e=d.datetime.fromisoformat(b.replace('Z','+00:00')) if b and b!='null' else n
+              t+=max(1,math.ceil((e-s).total_seconds()/60))
+          print(t)" || echo 0)
+          FLAG=(); [ "$BACKFILL" = "true" ] && FLAG=(--backfill)
+          python -m opencrawl backfill next --minutes "$M" --run-id "$RUN_ID" "${FLAG[@]}" --github-output "$GITHUB_OUTPUT" || echo "go=false" >> "$GITHUB_OUTPUT"
+      - name: Seal data and bundle
+        if: always()
+        env:
+          OPENCRAWL_DATA_KEY: ${{ secrets.OPENCRAWL_DATA_KEY }}
+          OPTIMIZE_FTS: ${{ needs.prepare.outputs.weekly }}
+          PUBLIC_BUNDLE: ${{ vars.PUBLIC_BUNDLE }}
+        run: |
+          mkdir -p .ci-out dist/bundle
+          bash scripts/ci_data.sh pack .ci-out/opencrawl-data.ocv
+          bash scripts/ci_data.sh seal dist/bundle .ci-out/bundle.ocv
+          if [ "$PUBLIC_BUNDLE" = "true" ]; then tar -cf - -C dist bundle | gzip -1 > .ci-out/bundle.tar.gz; fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: always()
+        with: {name: data-final, path: .ci-out/, retention-days: 3, if-no-files-found: ignore, include-hidden-files: true}
+
+  publish:
+    needs: [prepare, merge]
+    if: always() && needs.merge.result != 'skipped' && needs.merge.result != 'cancelled'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write        # release assets (and, with COMMIT_STATE, a commit of state files)
+      actions: write         # dispatch the next backfill run
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: {persist-credentials: "${{ vars.COMMIT_STATE == 'true' }}"}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with: {name: data-final, path: .ci-out}
+      - name: Upload release assets (encrypted)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          F=(.ci-out/opencrawl-data.ocv .ci-out/bundle.ocv .ci-out/bundle.tar.gz)
+          [ -f .ci-out/opencrawl-data.ocv ] || { echo "::error::no data archive from the merge job"; exit 1; }
+          bash scripts/ci_data.sh push "${F[@]}"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        if: vars.COMMIT_STATE == 'true'
+        with: {python-version: "3.13"}
+      - name: Commit state files (COMMIT_STATE)
+        if: vars.COMMIT_STATE == 'true'
+        env:
+          OPENCRAWL_DATA_KEY: ${{ secrets.OPENCRAWL_DATA_KEY }}
+        run: |
+          pip install -q --only-binary=:all: -r requirements.txt
+          bash scripts/ci_data.sh open .ci-out/opencrawl-data.ocv .ci-state
+          git config user.name "opencrawl-bot"
+          git config user.email "opencrawl-bot@users.noreply.github.com"
+          # small state files, the records-request tracker and received records; never the database, the page
+          # cache, quarantined claims or replies kept for review
+          for p in state/progress.json state/channels.json state/blocked.json state/discovered.json \
+                   state/subject_progress.json state/screens_seen.json state/finance_portal.json state/backfill.json \
+                   state/subjects_imported.json data/openrecords/requests.json data/manual_tasks.md data/verified \
+                   imports/screens; do
+            if [ -e ".ci-state/$p" ]; then mkdir -p "$(dirname "$p")"; rm -rf "$p"; cp -R ".ci-state/$p" "$p"; git add -A "$p"; fi
+          done
+          rm -rf .ci-state
+          git diff --cached --quiet || git commit -q -m "crawl: $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done
+      - name: Next backfill run
+        if: needs.merge.outputs.dispatch == 'true' && needs.prepare.outputs.backfill == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ github.ref_name }}
+        run: gh workflow run crawl.yml --ref "$REF" -f job=backfill && echo "next backfill run queued"

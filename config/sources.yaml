@@ -1,0 +1,24 @@
+# Individual sources beyond the targets: any website, feed, API or portal you want crawled on its own.
+# Every entry is one crawl source. Fields:
+#   id          required, unique (an id that matches a target's source, e.g. "example-org:site", overrides it)
+#   url         the start page (a real page: the crawler never builds URLs from a pattern)
+#   kind        the record kind pages get: page (default), document, post, press_release, guide, article...
+#   tier        a | b | c crawl cadence (default b)
+#   target      the target these records belong to (optional)
+#   include     substrings a page URL must contain to be kept (default: everything on the site)
+#   exclude     substrings that drop a page (default: search, login, print, tag and author pages)
+#   max_pages, depth, since
+#   channel / endpoint   pin a channel instead of probing: feed + the feed URL, wp_json + the posts endpoint,
+#               api + "legistar:<client>" / "youtube:<channel url>" / ...
+#   render: browser      use headless Chromium (script-rendered sites); content_selector / follow narrow it
+#   feeds       feed URLs to try first
+#   coverage: true       also crawl the site's pages after reading its feed or API
+#   enabled: false       keep an entry without crawling it
+sources:
+  - id: example-feed
+    url: https://www.example.org/news/
+    kind: page
+    tier: b
+    include: ["/news/"]
+    max_pages: 40
+    enabled: false                 # an illustration; turn it on or replace it

@@ -1,0 +1,1452 @@
+_about: Every public school district of Colorado (178), keyed to the registry's counties. Built by scripts/build_registry.py
+  from sources/school_districts.txt. Websites and board portals (BoardDocs...) come from `opencrawl seed` or config/overrides.yaml.
+districts:
+- id: sd-academy-school-district-20
+  name: Academy School District 20
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Academy School District
+- id: sd-adams-12-five-star-schools
+  name: Adams 12 Five Star Schools
+  kind: school_district
+  county: Adams
+  county_id: co-adams
+  population: 554668
+  counties:
+  - Adams
+  - Broomfield
+- id: sd-adams-county-school-district-14
+  name: Adams County School District 14
+  kind: school_district
+  county: Adams
+  county_id: co-adams
+  population: 554668
+  aliases:
+  - Adams County School District
+- id: sd-adams-arapahoe-school-district-28j
+  name: Adams-Arapahoe School District 28J
+  kind: school_district
+  county: Arapahoe
+  county_id: co-arapahoe
+  population: 673820
+  aliases:
+  - Adams-Arapahoe School District
+  counties:
+  - Arapahoe
+  - Adams
+- id: sd-agate-school-district-300
+  name: Agate School District 300
+  kind: school_district
+  county: Elbert
+  county_id: co-elbert
+  population: 30534
+  aliases:
+  - Agate School District
+- id: sd-aguilar-reorganized-school-district-re-6
+  name: Aguilar Reorganized School District RE-6
+  kind: school_district
+  county: Las Animas
+  county_id: co-las-animas
+  population: 14391
+  aliases:
+  - Aguilar Reorganized School District
+- id: sd-akron-school-district-r-1
+  name: Akron School District R-1
+  kind: school_district
+  county: Washington
+  county_id: co-washington
+  population: 4732
+  aliases:
+  - Akron School District
+- id: sd-alamosa-school-district-re-11j
+  name: Alamosa School District RE-11J
+  kind: school_district
+  county: Alamosa
+  county_id: co-alamosa
+  population: 16688
+  aliases:
+  - Alamosa School District
+- id: sd-archuleta-county-school-district-50-jt
+  name: Archuleta County School District 50 JT
+  kind: school_district
+  county: Archuleta
+  county_id: co-archuleta
+  population: 14306
+- id: sd-arickaree-school-district-r-2
+  name: Arickaree School District R-2
+  kind: school_district
+  county: Washington
+  county_id: co-washington
+  population: 4732
+  aliases:
+  - Arickaree School District
+- id: sd-arriba-flagler-consolidated-school-district-20
+  name: Arriba-Flagler Consolidated School District 20
+  kind: school_district
+  county: Kit Carson
+  county_id: co-kit-carson
+  population: 7069
+  aliases:
+  - Arriba-Flagler Consolidated School District
+- id: sd-aspen-school-district-1
+  name: Aspen School District 1
+  kind: school_district
+  county: Pitkin
+  county_id: co-pitkin
+  population: 16625
+  aliases:
+  - Aspen School District
+- id: sd-ault-highland-school-district-re-9
+  name: Ault-Highland School District RE-9
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Ault-Highland School District
+- id: sd-bayfield-school-district-10-jt-r
+  name: Bayfield School District 10 JT-R
+  kind: school_district
+  county: La Plata
+  county_id: co-la-plata
+  population: 56898
+- id: sd-bennett-school-district-29j
+  name: Bennett School District 29J
+  kind: school_district
+  county: Adams
+  county_id: co-adams
+  population: 554668
+  aliases:
+  - Bennett School District
+- id: sd-bethune-school-district-r-5
+  name: Bethune School District R-5
+  kind: school_district
+  county: Kit Carson
+  county_id: co-kit-carson
+  population: 7069
+  aliases:
+  - Bethune School District
+- id: sd-big-sandy-school-district-100j
+  name: Big Sandy School District 100J
+  kind: school_district
+  county: Elbert
+  county_id: co-elbert
+  population: 30534
+  aliases:
+  - Big Sandy School District
+- id: sd-boulder-valley-school-district-re-2
+  name: Boulder Valley School District RE-2
+  kind: school_district
+  county: Boulder
+  county_id: co-boulder
+  population: 328560
+  aliases:
+  - Boulder Valley School District
+  counties:
+  - Boulder
+  - Broomfield
+- id: sd-branson-reorganized-school-district-re-82
+  name: Branson Reorganized School District RE-82
+  kind: school_district
+  county: Las Animas
+  county_id: co-las-animas
+  population: 14391
+  aliases:
+  - Branson Reorganized School District
+- id: sd-briggsdale-school-district-re-10j
+  name: Briggsdale School District RE-10J
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Briggsdale School District
+- id: sd-brush-school-district-re-2j
+  name: Brush School District RE-2J
+  kind: school_district
+  county: Morgan
+  county_id: co-morgan
+  population: 30306
+  aliases:
+  - Brush School District
+- id: sd-buena-vista-school-district-r-31
+  name: Buena Vista School District R-31
+  kind: school_district
+  county: Chaffee
+  county_id: co-chaffee
+  population: 20831
+  aliases:
+  - Buena Vista School District
+- id: sd-buffalo-school-district-re-4j
+  name: Buffalo School District RE-4J
+  kind: school_district
+  county: Logan
+  county_id: co-logan
+  population: 20654
+  aliases:
+  - Buffalo School District
+- id: sd-burlington-public-school-district-re-6j
+  name: Burlington Public School District RE-6J
+  kind: school_district
+  county: Kit Carson
+  county_id: co-kit-carson
+  population: 7069
+  aliases:
+  - Burlington Public School District
+- id: sd-byers-school-district-32j
+  name: Byers School District 32J
+  kind: school_district
+  county: Arapahoe
+  county_id: co-arapahoe
+  population: 673820
+  aliases:
+  - Byers School District
+- id: sd-calhan-school-district-rj-1
+  name: Calhan School District RJ-1
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Calhan School District
+- id: sd-campo-school-district-re-6
+  name: Campo School District RE-6
+  kind: school_district
+  county: Baca
+  county_id: co-baca
+  population: 3347
+  aliases:
+  - Campo School District
+- id: sd-centennial-school-district-r-1
+  name: Centennial School District R-1
+  kind: school_district
+  county: Costilla
+  county_id: co-costilla
+  population: 3679
+  aliases:
+  - Centennial School District
+- id: sd-center-consolidated-school-district-26-jt
+  name: Center Consolidated School District 26 JT
+  kind: school_district
+  county: Saguache
+  county_id: co-saguache
+  population: 6732
+  counties:
+  - Saguache
+  - Alamosa
+  - Rio Grande
+- id: sd-cheraw-school-district-31
+  name: Cheraw School District 31
+  kind: school_district
+  county: Otero
+  county_id: co-otero
+  population: 17683
+  aliases:
+  - Cheraw School District
+- id: sd-cherry-creek-school-district-5
+  name: Cherry Creek School District 5
+  kind: school_district
+  county: Arapahoe
+  county_id: co-arapahoe
+  population: 673820
+  aliases:
+  - Cherry Creek School District
+- id: sd-cheyenne-county-school-district-re-5
+  name: Cheyenne County School District RE-5
+  kind: school_district
+  county: Cheyenne
+  county_id: co-cheyenne
+  population: 1713
+  aliases:
+  - Cheyenne County School District
+- id: sd-cheyenne-mountain-school-district-12
+  name: Cheyenne Mountain School District 12
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Cheyenne Mountain School District
+- id: sd-clear-creek-school-district-re-1
+  name: Clear Creek School District RE-1
+  kind: school_district
+  county: Clear Creek
+  county_id: co-clear-creek
+  population: 8994
+  aliases:
+  - Clear Creek School District
+- id: sd-colorado-springs-school-district-11
+  name: Colorado Springs School District 11
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Colorado Springs School District
+- id: sd-cotopaxi-school-district-re-3
+  name: Cotopaxi School District RE-3
+  kind: school_district
+  county: Fremont
+  county_id: co-fremont
+  population: 50039
+  aliases:
+  - Cotopaxi School District
+- id: sd-creede-school-district
+  name: Creede School District
+  kind: school_district
+  county: Mineral
+  county_id: co-mineral
+  population: 910
+- id: sd-cripple-creek-victor-school-district-re-1
+  name: Cripple Creek-Victor School District RE-1
+  kind: school_district
+  county: Teller
+  county_id: co-teller
+  population: 24756
+  aliases:
+  - Cripple Creek-Victor School District
+- id: sd-crowley-county-school-district-re-1-j
+  name: Crowley County School District RE-1-J
+  kind: school_district
+  county: Crowley
+  county_id: co-crowley
+  population: 5677
+  aliases:
+  - Crowley County School District
+- id: sd-custer-county-school-district-c-1
+  name: Custer County School District C-1
+  kind: school_district
+  county: Custer
+  county_id: co-custer
+  population: 5590
+  aliases:
+  - Custer County School District
+- id: sd-debeque-school-district-49-jt
+  name: DeBeque School District 49-JT
+  kind: school_district
+  county: Mesa
+  county_id: co-mesa
+  population: 162845
+  aliases:
+  - DeBeque School District
+  counties:
+  - Mesa
+  - Garfield
+- id: sd-deer-trail-school-district-26j
+  name: Deer Trail School District 26J
+  kind: school_district
+  county: Arapahoe
+  county_id: co-arapahoe
+  population: 673820
+  aliases:
+  - Deer Trail School District
+- id: sd-delta-county-school-district-50j
+  name: Delta County School District 50J
+  kind: school_district
+  county: Delta
+  county_id: co-delta
+  population: 32178
+  aliases:
+  - Delta County School District
+  counties:
+  - Delta
+  - Gunnison
+  - Mesa
+  - Montrose
+- id: sd-denver-county-school-district-1
+  name: Denver County School District 1
+  kind: school_district
+  county: Denver
+  county_id: co-denver
+  population: 740613
+  aliases:
+  - Denver County School District
+- id: sd-dolores-county-school-district-re-2j
+  name: Dolores County School District RE-2J
+  kind: school_district
+  county: Dolores
+  county_id: co-dolores
+  population: 2466
+  aliases:
+  - Dolores County School District
+- id: sd-dolores-school-district-re-4a
+  name: Dolores School District RE-4A
+  kind: school_district
+  county: Montezuma
+  county_id: co-montezuma
+  population: 26678
+  aliases:
+  - Dolores School District
+- id: sd-douglas-county-school-district-re-1
+  name: Douglas County School District RE-1
+  kind: school_district
+  county: Douglas
+  county_id: co-douglas
+  population: 399396
+  aliases:
+  - Douglas County School District
+- id: sd-durango-school-district-9-r
+  name: Durango School District 9-R
+  kind: school_district
+  county: La Plata
+  county_id: co-la-plata
+  population: 56898
+  aliases:
+  - Durango School District
+- id: sd-eads-school-district-re-1
+  name: Eads School District RE-1
+  kind: school_district
+  county: Kiowa
+  county_id: co-kiowa
+  population: 1412
+  aliases:
+  - Eads School District
+- id: sd-eagle-county-school-district-re-50
+  name: Eagle County School District RE-50
+  kind: school_district
+  county: Eagle
+  county_id: co-eagle
+  population: 54291
+  aliases:
+  - Eagle County School District
+- id: sd-east-grand-school-district-2
+  name: East Grand School District 2
+  kind: school_district
+  county: Grand
+  county_id: co-grand
+  population: 16496
+  aliases:
+  - East Grand School District
+- id: sd-east-otero-school-district-r-1
+  name: East Otero School District R-1
+  kind: school_district
+  county: Otero
+  county_id: co-otero
+  population: 17683
+  aliases:
+  - East Otero School District
+- id: sd-eaton-school-district-re-2
+  name: Eaton School District RE-2
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Eaton School District
+- id: sd-edison-school-district-54jt
+  name: Edison School District 54JT
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Edison School District
+  counties:
+  - El Paso
+  - Lincoln
+  - Pueblo
+- id: sd-el-paso-county-school-district-49
+  name: El Paso County School District 49
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - El Paso County School District
+- id: sd-elbert-school-district-200
+  name: Elbert School District 200
+  kind: school_district
+  county: Elbert
+  county_id: co-elbert
+  population: 30534
+  aliases:
+  - Elbert School District
+- id: sd-elizabeth-school-district-c-1
+  name: Elizabeth School District C-1
+  kind: school_district
+  county: Elbert
+  county_id: co-elbert
+  population: 30534
+  aliases:
+  - Elizabeth School District
+- id: sd-ellicott-school-district-22
+  name: Ellicott School District 22
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Ellicott School District
+- id: sd-englewood-school-district-1
+  name: Englewood School District 1
+  kind: school_district
+  county: Arapahoe
+  county_id: co-arapahoe
+  population: 673820
+  aliases:
+  - Englewood School District
+- id: sd-estes-park-school-district-r-3
+  name: Estes Park School District R-3
+  kind: school_district
+  county: Larimer
+  county_id: co-larimer
+  population: 377292
+  aliases:
+  - Estes Park School District
+- id: sd-fort-morgan-school-district-re-3
+  name: Fort Morgan School District RE-3
+  kind: school_district
+  county: Morgan
+  county_id: co-morgan
+  population: 30306
+  aliases:
+  - Fort Morgan School District
+- id: sd-fountain-school-district-8
+  name: Fountain School District 8
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Fountain School District
+- id: sd-fowler-school-district-r4j
+  name: Fowler School District R4J
+  kind: school_district
+  county: Otero
+  county_id: co-otero
+  population: 17683
+  aliases:
+  - Fowler School District
+- id: sd-fremont-school-district-re-1
+  name: Fremont School District RE-1
+  kind: school_district
+  county: Fremont
+  county_id: co-fremont
+  population: 50039
+  aliases:
+  - Fremont School District
+- id: sd-fremont-re-2-school-district
+  name: Fremont RE-2 School District
+  kind: school_district
+  county: Fremont
+  county_id: co-fremont
+  population: 50039
+- id: sd-frenchman-school-district-re-3
+  name: Frenchman School District RE-3
+  kind: school_district
+  county: Logan
+  county_id: co-logan
+  population: 20654
+  aliases:
+  - Frenchman School District
+- id: sd-garfield-county-school-district-16
+  name: Garfield County School District 16
+  kind: school_district
+  county: Garfield
+  county_id: co-garfield
+  population: 63474
+  aliases:
+  - Garfield County School District
+- id: sd-garfield-school-district-re-2
+  name: Garfield School District RE-2
+  kind: school_district
+  county: Garfield
+  county_id: co-garfield
+  population: 63474
+  aliases:
+  - Garfield School District
+- id: sd-genoa-hugo-school-district-c-113
+  name: Genoa-Hugo School District C-113
+  kind: school_district
+  county: Lincoln
+  county_id: co-lincoln
+  population: 5645
+  aliases:
+  - Genoa-Hugo School District
+- id: sd-gilpin-county-school-district-re-1
+  name: Gilpin County School District RE-1
+  kind: school_district
+  county: Gilpin
+  county_id: co-gilpin
+  population: 6073
+  aliases:
+  - Gilpin County School District
+- id: sd-granada-school-district-re-1
+  name: Granada School District RE-1
+  kind: school_district
+  county: Prowers
+  county_id: co-prowers
+  population: 11884
+  aliases:
+  - Granada School District
+- id: sd-greeley-evans-school-district-6
+  name: Greeley-Evans School District 6
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Greeley-Evans School District
+- id: sd-gunnison-watershed-school-district-re1j
+  name: Gunnison Watershed School District RE1J
+  kind: school_district
+  county: Gunnison
+  county_id: co-gunnison
+  population: 17439
+  aliases:
+  - Gunnison Watershed School District
+- id: sd-hanover-school-district-28
+  name: Hanover School District 28
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Hanover School District
+- id: sd-harrison-school-district-2
+  name: Harrison School District 2
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Harrison School District
+- id: sd-haxtun-school-district-re-2j
+  name: Haxtun School District RE-2J
+  kind: school_district
+  county: Phillips
+  county_id: co-phillips
+  population: 4420
+  aliases:
+  - Haxtun School District
+- id: sd-hayden-school-district-re-1
+  name: Hayden School District RE-1
+  kind: school_district
+  county: Routt
+  county_id: co-routt
+  population: 25329
+  aliases:
+  - Hayden School District
+- id: sd-hi-plains-school-district-r-23
+  name: Hi-Plains School District R-23
+  kind: school_district
+  county: Kit Carson
+  county_id: co-kit-carson
+  population: 7069
+  aliases:
+  - Hi-Plains School District
+- id: sd-hinsdale-county-school-district-re-1
+  name: Hinsdale County School District RE-1
+  kind: school_district
+  county: Hinsdale
+  county_id: co-hinsdale
+  population: 753
+  aliases:
+  - Hinsdale County School District
+- id: sd-hoehne-reorganized-school-district-re-3
+  name: Hoehne Reorganized School District RE-3
+  kind: school_district
+  county: Las Animas
+  county_id: co-las-animas
+  population: 14391
+  aliases:
+  - Hoehne Reorganized School District
+- id: sd-holly-school-district-re-3
+  name: Holly School District RE-3
+  kind: school_district
+  county: Prowers
+  county_id: co-prowers
+  population: 11884
+  aliases:
+  - Holly School District
+- id: sd-holyoke-school-district-re-1j
+  name: Holyoke School District RE-1J
+  kind: school_district
+  county: Phillips
+  county_id: co-phillips
+  population: 4420
+  aliases:
+  - Holyoke School District
+- id: sd-huerfano-school-district-re-1
+  name: Huerfano School District RE-1
+  kind: school_district
+  county: Huerfano
+  county_id: co-huerfano
+  population: 7011
+  aliases:
+  - Huerfano School District
+- id: sd-idalia-school-district-rj-3
+  name: Idalia School District RJ-3
+  kind: school_district
+  county: Yuma
+  county_id: co-yuma
+  population: 9896
+  aliases:
+  - Idalia School District
+- id: sd-ignacio-school-district-11-jt
+  name: Ignacio School District 11-JT
+  kind: school_district
+  county: La Plata
+  county_id: co-la-plata
+  population: 56898
+  aliases:
+  - Ignacio School District
+- id: sd-jefferson-county-school-district-r-1
+  name: Jefferson County School District R-1
+  kind: school_district
+  county: Jefferson
+  county_id: co-jefferson
+  population: 580451
+  aliases:
+  - Jefferson County School District
+  counties:
+  - Jefferson
+  - Broomfield
+- id: sd-johnstown-milliken-school-district-re-5j
+  name: Johnstown-Milliken School District RE-5J
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Johnstown-Milliken School District
+- id: sd-julesburg-school-district-re-1
+  name: Julesburg School District RE-1
+  kind: school_district
+  county: Sedgwick
+  county_id: co-sedgwick
+  population: 2247
+  aliases:
+  - Julesburg School District
+- id: sd-karval-school-district-re-23
+  name: Karval School District RE-23
+  kind: school_district
+  county: Lincoln
+  county_id: co-lincoln
+  population: 5645
+  aliases:
+  - Karval School District
+- id: sd-kim-reorganized-school-district-re-88
+  name: Kim Reorganized School District RE-88
+  kind: school_district
+  county: Las Animas
+  county_id: co-las-animas
+  population: 14391
+  aliases:
+  - Kim Reorganized School District
+- id: sd-kiowa-school-district-c-2
+  name: Kiowa School District C-2
+  kind: school_district
+  county: Elbert
+  county_id: co-elbert
+  population: 30534
+  aliases:
+  - Kiowa School District
+- id: sd-kit-carson-school-district-r-1
+  name: Kit Carson School District R-1
+  kind: school_district
+  county: Cheyenne
+  county_id: co-cheyenne
+  population: 1713
+  aliases:
+  - Kit Carson School District
+- id: sd-la-veta-school-district-re-2
+  name: La Veta School District RE-2
+  kind: school_district
+  county: Huerfano
+  county_id: co-huerfano
+  population: 7011
+  aliases:
+  - La Veta School District
+- id: sd-lake-county-school-district-r-1
+  name: Lake County School District R-1
+  kind: school_district
+  county: Lake
+  county_id: co-lake
+  population: 7552
+  aliases:
+  - Lake County School District
+- id: sd-lamar-school-district-re-2
+  name: Lamar School District RE-2
+  kind: school_district
+  county: Prowers
+  county_id: co-prowers
+  population: 11884
+  aliases:
+  - Lamar School District
+- id: sd-las-animas-school-district-re-1
+  name: Las Animas School District RE-1
+  kind: school_district
+  county: Bent
+  county_id: co-bent
+  population: 5716
+  aliases:
+  - Las Animas School District
+- id: sd-lewis-palmer-school-district-38
+  name: Lewis-Palmer School District 38
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Lewis-Palmer School District
+- id: sd-liberty-school-district-j-4
+  name: Liberty School District J-4
+  kind: school_district
+  county: Yuma
+  county_id: co-yuma
+  population: 9896
+  aliases:
+  - Liberty School District
+- id: sd-limon-school-district-re-4j
+  name: Limon School District RE-4J
+  kind: school_district
+  county: Lincoln
+  county_id: co-lincoln
+  population: 5645
+  aliases:
+  - Limon School District
+- id: sd-littleton-school-district-6
+  name: Littleton School District 6
+  kind: school_district
+  county: Arapahoe
+  county_id: co-arapahoe
+  population: 673820
+  aliases:
+  - Littleton School District
+- id: sd-lone-star-school-district-101
+  name: Lone Star School District 101
+  kind: school_district
+  county: Washington
+  county_id: co-washington
+  population: 4732
+  aliases:
+  - Lone Star School District
+- id: sd-mancos-school-district-re-6
+  name: Mancos School District RE-6
+  kind: school_district
+  county: Montezuma
+  county_id: co-montezuma
+  population: 26678
+  aliases:
+  - Mancos School District
+- id: sd-manitou-springs-school-district-14
+  name: Manitou Springs School District 14
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Manitou Springs School District
+- id: sd-manzanola-school-district-3j
+  name: Manzanola School District 3J
+  kind: school_district
+  county: Otero
+  county_id: co-otero
+  population: 17683
+  aliases:
+  - Manzanola School District
+- id: sd-mapleton-school-district-1
+  name: Mapleton School District 1
+  kind: school_district
+  county: Adams
+  county_id: co-adams
+  population: 554668
+  aliases:
+  - Mapleton School District
+- id: sd-mcclave-school-district-re-2
+  name: McClave School District RE-2
+  kind: school_district
+  county: Bent
+  county_id: co-bent
+  population: 5716
+  aliases:
+  - McClave School District
+- id: sd-meeker-school-district-re-1
+  name: Meeker School District RE-1
+  kind: school_district
+  county: Rio Blanco
+  county_id: co-rio-blanco
+  population: 6683
+  aliases:
+  - Meeker School District
+- id: sd-mesa-county-valley-school-district-51
+  name: Mesa County Valley School District 51
+  kind: school_district
+  county: Mesa
+  county_id: co-mesa
+  population: 162845
+  aliases:
+  - Mesa County Valley School District
+- id: sd-miami-yoder-school-district-jt-60
+  name: Miami-Yoder School District JT-60
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Miami-Yoder School District
+  counties:
+  - El Paso
+  - Elbert
+  - Lincoln
+- id: sd-moffat-consolidated-school-district-2
+  name: Moffat Consolidated School District 2
+  kind: school_district
+  county: Saguache
+  county_id: co-saguache
+  population: 6732
+  aliases:
+  - Moffat Consolidated School District
+- id: sd-moffat-county-school-district-re-1
+  name: Moffat County School District RE-1
+  kind: school_district
+  county: Moffat
+  county_id: co-moffat
+  population: 13122
+  aliases:
+  - Moffat County School District
+- id: sd-monte-vista-school-district-c-8
+  name: Monte Vista School District C-8
+  kind: school_district
+  county: Rio Grande
+  county_id: co-rio-grande
+  population: 11087
+  aliases:
+  - Monte Vista School District
+- id: sd-montezuma-cortez-school-district-re-1
+  name: Montezuma-Cortez School District RE-1
+  kind: school_district
+  county: Montezuma
+  county_id: co-montezuma
+  population: 26678
+  aliases:
+  - Montezuma-Cortez School District
+- id: sd-montrose-county-school-district-re-1j
+  name: Montrose County School District RE-1J
+  kind: school_district
+  county: Montrose
+  county_id: co-montrose
+  population: 44591
+  aliases:
+  - Montrose County School District
+- id: sd-mountain-valley-school-district-re-1
+  name: Mountain Valley School District RE-1
+  kind: school_district
+  county: Saguache
+  county_id: co-saguache
+  population: 6732
+  aliases:
+  - Mountain Valley School District
+- id: sd-north-conejos-school-district-re-1j
+  name: North Conejos School District RE-1J
+  kind: school_district
+  county: Conejos
+  county_id: co-conejos
+  population: 7529
+  aliases:
+  - North Conejos School District
+- id: sd-north-park-school-district-r-1
+  name: North Park School District R-1
+  kind: school_district
+  county: Jackson
+  county_id: co-jackson
+  population: 1211
+  aliases:
+  - North Park School District
+- id: sd-norwood-school-district-r-2j
+  name: Norwood School District R-2J
+  kind: school_district
+  county: San Miguel
+  county_id: co-san-miguel
+  population: 7753
+  aliases:
+  - Norwood School District
+- id: sd-otis-school-district-r-3
+  name: Otis School District R-3
+  kind: school_district
+  county: Washington
+  county_id: co-washington
+  population: 4732
+  aliases:
+  - Otis School District
+- id: sd-ouray-school-district-r-1
+  name: Ouray School District R-1
+  kind: school_district
+  county: Ouray
+  county_id: co-ouray
+  population: 5265
+  aliases:
+  - Ouray School District
+- id: sd-park-county-school-district-re-2
+  name: Park County School District RE-2
+  kind: school_district
+  county: Park
+  county_id: co-park
+  population: 18314
+  aliases:
+  - Park County School District
+- id: sd-pawnee-school-district-re-12
+  name: Pawnee School District RE-12
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Pawnee School District
+- id: sd-peyton-school-district-23-jt
+  name: Peyton School District 23-JT
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Peyton School District
+- id: sd-plainview-school-district-re-2
+  name: Plainview School District RE-2
+  kind: school_district
+  county: Kiowa
+  county_id: co-kiowa
+  population: 1412
+  aliases:
+  - Plainview School District
+- id: sd-plateau-school-district-re-5
+  name: Plateau School District RE-5
+  kind: school_district
+  county: Logan
+  county_id: co-logan
+  population: 20654
+  aliases:
+  - Plateau School District
+- id: sd-plateau-valley-school-district-50
+  name: Plateau Valley School District 50
+  kind: school_district
+  county: Mesa
+  county_id: co-mesa
+  population: 162845
+  aliases:
+  - Plateau Valley School District
+- id: sd-platte-canyon-school-district-1
+  name: Platte Canyon School District 1
+  kind: school_district
+  county: Park
+  county_id: co-park
+  population: 18314
+  aliases:
+  - Platte Canyon School District
+- id: sd-platte-valley-school-district-re-7
+  name: Platte Valley School District RE-7
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Platte Valley School District
+- id: sd-poudre-school-district-r-1
+  name: Poudre School District R-1
+  kind: school_district
+  county: Larimer
+  county_id: co-larimer
+  population: 377292
+  aliases:
+  - Poudre School District
+- id: sd-prairie-school-district-re-11
+  name: Prairie School District RE-11
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Prairie School District
+- id: sd-primero-reorganized-school-district-re-2
+  name: Primero Reorganized School District RE-2
+  kind: school_district
+  county: Las Animas
+  county_id: co-las-animas
+  population: 14391
+  aliases:
+  - Primero Reorganized School District
+- id: sd-pritchett-school-district-re-3
+  name: Pritchett School District RE-3
+  kind: school_district
+  county: Baca
+  county_id: co-baca
+  population: 3347
+  aliases:
+  - Pritchett School District
+- id: sd-pueblo-school-district-60
+  name: Pueblo School District 60
+  kind: school_district
+  county: Pueblo
+  county_id: co-pueblo
+  population: 169277
+  aliases:
+  - Pueblo School District
+- id: sd-pueblo-county-school-district-70
+  name: Pueblo County School District 70
+  kind: school_district
+  county: Pueblo
+  county_id: co-pueblo
+  population: 169277
+  aliases:
+  - Pueblo County School District
+- id: sd-rangely-school-district-re-4
+  name: Rangely School District RE-4
+  kind: school_district
+  county: Rio Blanco
+  county_id: co-rio-blanco
+  population: 6683
+  aliases:
+  - Rangely School District
+- id: sd-revere-school-district-re-3
+  name: Revere School District RE-3
+  kind: school_district
+  county: Sedgwick
+  county_id: co-sedgwick
+  population: 2247
+  aliases:
+  - Revere School District
+- id: sd-ridgway-school-district-r-2
+  name: Ridgway School District R-2
+  kind: school_district
+  county: Ouray
+  county_id: co-ouray
+  population: 5265
+  aliases:
+  - Ridgway School District
+- id: sd-roaring-fork-school-district-re-1
+  name: Roaring Fork School District RE-1
+  kind: school_district
+  county: Garfield
+  county_id: co-garfield
+  population: 63474
+  aliases:
+  - Roaring Fork School District
+- id: sd-rocky-ford-school-district-r-2
+  name: Rocky Ford School District R-2
+  kind: school_district
+  county: Otero
+  county_id: co-otero
+  population: 17683
+  aliases:
+  - Rocky Ford School District
+- id: sd-salida-school-district-r-32
+  name: Salida School District R-32
+  kind: school_district
+  county: Chaffee
+  county_id: co-chaffee
+  population: 20831
+  aliases:
+  - Salida School District
+- id: sd-sanford-school-district-6j
+  name: Sanford School District 6J
+  kind: school_district
+  county: Conejos
+  county_id: co-conejos
+  population: 7529
+  aliases:
+  - Sanford School District
+- id: sd-sangre-de-cristo-school-district-re-22j
+  name: Sangre de Cristo School District RE-22J
+  kind: school_district
+  county: Alamosa
+  county_id: co-alamosa
+  population: 16688
+  aliases:
+  - Sangre de Cristo School District
+- id: sd-sargent-school-district-re-33j
+  name: Sargent School District RE-33J
+  kind: school_district
+  county: Rio Grande
+  county_id: co-rio-grande
+  population: 11087
+  aliases:
+  - Sargent School District
+- id: sd-school-district-27j
+  name: School District 27J
+  kind: school_district
+  county: Adams
+  county_id: co-adams
+  population: 554668
+  aliases:
+  - School District
+- id: sd-sheridan-school-district-2
+  name: Sheridan School District 2
+  kind: school_district
+  county: Arapahoe
+  county_id: co-arapahoe
+  population: 673820
+  aliases:
+  - Sheridan School District
+- id: sd-sierra-grande-school-district-r-30
+  name: Sierra Grande School District R-30
+  kind: school_district
+  county: Costilla
+  county_id: co-costilla
+  population: 3679
+  aliases:
+  - Sierra Grande School District
+- id: sd-silverton-school-district-1
+  name: Silverton School District 1
+  kind: school_district
+  county: San Juan
+  county_id: co-san-juan
+  population: 813
+  aliases:
+  - Silverton School District
+- id: sd-south-conejos-school-district-re-10
+  name: South Conejos School District RE-10
+  kind: school_district
+  county: Conejos
+  county_id: co-conejos
+  population: 7529
+  aliases:
+  - South Conejos School District
+- id: sd-south-routt-school-district-re-3
+  name: South Routt School District RE-3
+  kind: school_district
+  county: Routt
+  county_id: co-routt
+  population: 25329
+  aliases:
+  - South Routt School District
+- id: sd-springfield-school-district-re-4
+  name: Springfield School District RE-4
+  kind: school_district
+  county: Baca
+  county_id: co-baca
+  population: 3347
+  aliases:
+  - Springfield School District
+- id: sd-st-vrain-valley-school-district-re-1j
+  name: St. Vrain Valley School District RE-1J
+  kind: school_district
+  county: Boulder
+  county_id: co-boulder
+  population: 328560
+  aliases:
+  - St. Vrain Valley School District
+  counties:
+  - Boulder
+  - Broomfield
+  - Larimer
+  - Weld
+- id: sd-steamboat-springs-school-district-re-2
+  name: Steamboat Springs School District RE-2
+  kind: school_district
+  county: Routt
+  county_id: co-routt
+  population: 25329
+  aliases:
+  - Steamboat Springs School District
+- id: sd-strasburg-school-district-31j
+  name: Strasburg School District 31J
+  kind: school_district
+  county: Adams
+  county_id: co-adams
+  population: 554668
+  aliases:
+  - Strasburg School District
+- id: sd-stratton-school-district-r-4
+  name: Stratton School District R-4
+  kind: school_district
+  county: Kit Carson
+  county_id: co-kit-carson
+  population: 7069
+  aliases:
+  - Stratton School District
+- id: sd-summit-school-district-re-1
+  name: Summit School District RE-1
+  kind: school_district
+  county: Summit
+  county_id: co-summit
+  population: 31517
+  aliases:
+  - Summit School District
+- id: sd-swink-school-district-33
+  name: Swink School District 33
+  kind: school_district
+  county: Otero
+  county_id: co-otero
+  population: 17683
+  aliases:
+  - Swink School District
+- id: sd-telluride-school-district-r-1
+  name: Telluride School District R-1
+  kind: school_district
+  county: San Miguel
+  county_id: co-san-miguel
+  population: 7753
+  aliases:
+  - Telluride School District
+- id: sd-thompson-school-district-r-2j
+  name: Thompson School District R-2J
+  kind: school_district
+  county: Larimer
+  county_id: co-larimer
+  population: 377292
+  aliases:
+  - Thompson School District
+- id: sd-trinidad-school-district-1
+  name: Trinidad School District 1
+  kind: school_district
+  county: Las Animas
+  county_id: co-las-animas
+  population: 14391
+  aliases:
+  - Trinidad School District
+- id: sd-upper-rio-grande-school-district-c-7
+  name: Upper Rio Grande School District C-7
+  kind: school_district
+  county: Rio Grande
+  county_id: co-rio-grande
+  population: 11087
+  aliases:
+  - Upper Rio Grande School District
+- id: sd-valley-school-district-re-1
+  name: Valley School District RE-1
+  kind: school_district
+  county: Logan
+  county_id: co-logan
+  population: 20654
+  aliases:
+  - Valley School District
+- id: sd-vilas-school-district-re-5
+  name: Vilas School District RE-5
+  kind: school_district
+  county: Baca
+  county_id: co-baca
+  population: 3347
+  aliases:
+  - Vilas School District
+- id: sd-walsh-school-district-re-1
+  name: Walsh School District RE-1
+  kind: school_district
+  county: Baca
+  county_id: co-baca
+  population: 3347
+  aliases:
+  - Walsh School District
+- id: sd-weld-county-school-district-re-1
+  name: Weld County School District RE-1
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Weld County School District
+- id: sd-weld-county-school-district-re-3j
+  name: Weld County School District RE-3J
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Weld County School District
+- id: sd-weld-county-school-district-re-8
+  name: Weld County School District RE-8
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Weld County School District
+- id: sd-weldon-valley-school-district-re-20j
+  name: Weldon Valley School District RE-20J
+  kind: school_district
+  county: Morgan
+  county_id: co-morgan
+  population: 30306
+  aliases:
+  - Weldon Valley School District
+- id: sd-west-end-school-district-re-2
+  name: West End School District RE-2
+  kind: school_district
+  county: Montrose
+  county_id: co-montrose
+  population: 44591
+  aliases:
+  - West End School District
+- id: sd-west-grand-school-district-1-jt
+  name: West Grand School District 1-JT
+  kind: school_district
+  county: Grand
+  county_id: co-grand
+  population: 16496
+  aliases:
+  - West Grand School District
+- id: sd-westminster-school-district-50
+  name: Westminster School District 50
+  kind: school_district
+  county: Adams
+  county_id: co-adams
+  population: 554668
+  aliases:
+  - Westminster School District
+- id: sd-widefield-school-district-3
+  name: Widefield School District 3
+  kind: school_district
+  county: El Paso
+  county_id: co-el-paso
+  population: 757040
+  aliases:
+  - Widefield School District
+- id: sd-wiggins-school-district-re-50j
+  name: Wiggins School District RE-50J
+  kind: school_district
+  county: Morgan
+  county_id: co-morgan
+  population: 30306
+  aliases:
+  - Wiggins School District
+- id: sd-wiley-school-district-re-13-jt
+  name: Wiley School District RE-13-JT
+  kind: school_district
+  county: Prowers
+  county_id: co-prowers
+  population: 11884
+  aliases:
+  - Wiley School District
+- id: sd-weld-county-school-district-re-4
+  name: Weld County School District RE-4
+  kind: school_district
+  county: Weld
+  county_id: co-weld
+  population: 378426
+  aliases:
+  - Weld County School District
+- id: sd-woodland-park-school-district-re-2
+  name: Woodland Park School District RE-2
+  kind: school_district
+  county: Teller
+  county_id: co-teller
+  population: 24756
+  aliases:
+  - Woodland Park School District
+- id: sd-woodlin-school-district-r-104
+  name: Woodlin School District R-104
+  kind: school_district
+  county: Washington
+  county_id: co-washington
+  population: 4732
+  aliases:
+  - Woodlin School District
+- id: sd-wray-school-district-rd-2
+  name: Wray School District RD-2
+  kind: school_district
+  county: Yuma
+  county_id: co-yuma
+  population: 9896
+  aliases:
+  - Wray School District
+- id: sd-yuma-school-district-1
+  name: Yuma School District 1
+  kind: school_district
+  county: Yuma
+  county_id: co-yuma
+  population: 9896
+  aliases:
+  - Yuma School District

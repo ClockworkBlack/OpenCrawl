@@ -1,0 +1,180 @@
+# Colorado public school districts: district name|county or counties (";" separated)
+# Source: Wikipedia, "List of school districts in Colorado" (CC BY-SA). The statewide Charter School Institute is left out.
+Academy School District 20|El Paso
+Adams 12 Five Star Schools|Adams;Broomfield
+Adams County School District 14|Adams
+Adams-Arapahoe School District 28J|Arapahoe;Adams
+Agate School District 300|Elbert
+Aguilar Reorganized School District RE-6|Las Animas
+Akron School District R-1|Washington
+Alamosa School District RE-11J|Alamosa
+Archuleta County School District 50 JT|Archuleta
+Arickaree School District R-2|Washington
+Arriba-Flagler Consolidated School District 20|Kit Carson
+Aspen School District 1|Pitkin
+Ault-Highland School District RE-9|Weld
+Bayfield School District 10 JT-R|La Plata
+Bennett School District 29J|Adams
+Bethune School District R-5|Kit Carson
+Big Sandy School District 100J|Elbert
+Boulder Valley School District RE-2|Boulder;Broomfield
+Branson Reorganized School District RE-82|Las Animas
+Briggsdale School District RE-10J|Weld
+Brush School District RE-2J|Morgan
+Buena Vista School District R-31|Chaffee
+Buffalo School District RE-4J|Logan
+Burlington Public School District RE-6J|Kit Carson
+Byers School District 32J|Arapahoe
+Calhan School District RJ-1|El Paso
+Campo School District RE-6|Baca
+Centennial School District R-1|Costilla
+Center Consolidated School District 26 JT|Saguache;Alamosa;Rio Grande
+Cheraw School District 31|Otero
+Cherry Creek School District 5|Arapahoe
+Cheyenne County School District RE-5|Cheyenne
+Cheyenne Mountain School District 12|El Paso
+Clear Creek School District RE-1|Clear Creek
+Colorado Springs School District 11|El Paso
+Cotopaxi School District RE-3|Fremont
+Creede School District|Mineral
+Cripple Creek-Victor School District RE-1|Teller
+Crowley County School District RE-1-J|Crowley
+Custer County School District C-1|Custer
+DeBeque School District 49-JT|Mesa;Garfield
+Deer Trail School District 26J|Arapahoe
+Delta County School District 50J|Delta;Gunnison;Mesa;Montrose
+Denver County School District 1|Denver
+Dolores County School District RE-2J|Dolores
+Dolores School District RE-4A|Montezuma
+Douglas County School District RE-1|Douglas
+Durango School District 9-R|La Plata
+Eads School District RE-1|Kiowa
+Eagle County School District RE-50|Eagle
+East Grand School District 2|Grand
+East Otero School District R-1|Otero
+Eaton School District RE-2|Weld
+Edison School District 54JT|El Paso;Lincoln;Pueblo
+El Paso County School District 49|El Paso
+Elbert School District 200|Elbert
+Elizabeth School District C-1|Elbert
+Ellicott School District 22|El Paso
+Englewood School District 1|Arapahoe
+Estes Park School District R-3|Larimer
+Fort Morgan School District RE-3|Morgan
+Fountain School District 8|El Paso
+Fowler School District R4J|Otero
+Fremont School District RE-1|Fremont
+Fremont RE-2 School District|Fremont
+Frenchman School District RE-3|Logan
+Garfield County School District 16|Garfield
+Garfield School District RE-2|Garfield
+Genoa-Hugo School District C-113|Lincoln
+Gilpin County School District RE-1|Gilpin
+Granada School District RE-1|Prowers
+Greeley-Evans School District 6|Weld
+Gunnison Watershed School District RE1J|Gunnison
+Hanover School District 28|El Paso
+Harrison School District 2|El Paso
+Haxtun School District RE-2J|Phillips
+Hayden School District RE-1|Routt
+Hi-Plains School District R-23|Kit Carson
+Hinsdale County School District RE-1|Hinsdale
+Hoehne Reorganized School District RE-3|Las Animas
+Holly School District RE-3|Prowers
+Holyoke School District RE-1J|Phillips
+Huerfano School District RE-1|Huerfano
+Idalia School District RJ-3|Yuma
+Ignacio School District 11-JT|La Plata
+Jefferson County School District R-1|Jefferson;Broomfield
+Johnstown-Milliken School District RE-5J|Weld
+Julesburg School District RE-1|Sedgwick
+Karval School District RE-23|Lincoln
+Kim Reorganized School District RE-88|Las Animas
+Kiowa School District C-2|Elbert
+Kit Carson School District R-1|Cheyenne
+La Veta School District RE-2|Huerfano
+Lake County School District R-1|Lake
+Lamar School District RE-2|Prowers
+Las Animas School District RE-1|Bent
+Lewis-Palmer School District 38|El Paso
+Liberty School District J-4|Yuma
+Limon School District RE-4J|Lincoln
+Littleton School District 6|Arapahoe
+Lone Star School District 101|Washington
+Mancos School District RE-6|Montezuma
+Manitou Springs School District 14|El Paso
+Manzanola School District 3J|Otero
+Mapleton School District 1|Adams
+McClave School District RE-2|Bent
+Meeker School District RE-1|Rio Blanco
+Mesa County Valley School District 51|Mesa
+Miami-Yoder School District JT-60|El Paso;Elbert;Lincoln
+Moffat Consolidated School District 2|Saguache
+Moffat County School District RE-1|Moffat
+Monte Vista School District C-8|Rio Grande
+Montezuma-Cortez School District RE-1|Montezuma
+Montrose County School District RE-1J|Montrose
+Mountain Valley School District RE-1|Saguache
+North Conejos School District RE-1J|Conejos
+North Park School District R-1|Jackson
+Norwood School District R-2J|San Miguel
+Otis School District R-3|Washington
+Ouray School District R-1|Ouray
+Park County School District RE-2|Park
+Pawnee School District RE-12|Weld
+Peyton School District 23-JT|El Paso
+Plainview School District RE-2|Kiowa
+Plateau School District RE-5|Logan
+Plateau Valley School District 50|Mesa
+Platte Canyon School District 1|Park
+Platte Valley School District RE-7|Weld
+Poudre School District R-1|Larimer
+Prairie School District RE-11|Weld
+Primero Reorganized School District RE-2|Las Animas
+Pritchett School District RE-3|Baca
+Pueblo School District 60|Pueblo
+Pueblo County School District 70|Pueblo
+Rangely School District RE-4|Rio Blanco
+Revere School District RE-3|Sedgwick
+Ridgway School District R-2|Ouray
+Roaring Fork School District RE-1|Garfield
+Rocky Ford School District R-2|Otero
+Salida School District R-32|Chaffee
+Sanford School District 6J|Conejos
+Sangre de Cristo School District RE-22J|Alamosa
+Sargent School District RE-33J|Rio Grande
+School District 27J|Adams
+Sheridan School District 2|Arapahoe
+Sierra Grande School District R-30|Costilla
+Silverton School District 1|San Juan
+South Conejos School District RE-10|Conejos
+South Routt School District RE-3|Routt
+Springfield School District RE-4|Baca
+St. Vrain Valley School District RE-1J|Boulder;Broomfield;Larimer;Weld
+Steamboat Springs School District RE-2|Routt
+Strasburg School District 31J|Adams
+Stratton School District R-4|Kit Carson
+Summit School District RE-1|Summit
+Swink School District 33|Otero
+Telluride School District R-1|San Miguel
+Thompson School District R-2J|Larimer
+Trinidad School District 1|Las Animas
+Upper Rio Grande School District C-7|Rio Grande
+Valley School District RE-1|Logan
+Vilas School District RE-5|Baca
+Walsh School District RE-1|Baca
+Weld County School District RE-1|Weld
+Weld County School District RE-3J|Weld
+Weld County School District RE-8|Weld
+Weldon Valley School District RE-20J|Morgan
+West End School District RE-2|Montrose
+West Grand School District 1-JT|Grand
+Westminster School District 50|Adams
+Widefield School District 3|El Paso
+Wiggins School District RE-50J|Morgan
+Wiley School District RE-13-JT|Prowers
+Weld County School District RE-4|Weld
+Woodland Park School District RE-2|Teller
+Woodlin School District R-104|Washington
+Wray School District RD-2|Yuma
+Yuma School District 1|Yuma

@@ -1,0 +1,25 @@
+# Exact versions the workflows install (pip install --only-binary=:all: -r requirements.txt): what CI tests is what
+# runs. Dependabot proposes updates as pull requests. pyproject.toml holds the looser ranges for pip installs, with
+# floors at the versions that fixed known security issues in the libraries that parse untrusted input.
+requests==2.34.2
+urllib3==2.8.0
+certifi==2026.10.18
+idna==3.20
+charset-normalizer==3.5.1
+beautifulsoup4==4.15.0
+soupsieve==2.9.2
+typing-extensions==4.16.0
+lxml==6.1.3
+PyYAML==6.0.3
+Pillow==12.3.0
+pytesseract==0.3.13
+packaging==26.3
+pdfplumber==0.11.10
+pdfminer.six==20260107
+pypdfium2==5.13.0
+cryptography==50.0.1
+cffi==2.1.1
+pycparser==3.0
+playwright==1.63.0
+pyee==13.0.1
+greenlet==3.5.6

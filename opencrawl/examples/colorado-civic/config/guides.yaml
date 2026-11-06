@@ -1,0 +1,48 @@
+# Endorsements, scorecards and voter guides: organizations' OWN pages only (an endorsement is cited
+# to the endorser). The crawler starts at each home page and follows links matching `include`;
+# robots.txt is honored, so a guide that disallows crawling is simply skipped (opencrawl blocked).
+# Never aggregators (config/outlets.yaml excludes them everywhere).
+# kind: endorsements | scorecard | questionnaire | party — what the deriver expects to find.
+# Check each organization's current site before relying on it; these are starting points.
+guides:
+  - id: guide:lwv-co
+    name: League of Women Voters of Colorado
+    url: https://lwvcolorado.org/
+    kind: questionnaire
+    include: ["vote411", "voter-guide", "voters-guide", "candidate", "election", "guide", "ballot"]
+  - id: guide:vote411
+    name: Vote411 (League of Women Voters Education Fund)
+    url: https://www.vote411.org/
+    kind: questionnaire
+    include: ["colorado", "/ballot", "candidate", "race"]
+    max_pages: 60
+  - id: guide:conservation-co
+    name: Conservation Colorado
+    url: https://conservationco.org/
+    kind: scorecard
+    include: ["scorecard", "endorse", "candidate", "legislator"]
+  - id: guide:sierra-co
+    name: Sierra Club Colorado Chapter
+    url: https://www.sierraclub.org/colorado
+    kind: endorsements
+    include: ["endorse", "political", "candidate"]
+  - id: guide:cea
+    name: Colorado Education Association
+    url: https://www.coloradoea.org/
+    kind: endorsements
+    include: ["endorse", "candidate", "legislative", "scorecard", "election"]
+  - id: guide:co-realtors
+    name: Colorado Association of REALTORS
+    url: https://www.coloradorealtors.com/
+    kind: endorsements
+    include: ["endorse", "rpac", "candidate", "political", "advocacy"]
+  - id: guide:cogop
+    name: Colorado Republican Party
+    url: https://cologop.org/
+    kind: party
+    include: ["candidate", "endorse", "elected", "officials"]
+  - id: guide:codems
+    name: Colorado Democratic Party
+    url: https://www.coloradodems.org/
+    kind: party
+    include: ["candidate", "endorse", "elected", "officials"]

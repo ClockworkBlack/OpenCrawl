@@ -1,0 +1,26 @@
+# People and organizations to research with `opencrawl subjects research`. Add entries by hand here, or import a
+# list with `opencrawl subjects import subjects.csv` (columns: id, name, aliases, target, targets, places, websites,
+# social, office, public_role, party, priority, external_id, last_active, fec_id). Websites and social accounts
+# should be ones seen on an official page or the subject's own materials, never guessed. Unverified material goes
+# to the quarantine, never into a profile.
+#
+# Anyone can be listed. With settings.yaml privacy.public_figures_only: true, a person needs an `office` (held or
+# sought), a `public_role` or a `title` to be researched.
+#
+# Fields: see the starter config/subjects.yaml. For civic research also useful:
+#   office, party          what they hold or ran for
+#   target, targets[]      the registry ids whose records (votes, minutes, agendas) are searched first
+#   counties[]             counties that disambiguate news coverage ("Weld County")
+#   last_active            date of their latest race or filing: researched more often while recent
+#   races[]                contests for the career timeline: {election_id, date, office, party, votes, pct, outcome,
+#                          level, url, county, type}
+#   finance_csv, fec_id    a TRACER export, an FEC candidate id (federal candidates)
+subjects: []
+#  - id: robin-ashby
+#    name: Robin Ashby
+#    office: Council Member, Ward 1
+#    target: springfield
+#    targets: [springfield, co-baca]
+#    websites: ["https://www.robinashbyforcouncil.example/"]
+#    social: ["https://bsky.app/profile/robinashby.example"]
+#    priority: true

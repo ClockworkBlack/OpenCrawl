@@ -1,0 +1,43 @@
+# Targets: the things you want to cover. A target is an organization, a place, a company, a campaign, an agency,
+# a cause's main institutions... anything with a website (and maybe feeds, a YouTube channel, a meeting portal).
+# `opencrawl seed` finds each target's website (if you don't give one), its feeds, its portals and its social
+# accounts into state/discovered.json; `opencrawl run` then crawls one source per place its records live
+# (`<id>:site`, `<id>:youtube`, `<id>:legistar`, ...). Hand corrections go in overrides.yaml.
+#
+# Fields
+#   id, name          required; the id is used in record ids, file names and `--target`
+#   kind              free text (organization, agency, company, campaign...). Civic kinds (county, city, town,
+#                     school_district...) get the civic module's crawl rules; those usually come from a
+#                     jurisdictions.yaml registry instead (see examples/colorado-civic).
+#   website           the site to crawl. Leave it out to have seed look it up on Wikidata / Wikipedia.
+#   wikidata          Wikidata item id (Q...), the most reliable lookup
+#   wikipedia         the English Wikipedia article URL (its infobox website is used)
+#   search_hint       words added to a Wikipedia search by name when nothing else is given ("Colorado", "software")
+#   tier              a (crawled every cadence_days.a), b, c
+#   include, exclude  substrings a page URL must / must not contain to be kept from the site (default: no filter)
+#   max_pages, depth  page budget per run and link depth for the site crawl
+#   extra_feeds       RSS/Atom URLs to read besides what seed finds
+#   portals           {youtube: <channel url>, legistar: <...>, ...} when you already know them
+#   tags              free labels (a cause, a region) you can filter exports by
+#
+#   enabled: false    keep the entry but neither seed nor crawl it
+#
+# Two illustrative entries (disabled; replace them with your own):
+targets:
+  - id: example-org
+    name: Example Organization
+    kind: organization
+    website: https://www.example.org/
+    tier: b
+    include: [news, press, report, publication, statement, about]
+    tags: [example]
+    enabled: false
+
+  - id: example-agency
+    name: Example Agency
+    kind: agency
+    # no website: seed will look for it on Wikidata / Wikipedia by name
+    search_hint: "government agency"
+    tier: c
+    tags: [example]
+    enabled: false

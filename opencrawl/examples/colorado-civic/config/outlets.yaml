@@ -1,0 +1,60 @@
+# News outlets whose reporting counts as "reported" evidence (as opposed to "primary" = official record /
+# the subject's own channels, and "unverified" = everything else, which lands in the quarantine).
+# A starting list for Colorado; add local papers as you go. Match is by registered domain (and subdomains).
+outlets:
+  # statewide / Denver
+  - denverpost.com
+  - coloradosun.com
+  - cpr.org
+  - coloradopolitics.com
+  - coloradonewsline.com
+  - 9news.com
+  - kdvr.com
+  - denver7.com
+  - cbsnews.com        # CBS Colorado publishes under cbsnews.com/colorado
+  - westword.com
+  - axios.com          # Axios Denver
+  - kunc.org
+  # regional dailies / weeklies
+  - gazette.com
+  - coloradoan.com
+  - dailycamera.com
+  - timescall.com
+  - reporterherald.com
+  - greeleytribune.com
+  - chieftain.com
+  - gjsentinel.com
+  - durangoherald.com
+  - aspentimes.com
+  - vaildaily.com
+  - summitdaily.com
+  - steamboatpilot.com
+  - postindependent.com
+  - craigdailypress.com
+  - montrosepress.com
+  - telluridenews.com
+  - canoncitydailyrecord.com
+  - thefortmorgantimes.com
+  - journal-advocate.com
+  - lamarledger.com
+  # national wires
+  - apnews.com
+  - reuters.com
+  - npr.org
+
+# Domains never used as evidence or leads: aggregators, AI summaries, wikis, content farms.
+exclude_domains:
+  - ballotpedia.org
+  - wikipedia.org
+  - wikidata.org
+  - facebook.com
+  - x.com
+  - twitter.com
+  - instagram.com
+  - tiktok.com
+  - reddit.com
+  - quora.com
+  - medium.com
+  - substack.com
+  - perplexity.ai
+  - chatgpt.com

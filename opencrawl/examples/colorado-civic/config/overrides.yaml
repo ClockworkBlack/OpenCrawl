@@ -1,0 +1,10 @@
+# Hand edits that win over jurisdictions.yaml and state/discovered.json. Keyed by registry id
+# (see config/jurisdictions.yaml). Any field is allowed; the useful ones: website, portals (legistar,
+# agenda_center, granicus, civicclerk, boarddocs, ecode360, amlegal, youtube), tier (a|b|c), enabled (false to
+# skip), notes. `youtube_checked` records why a YouTube channel is believed to be the government's own.
+targets: {}
+#  denver:
+#    portals: {legistar: https://denver.legistar.com/}
+#  aurora:
+#    portals: {youtube: "https://www.youtube.com/@AuroraGov"}
+#    youtube_checked: "2026-01-01: linked from the footer of the city's official website"

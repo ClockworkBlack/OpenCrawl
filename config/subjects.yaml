@@ -1,0 +1,36 @@
+# Subjects: people and organizations to research by name across everything crawled, the news and social media
+# (`opencrawl subjects research`). Also importable from a CSV/JSON with `opencrawl subjects import FILE`.
+#
+# Anyone or anything can be a subject. With settings.yaml privacy.public_figures_only: true, a person is researched
+# only with an `office` (held or sought), a `public_role` ("spokesperson for X", "CEO of Y") or a `title`.
+# Remove someone with `opencrawl purge --subject ID` (and delete their entry here).
+#
+# Fields
+#   id, name, aliases[]      who; aliases are other spellings, former names, nicknames
+#   kind                     person | organization
+#   office, public_role, title   their public role, if any (required for people with privacy.public_figures_only)
+#   target, targets[]        the target(s) whose records are searched first; their names also disambiguate news
+#   places[]                 words an article must contain besides the name (a city, a state, an employer)
+#   websites[], social[]     the subject's own channels (primary evidence; the first website is the proof page
+#                            that social accounts are checked against)
+#   search_terms[], news_feeds[]   extra news queries and feeds
+#   priority: true           researched before everyone else
+#   external_id              your own id for them (names their packet/profile files)
+#   known_urls[]             sources you already have: packets mark the new ones
+#   last_active              date of their latest notable activity: researched more often while recent
+#   party                    civic: party, when they ran under one
+#   finance_csv, fec_id      civic: a campaign-finance export, an FEC candidate id
+#   races[]                  civic: contests ({election_id, date, office, party, votes, pct, outcome, level, url})
+#                            for the career timeline
+subjects: []
+# An entry looks like this (uncomment and replace with your own):
+#  - id: example-person
+#    name: Example Person
+#    kind: person
+#    public_role: "executive director of Example Organization"
+#    aliases: []
+#    target: example-org
+#    places: ["Example Organization"]
+#    websites: []
+#    social: []
+#    priority: false

@@ -1,0 +1,274 @@
+# Colorado municipalities: name († = a county seat)|type|county or counties (";" separated)|population (2020 census)
+# Source: Wikipedia, "List of municipalities in Colorado" (CC BY-SA), populations from the 2020 census.
+Aguilar|Statutory town|Las Animas|456
+Akron†|Statutory town|Washington|1757
+Alamosa†|Home rule city|Alamosa|9806
+Alma|Statutory town|Park|296
+Antonito|Statutory town|Conejos|647
+Arriba|Statutory town|Lincoln|202
+Arvada|Home rule city|Jefferson; Adams|124402
+Aspen†|Home rule city|Pitkin|7004
+Ault|Statutory town|Weld|1887
+Aurora|Home rule city|Arapahoe; Adams; Douglas|386261
+Avon|Home rule town|Eagle|6072
+Basalt|Home rule town|Eagle; Pitkin|3984
+Bayfield|Statutory town|La Plata|2838
+Bennett|Statutory town|Adams; Arapahoe|2862
+Berthoud|Statutory town|Larimer; Weld|10332
+Bethune|Statutory town|Kit Carson|183
+Black Hawk|Home rule city|Gilpin|127
+Blanca|Statutory town|Costilla|322
+Blue River|Statutory town|Summit|877
+Bonanza|Statutory town|Saguache|17
+Boone|Statutory town|Pueblo|305
+Boulder†|Home rule city|Boulder|108250
+Bow Mar|Statutory town|Arapahoe; Jefferson|853
+Branson|Statutory town|Las Animas|57
+Breckenridge†|Home rule town|Summit|5078
+Brighton†|Home rule city|Adams; Weld|40083
+Brookside|Statutory town|Fremont|236
+Broomfield†|Consolidated city and county|Broomfield|74112
+Brush|Statutory city|Morgan|5339
+Buena Vista|Statutory town|Chaffee|2855
+Burlington†|Home rule city|Kit Carson|3172
+Calhan|Statutory town|El Paso|762
+Campo|Statutory town|Baca|103
+Cañon City†|Home rule city|Fremont|17141
+Carbonate|Statutory town|Garfield|0
+Carbondale|Home rule town|Garfield|6434
+Castle Pines|Home rule city|Douglas|11036
+Castle Rock†|Home rule town|Douglas|73158
+Cedaredge|Home rule town|Delta|2279
+Centennial|Home rule city|Arapahoe|108418
+Center|Statutory town|Saguache; Rio Grande|1929
+Central City†|Home rule city|Gilpin; Clear Creek|779
+Cheraw|Statutory town|Otero|237
+Cherry Hills Village|Home rule city|Arapahoe|6442
+Cheyenne Wells†|Statutory town|Cheyenne|758
+Coal Creek|Statutory town|Fremont|364
+Cokedale|Statutory town|Las Animas|127
+Collbran|Statutory town|Mesa|369
+Colorado Springs†|Home rule city|El Paso|478961
+Columbine Valley|Statutory town|Arapahoe|1502
+Commerce City|Home rule city|Adams|62418
+Cortez†|Home rule city|Montezuma|8766
+Craig†|Home rule city|Moffat|9060
+Crawford|Statutory town|Delta|403
+Creede†|Statutory town|Mineral|257
+Crested Butte|Home rule town|Gunnison|1639
+Crestone|Statutory town|Saguache|141
+Cripple Creek†|Statutory city|Teller|1155
+Crook|Statutory town|Logan|133
+Crowley|Statutory town|Crowley|166
+Dacono|Home rule city|Weld|6297
+De Beque|Statutory town|Mesa|493
+Deer Trail|Statutory town|Arapahoe|1068
+Del Norte†|Statutory town|Rio Grande|1458
+Delta†|Home rule city|Delta|9035
+Denver†|Consolidated city and county|Denver|715522
+Dillon|Home rule town|Summit|1064
+Dinosaur|Statutory town|Moffat|243
+Dolores|Statutory town|Montezuma|885
+Dove Creek†|Statutory town|Dolores|635
+Durango†|Home rule city|La Plata|19071
+Eads†|Statutory town|Kiowa|672
+Eagle†|Home rule town|Eagle|7511
+Eaton|Statutory town|Weld|5802
+Eckley|Statutory town|Yuma|232
+Edgewater|Home rule city|Jefferson|5005
+Elizabeth|Statutory town|Elbert|1675
+Empire|Statutory town|Clear Creek|345
+Englewood|Home rule city|Arapahoe|33659
+Erie|Home rule town|Weld; Boulder|30038
+Estes Park|Statutory town|Larimer|5904
+Evans|Home rule city|Weld|22165
+Fairplay†|Statutory town|Park|724
+Federal Heights|Home rule city|Adams|14382
+Firestone|Statutory town|Weld|16381
+Flagler|Statutory town|Kit Carson|567
+Fleming|Statutory town|Logan|428
+Florence|Statutory city|Fremont|3822
+Fort Collins†|Home rule city|Larimer|169810
+Fort Lupton|Statutory city|Weld|7955
+Fort Morgan†|Home rule city|Morgan|11597
+Fountain|Home rule city|El Paso|29802
+Fowler|Statutory town|Otero|1253
+Foxfield|Statutory town|Arapahoe|754
+Fraser|Statutory town|Grand|1400
+Frederick|Statutory town|Weld|14513
+Frisco|Home rule town|Summit|2913
+Fruita|Home rule city|Mesa|13395
+Garden City|Statutory town|Weld|254
+Genoa|Statutory town|Lincoln|153
+Georgetown†|Territorial charter municipality|Clear Creek|1118
+Gilcrest|Statutory town|Weld|1029
+Glendale|Home rule city|Arapahoe|4613
+Glenwood Springs†|Home rule city|Garfield|9963
+Golden†|Home rule city|Jefferson|20399
+Granada|Statutory town|Prowers|445
+Granby|Statutory town|Grand|2079
+Grand Junction†|Home rule city|Mesa|65560
+Grand Lake|Statutory town|Grand|410
+Greeley†|Home rule city|Weld|108795
+Green Mountain Falls|Statutory town|El Paso; Teller|646
+Greenwood Village|Home rule city|Arapahoe|15691
+Grover|Statutory town|Weld|157
+Gunnison†|Home rule city|Gunnison|6560
+Gypsum|Home rule town|Eagle|8040
+Haswell|Statutory town|Kiowa|71
+Haxtun|Statutory town|Phillips|981
+Hayden|Home rule town|Routt|1941
+Hillrose|Statutory town|Morgan|312
+Holly|Statutory town|Prowers|837
+Holyoke†|Home rule city|Phillips|2346
+Hooper|Statutory town|Alamosa|81
+Hot Sulphur Springs†|Statutory town|Grand|687
+Hotchkiss|Statutory town|Delta|875
+Hudson|Statutory town|Weld|1651
+Hugo†|Statutory town|Lincoln|787
+Idaho Springs|Statutory city|Clear Creek|1782
+Ignacio|Statutory town|La Plata|852
+Iliff|Statutory town|Logan|246
+Jamestown|Statutory town|Boulder|256
+Johnstown|Home rule town|Weld; Larimer|17303
+Julesburg†|Statutory town|Sedgwick|1307
+Keenesburg|Statutory town|Weld|1250
+Kersey|Statutory town|Weld|1495
+Keystone|Home rule town|Summit|1369
+Kim|Statutory town|Las Animas|63
+Kiowa†|Home rule town|Elbert|725
+Kit Carson|Statutory town|Cheyenne|255
+Kremmling|Statutory town|Grand|1509
+La Jara|Statutory town|Conejos|730
+La Junta†|Home rule city|Otero|7322
+La Veta|Statutory town|Huerfano|862
+Lafayette|Home rule city|Boulder|30411
+Lake City†|Statutory town|Hinsdale|432
+Lakeside|Statutory town|Jefferson|16
+Lakewood|Home rule city|Jefferson|155984
+Lamar†|Home rule city|Prowers|7687
+Larkspur|Home rule town|Douglas|206
+Las Animas†|Statutory city|Bent|2300
+LaSalle|Statutory town|Weld|2359
+Leadville†|Statutory city|Lake|2633
+Limon|Statutory town|Lincoln|2043
+Littleton†|Home rule city|Arapahoe; Jefferson; Douglas|45652
+Lochbuie|Statutory town|Weld; Adams|8088
+Log Lane Village|Statutory town|Morgan|913
+Lone Tree|Home rule city|Douglas|14253
+Longmont|Home rule city|Boulder; Weld|98885
+Louisville|Home rule city|Boulder|21226
+Loveland|Home rule city|Larimer|76378
+Lyons|Statutory town|Boulder|2209
+Manassa|Statutory town|Conejos|947
+Mancos|Statutory town|Montezuma|1196
+Manitou Springs|Home rule city|El Paso|4858
+Manzanola|Statutory town|Otero|341
+Marble|Statutory town|Gunnison|133
+Mead|Statutory town|Weld|4781
+Meeker†|Statutory town|Rio Blanco|2374
+Merino|Statutory town|Logan|281
+Milliken|Statutory town|Weld|8386
+Minturn|Home rule town|Eagle|1033
+Moffat|Statutory town|Saguache|108
+Monte Vista|Home rule city|Rio Grande|4247
+Montezuma|Statutory town|Summit|74
+Montrose†|Home rule city|Montrose|20291
+Monument|Home rule town|El Paso|10399
+Morrison|Home rule town|Jefferson|396
+Mount Crested Butte|Home rule town|Gunnison|941
+Mountain View|Home rule town|Jefferson|541
+Mountain Village|Home rule town|San Miguel|1264
+Naturita|Statutory town|Montrose|485
+Nederland|Statutory town|Boulder|1471
+New Castle|Home rule town|Garfield|4923
+Northglenn|Home rule city|Adams; Weld|38131
+Norwood|Statutory town|San Miguel|535
+Nucla|Statutory town|Montrose|585
+Nunn|Statutory town|Weld|504
+Oak Creek|Statutory town|Routt|889
+Olathe|Statutory town|Montrose|2019
+Olney Springs|Statutory town|Crowley|315
+Ophir|Home rule town|San Miguel|197
+Orchard City|Statutory town|Delta|3142
+Ordway†|Statutory town|Crowley|1066
+Otis|Statutory town|Washington|511
+Ouray†|Home rule city|Ouray|898
+Ovid|Statutory town|Sedgwick|271
+Pagosa Springs†|Home rule town|Archuleta|1571
+Palisade|Statutory town|Mesa|2565
+Palmer Lake|Statutory town|El Paso|2636
+Paoli|Statutory town|Phillips|51
+Paonia|Statutory town|Delta|1447
+Parachute|Home rule town|Garfield|1390
+Parker|Home rule town|Douglas|58512
+Peetz|Statutory town|Logan|213
+Pierce|Statutory town|Weld|1097
+Pitkin|Statutory town|Gunnison|72
+Platteville|Statutory town|Weld|2955
+Poncha Springs|Statutory town|Chaffee|925
+Pritchett|Statutory town|Baca|112
+Pueblo†|Home rule city|Pueblo|111876
+Ramah|Statutory town|El Paso|111
+Rangely|Statutory town|Rio Blanco|2299
+Raymer|Statutory town|Weld|110
+Red Cliff|Statutory town|Eagle|257
+Rico|Home rule town|Dolores|288
+Ridgway|Home rule town|Ouray|1183
+Rifle|Home rule city|Garfield|10437
+Rockvale|Statutory town|Fremont|511
+Rocky Ford|Statutory city|Otero|3876
+Romeo|Statutory town|Conejos|302
+Rye|Statutory town|Pueblo|206
+Saguache†|Statutory town|Saguache|539
+Salida†|Statutory city|Chaffee|5666
+San Luis†|Statutory town|Costilla|598
+Sanford|Home rule town|Conejos|879
+Sawpit|Statutory town|San Miguel|38
+Sedgwick|Statutory town|Sedgwick|172
+Seibert|Statutory town|Kit Carson|172
+Severance|Statutory town|Weld|7683
+Sheridan|Home rule city|Arapahoe|6105
+Sheridan Lake|Statutory town|Kiowa|55
+Silt|Home rule town|Garfield|3536
+Silver Cliff|Statutory town|Custer|609
+Silver Plume|Home rule town|Clear Creek|207
+Silverthorne|Home rule town|Summit|4402
+Silverton†|Statutory town|San Juan|622
+Simla|Statutory town|Elbert|601
+Snowmass Village|Home rule town|Pitkin|3096
+South Fork|Statutory town|Rio Grande|510
+Springfield†|Statutory town|Baca|1325
+Starkville|Statutory town|Las Animas|62
+Steamboat Springs†|Home rule city|Routt|13224
+Sterling†|Home rule city|Logan|13735
+Stratton|Statutory town|Kit Carson|656
+Sugar City|Statutory town|Crowley|259
+Superior|Statutory town|Boulder; Jefferson|13094
+Swink|Statutory town|Otero|604
+Telluride†|Home rule town|San Miguel|2607
+Thornton|Home rule city|Adams; Weld|141867
+Timnath|Home rule town|Larimer|6487
+Trinidad†|Home rule city|Las Animas|8329
+Two Buttes|Statutory town|Baca|34
+Vail|Home rule town|Eagle|4835
+Victor|Statutory city|Teller|379
+Vilas|Statutory town|Baca|98
+Vona|Statutory town|Kit Carson|95
+Walden†|Statutory town|Jackson|606
+Walsenburg†|Statutory city|Huerfano|3049
+Walsh|Statutory town|Baca|543
+Ward|Home rule town|Boulder|128
+Wellington|Statutory town|Larimer|11047
+Westcliffe†|Statutory town|Custer|435
+Westminster|Home rule city|Adams; Jefferson|116317
+Wheat Ridge|Home rule city|Jefferson|32398
+Wiggins|Statutory town|Morgan|1401
+Wiley|Statutory town|Prowers|437
+Williamsburg|Statutory town|Fremont|731
+Windsor|Home rule town|Weld; Larimer|32716
+Winter Park|Home rule town|Grand|1033
+Woodland Park|Home rule city|Teller|7920
+Wray†|Home rule city|Yuma|2358
+Yampa|Statutory town|Routt|399
+Yuma|Home rule city|Yuma|3456

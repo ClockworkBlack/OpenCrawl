@@ -1,0 +1,117 @@
+# Colorado civic example: every county, municipality and school district in Colorado, their meeting portals,
+# codes, elections pages and official channels, plus state newsrooms and voter guides. Copy this project
+# (`opencrawl init my-colorado --example colorado-civic`) and edit from there. Values not set here keep the
+# defaults described in the starter config/settings.yaml.
+
+http:
+  user_agent: "OpenCrawl/1.0 (+https://github.com/your-org/your-repo)"   # point this at your repository
+  contact: ""                  # optional, added to the User-Agent: a project or role address, never a personal one
+  min_interval_seconds: 3
+  host_intervals:
+    webapi.legistar.com: 0.5
+    api.civicclerk.com: 1
+    public.api.bsky.app: 1
+    api.gdeltproject.org: 5.5
+    news.google.com: 3
+    en.wikipedia.org: 1
+    query.wikidata.org: 2
+  api_endpoints:
+    - query.wikidata.org/sparql
+    - en.wikipedia.org/w/api.php
+    - www.wikidata.org/wiki/Special:EntityData
+    - api.open.fec.gov/v1
+    - projects.propublica.org/nonprofits/api
+    - api.opencorporates.com
+  timeout_seconds: 30
+  max_response_seconds: 300
+  max_bytes: 25000000
+  max_redirects: 5
+  blocked_ttl_days: 7
+  allow_private_networks: true    # local / intranet / cloud-hosted sites allowed (see the starter settings.yaml)
+  block_metadata: true
+  allow_hosts: []
+
+# Government sites see the least human traffic late at night (Mountain time).
+schedule:
+  timezone: America/Denver
+  api_anytime: true
+  windows:
+    - {days: [mon, tue, wed, thu, fri], start: "23:00", end: "06:00"}
+    - {days: [sat, sun], start: "21:00", end: "08:00"}
+
+# a = counties, consolidated governments and cities >= 10k; b = 1k-10k; c = under 1k (from the registry's populations)
+cadence_days: {a: 2, b: 7, c: 30}
+
+frontier:
+  document_ttl_days: 3650
+  page_revisit_days: 7
+
+workers: 16
+recheck_days: 14
+max_minutes: 300
+
+limits:
+  since: "2016-01-01"
+  max_pages: 200
+  meeting_lookback_days: 45
+
+crawl:
+  extra_hot: "tabor|mill-levy|lodging-tax|home-rule|charter"
+  extra_cold: ""
+
+evidence:
+  primary_suffixes: [".gov", ".mil", ".co.us"]
+  primary_domains: []
+
+subjects:
+  max_minutes: 60
+  cadence_days: 30
+  recent_cadence_days: 3
+  max_mentions: 150
+  max_articles_per_query: 60
+  gdelt: true
+  google_news: true
+  leads_for: priority_or_recent
+  bluesky_search: false        # true also collects public Bluesky posts by anyone that name a subject
+  places: ["Colorado", "Colo."]       # an article must name the subject AND the state (or their place) to count
+
+transcribe:
+  enabled: false
+  model: base
+  per_run: 2
+  max_mb: 300
+  budget_seconds: 900
+
+civic:
+  state_fips: "08"
+  state_name: Colorado
+  state_abbr: CO
+  # Colorado ballot-question kinds, tried before the generic ones: TABOR (the Taxpayer's Bill of Rights) puts tax
+  # increases and revenue retention ("de-Brucing") on the ballot.
+  ballot_types:
+    - {label: "TABOR revenue retention", pattern: '\b(de-?bruc\w*|tabor|retain and spend|revenue change)\b'}
+    - {label: "Metro district", pattern: '\bmetropolitan district\b'}
+
+# Colorado Open Records Act (CORA): records are due within three working days, extendable to seven in extenuating
+# circumstances (C.R.S. § 24-72-203(3)(b)). Nothing is sent until enabled is true, requester is set and the
+# mailbox secrets exist (ORR_SMTP_HOST, ORR_SMTP_PORT, ORR_USER, ORR_PASSWORD, ORR_FROM, optional ORR_IMAP_HOST).
+openrecords:
+  enabled: false
+  requester: ""                # the name requests are signed with (a project name, not a person)
+  law: "the Colorado Open Records Act"
+  citation: "C.R.S. § 24-72-201 et seq."
+  response_days: 3
+  cost_cap: "$25.00"
+  daily_limit: 10
+  cooldown_days: 180
+  follow_up_after_business_days: 5
+  trusted_reply_domains: []    # a records portal a government replies from, besides the domain the request went to
+
+privacy:
+  public_figures_only: false   # true: people are researched only with an office, public_role or title
+  retention_days:              # e.g. 730 for `opencrawl purge --expired`
+  export_quarantine: false
+  export_screenshot_text: true
+
+data_dir: data
+state_dir: state

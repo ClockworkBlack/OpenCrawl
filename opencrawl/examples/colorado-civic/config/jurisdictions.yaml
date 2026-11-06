@@ -1,0 +1,2444 @@
+_about: 'Every county and municipality of Colorado: ids, kinds, FIPS (counties), counties, 2020 populations and Wikipedia
+  articles. Built by scripts/build_registry.py from sources/*.txt (Wikipedia lists, CC BY-SA; Census 2020 populations). Websites,
+  portals and feeds are discovered by `opencrawl seed` into state/discovered.json; hand edits go in config/overrides.yaml.'
+counties:
+- id: co-adams
+  name: Adams County
+  kind: county
+  fips: 08001
+  seat: Brighton
+  population: 554668
+  wikipedia: https://en.wikipedia.org/wiki/Adams_County,_Colorado
+- id: co-alamosa
+  name: Alamosa County
+  kind: county
+  fips: 08003
+  seat: Alamosa
+  population: 16688
+  wikipedia: https://en.wikipedia.org/wiki/Alamosa_County,_Colorado
+- id: co-arapahoe
+  name: Arapahoe County
+  kind: county
+  fips: 08005
+  seat: Littleton
+  population: 673820
+  wikipedia: https://en.wikipedia.org/wiki/Arapahoe_County,_Colorado
+- id: co-archuleta
+  name: Archuleta County
+  kind: county
+  fips: 08007
+  seat: Pagosa Springs
+  population: 14306
+  wikipedia: https://en.wikipedia.org/wiki/Archuleta_County,_Colorado
+- id: co-baca
+  name: Baca County
+  kind: county
+  fips: 08009
+  seat: Springfield
+  population: 3347
+  wikipedia: https://en.wikipedia.org/wiki/Baca_County,_Colorado
+- id: co-bent
+  name: Bent County
+  kind: county
+  fips: 08011
+  seat: Las Animas
+  population: 5716
+  wikipedia: https://en.wikipedia.org/wiki/Bent_County,_Colorado
+- id: co-boulder
+  name: Boulder County
+  kind: county
+  fips: 08013
+  seat: Boulder
+  population: 328560
+  wikipedia: https://en.wikipedia.org/wiki/Boulder_County,_Colorado
+- id: co-broomfield
+  name: Broomfield County
+  kind: county
+  fips: 08014
+  seat: Broomfield
+  population: 79174
+  wikipedia: https://en.wikipedia.org/wiki/Broomfield,_Colorado
+- id: co-chaffee
+  name: Chaffee County
+  kind: county
+  fips: 08015
+  seat: Salida
+  population: 20831
+  wikipedia: https://en.wikipedia.org/wiki/Chaffee_County,_Colorado
+- id: co-cheyenne
+  name: Cheyenne County
+  kind: county
+  fips: 08017
+  seat: Cheyenne Wells
+  population: 1713
+  wikipedia: https://en.wikipedia.org/wiki/Cheyenne_County,_Colorado
+- id: co-clear-creek
+  name: Clear Creek County
+  kind: county
+  fips: 08019
+  seat: Georgetown
+  population: 8994
+  wikipedia: https://en.wikipedia.org/wiki/Clear_Creek_County,_Colorado
+- id: co-conejos
+  name: Conejos County
+  kind: county
+  fips: 08021
+  seat: Conejos
+  population: 7529
+  wikipedia: https://en.wikipedia.org/wiki/Conejos_County,_Colorado
+- id: co-costilla
+  name: Costilla County
+  kind: county
+  fips: 08023
+  seat: San Luis
+  population: 3679
+  wikipedia: https://en.wikipedia.org/wiki/Costilla_County,_Colorado
+- id: co-crowley
+  name: Crowley County
+  kind: county
+  fips: 08025
+  seat: Ordway
+  population: 5677
+  wikipedia: https://en.wikipedia.org/wiki/Crowley_County,_Colorado
+- id: co-custer
+  name: Custer County
+  kind: county
+  fips: 08027
+  seat: Westcliffe
+  population: 5590
+  wikipedia: https://en.wikipedia.org/wiki/Custer_County,_Colorado
+- id: co-delta
+  name: Delta County
+  kind: county
+  fips: 08029
+  seat: Delta
+  population: 32178
+  wikipedia: https://en.wikipedia.org/wiki/Delta_County,_Colorado
+- id: co-denver
+  name: Denver County
+  kind: county
+  fips: 08031
+  seat: Denver
+  population: 740613
+  wikipedia: https://en.wikipedia.org/wiki/Denver,_Colorado
+- id: co-dolores
+  name: Dolores County
+  kind: county
+  fips: 08033
+  seat: Dove Creek
+  population: 2466
+  wikipedia: https://en.wikipedia.org/wiki/Dolores_County,_Colorado
+- id: co-douglas
+  name: Douglas County
+  kind: county
+  fips: 08035
+  seat: Castle Rock
+  population: 399396
+  wikipedia: https://en.wikipedia.org/wiki/Douglas_County,_Colorado
+- id: co-eagle
+  name: Eagle County
+  kind: county
+  fips: 08037
+  seat: Eagle
+  population: 54291
+  wikipedia: https://en.wikipedia.org/wiki/Eagle_County,_Colorado
+- id: co-el-paso
+  name: El Paso County
+  kind: county
+  fips: 08041
+  seat: Colorado Springs
+  population: 757040
+  wikipedia: https://en.wikipedia.org/wiki/El_Paso_County,_Colorado
+- id: co-elbert
+  name: Elbert County
+  kind: county
+  fips: 08039
+  seat: Kiowa
+  population: 30534
+  wikipedia: https://en.wikipedia.org/wiki/Elbert_County,_Colorado
+- id: co-fremont
+  name: Fremont County
+  kind: county
+  fips: 08043
+  seat: Cañon City
+  population: 50039
+  wikipedia: https://en.wikipedia.org/wiki/Fremont_County,_Colorado
+- id: co-garfield
+  name: Garfield County
+  kind: county
+  fips: 08045
+  seat: Glenwood Springs
+  population: 63474
+  wikipedia: https://en.wikipedia.org/wiki/Garfield_County,_Colorado
+- id: co-gilpin
+  name: Gilpin County
+  kind: county
+  fips: 08047
+  seat: Central City
+  population: 6073
+  wikipedia: https://en.wikipedia.org/wiki/Gilpin_County,_Colorado
+- id: co-grand
+  name: Grand County
+  kind: county
+  fips: 08049
+  seat: Hot Sulphur Springs
+  population: 16496
+  wikipedia: https://en.wikipedia.org/wiki/Grand_County,_Colorado
+- id: co-gunnison
+  name: Gunnison County
+  kind: county
+  fips: 08051
+  seat: Gunnison
+  population: 17439
+  wikipedia: https://en.wikipedia.org/wiki/Gunnison_County,_Colorado
+- id: co-hinsdale
+  name: Hinsdale County
+  kind: county
+  fips: 08053
+  seat: Lake City
+  population: 753
+  wikipedia: https://en.wikipedia.org/wiki/Hinsdale_County,_Colorado
+- id: co-huerfano
+  name: Huerfano County
+  kind: county
+  fips: 08055
+  seat: Walsenburg
+  population: 7011
+  wikipedia: https://en.wikipedia.org/wiki/Huerfano_County,_Colorado
+- id: co-jackson
+  name: Jackson County
+  kind: county
+  fips: 08057
+  seat: Walden
+  population: 1211
+  wikipedia: https://en.wikipedia.org/wiki/Jackson_County,_Colorado
+- id: co-jefferson
+  name: Jefferson County
+  kind: county
+  fips: 08059
+  seat: Golden
+  population: 580451
+  wikipedia: https://en.wikipedia.org/wiki/Jefferson_County,_Colorado
+- id: co-kiowa
+  name: Kiowa County
+  kind: county
+  fips: 08061
+  seat: Eads
+  population: 1412
+  wikipedia: https://en.wikipedia.org/wiki/Kiowa_County,_Colorado
+- id: co-kit-carson
+  name: Kit Carson County
+  kind: county
+  fips: 08063
+  seat: Burlington
+  population: 7069
+  wikipedia: https://en.wikipedia.org/wiki/Kit_Carson_County,_Colorado
+- id: co-la-plata
+  name: La Plata County
+  kind: county
+  fips: 08067
+  seat: Durango
+  population: 56898
+  wikipedia: https://en.wikipedia.org/wiki/La_Plata_County,_Colorado
+- id: co-lake
+  name: Lake County
+  kind: county
+  fips: 08065
+  seat: Leadville
+  population: 7552
+  wikipedia: https://en.wikipedia.org/wiki/Lake_County,_Colorado
+- id: co-larimer
+  name: Larimer County
+  kind: county
+  fips: 08069
+  seat: Fort Collins
+  population: 377292
+  wikipedia: https://en.wikipedia.org/wiki/Larimer_County,_Colorado
+- id: co-las-animas
+  name: Las Animas County
+  kind: county
+  fips: 08071
+  seat: Trinidad
+  population: 14391
+  wikipedia: https://en.wikipedia.org/wiki/Las_Animas_County,_Colorado
+- id: co-lincoln
+  name: Lincoln County
+  kind: county
+  fips: 08073
+  seat: Hugo
+  population: 5645
+  wikipedia: https://en.wikipedia.org/wiki/Lincoln_County,_Colorado
+- id: co-logan
+  name: Logan County
+  kind: county
+  fips: 08075
+  seat: Sterling
+  population: 20654
+  wikipedia: https://en.wikipedia.org/wiki/Logan_County,_Colorado
+- id: co-mesa
+  name: Mesa County
+  kind: county
+  fips: 08077
+  seat: Grand Junction
+  population: 162845
+  wikipedia: https://en.wikipedia.org/wiki/Mesa_County,_Colorado
+- id: co-mineral
+  name: Mineral County
+  kind: county
+  fips: 08079
+  seat: Creede
+  population: 910
+  wikipedia: https://en.wikipedia.org/wiki/Mineral_County,_Colorado
+- id: co-moffat
+  name: Moffat County
+  kind: county
+  fips: 08081
+  seat: Craig
+  population: 13122
+  wikipedia: https://en.wikipedia.org/wiki/Moffat_County,_Colorado
+- id: co-montezuma
+  name: Montezuma County
+  kind: county
+  fips: 08083
+  seat: Cortez
+  population: 26678
+  wikipedia: https://en.wikipedia.org/wiki/Montezuma_County,_Colorado
+- id: co-montrose
+  name: Montrose County
+  kind: county
+  fips: 08085
+  seat: Montrose
+  population: 44591
+  wikipedia: https://en.wikipedia.org/wiki/Montrose_County,_Colorado
+- id: co-morgan
+  name: Morgan County
+  kind: county
+  fips: 08087
+  seat: Fort Morgan
+  population: 30306
+  wikipedia: https://en.wikipedia.org/wiki/Morgan_County,_Colorado
+- id: co-otero
+  name: Otero County
+  kind: county
+  fips: 08089
+  seat: La Junta
+  population: 17683
+  wikipedia: https://en.wikipedia.org/wiki/Otero_County,_Colorado
+- id: co-ouray
+  name: Ouray County
+  kind: county
+  fips: 08091
+  seat: Ouray
+  population: 5265
+  wikipedia: https://en.wikipedia.org/wiki/Ouray_County,_Colorado
+- id: co-park
+  name: Park County
+  kind: county
+  fips: 08093
+  seat: Fairplay
+  population: 18314
+  wikipedia: https://en.wikipedia.org/wiki/Park_County,_Colorado
+- id: co-phillips
+  name: Phillips County
+  kind: county
+  fips: 08095
+  seat: Holyoke
+  population: 4420
+  wikipedia: https://en.wikipedia.org/wiki/Phillips_County,_Colorado
+- id: co-pitkin
+  name: Pitkin County
+  kind: county
+  fips: 08097
+  seat: Aspen
+  population: 16625
+  wikipedia: https://en.wikipedia.org/wiki/Pitkin_County,_Colorado
+- id: co-prowers
+  name: Prowers County
+  kind: county
+  fips: 08099
+  seat: Lamar
+  population: 11884
+  wikipedia: https://en.wikipedia.org/wiki/Prowers_County,_Colorado
+- id: co-pueblo
+  name: Pueblo County
+  kind: county
+  fips: 08101
+  seat: Pueblo
+  population: 169277
+  wikipedia: https://en.wikipedia.org/wiki/Pueblo_County,_Colorado
+- id: co-rio-blanco
+  name: Rio Blanco County
+  kind: county
+  fips: 08103
+  seat: Meeker
+  population: 6683
+  wikipedia: https://en.wikipedia.org/wiki/Rio_Blanco_County,_Colorado
+- id: co-rio-grande
+  name: Rio Grande County
+  kind: county
+  fips: 08105
+  seat: Del Norte
+  population: 11087
+  wikipedia: https://en.wikipedia.org/wiki/Rio_Grande_County,_Colorado
+- id: co-routt
+  name: Routt County
+  kind: county
+  fips: 08107
+  seat: Steamboat Springs
+  population: 25329
+  wikipedia: https://en.wikipedia.org/wiki/Routt_County,_Colorado
+- id: co-saguache
+  name: Saguache County
+  kind: county
+  fips: 08109
+  seat: Saguache
+  population: 6732
+  wikipedia: https://en.wikipedia.org/wiki/Saguache_County,_Colorado
+- id: co-san-juan
+  name: San Juan County
+  kind: county
+  fips: 08111
+  seat: Silverton
+  population: 813
+  wikipedia: https://en.wikipedia.org/wiki/San_Juan_County,_Colorado
+- id: co-san-miguel
+  name: San Miguel County
+  kind: county
+  fips: 08113
+  seat: Telluride
+  population: 7753
+  wikipedia: https://en.wikipedia.org/wiki/San_Miguel_County,_Colorado
+- id: co-sedgwick
+  name: Sedgwick County
+  kind: county
+  fips: 08115
+  seat: Julesburg
+  population: 2247
+  wikipedia: https://en.wikipedia.org/wiki/Sedgwick_County,_Colorado
+- id: co-summit
+  name: Summit County
+  kind: county
+  fips: 08117
+  seat: Breckenridge
+  population: 31517
+  wikipedia: https://en.wikipedia.org/wiki/Summit_County,_Colorado
+- id: co-teller
+  name: Teller County
+  kind: county
+  fips: 08119
+  seat: Cripple Creek
+  population: 24756
+  wikipedia: https://en.wikipedia.org/wiki/Teller_County,_Colorado
+- id: co-washington
+  name: Washington County
+  kind: county
+  fips: 08121
+  seat: Akron
+  population: 4732
+  wikipedia: https://en.wikipedia.org/wiki/Washington_County,_Colorado
+- id: co-weld
+  name: Weld County
+  kind: county
+  fips: 08123
+  seat: Greeley
+  population: 378426
+  wikipedia: https://en.wikipedia.org/wiki/Weld_County,_Colorado
+- id: co-yuma
+  name: Yuma County
+  kind: county
+  fips: 08125
+  seat: Wray
+  population: 9896
+  wikipedia: https://en.wikipedia.org/wiki/Yuma_County,_Colorado
+municipalities:
+- id: aguilar
+  name: Aguilar
+  kind: town
+  counties:
+  - Las Animas
+  population: 456
+  wikipedia: https://en.wikipedia.org/wiki/Aguilar,_Colorado
+- id: akron
+  name: Akron
+  kind: town
+  counties:
+  - Washington
+  population: 1757
+  wikipedia: https://en.wikipedia.org/wiki/Akron,_Colorado
+  county_seat: true
+- id: alamosa
+  name: Alamosa
+  kind: city
+  counties:
+  - Alamosa
+  population: 9806
+  wikipedia: https://en.wikipedia.org/wiki/Alamosa,_Colorado
+  county_seat: true
+- id: alma
+  name: Alma
+  kind: town
+  counties:
+  - Park
+  population: 296
+  wikipedia: https://en.wikipedia.org/wiki/Alma,_Colorado
+- id: antonito
+  name: Antonito
+  kind: town
+  counties:
+  - Conejos
+  population: 647
+  wikipedia: https://en.wikipedia.org/wiki/Antonito,_Colorado
+- id: arriba
+  name: Arriba
+  kind: town
+  counties:
+  - Lincoln
+  population: 202
+  wikipedia: https://en.wikipedia.org/wiki/Arriba,_Colorado
+- id: arvada
+  name: Arvada
+  kind: city
+  counties:
+  - Jefferson
+  - Adams
+  population: 124402
+  wikipedia: https://en.wikipedia.org/wiki/Arvada,_Colorado
+- id: aspen
+  name: Aspen
+  kind: city
+  counties:
+  - Pitkin
+  population: 7004
+  wikipedia: https://en.wikipedia.org/wiki/Aspen,_Colorado
+  county_seat: true
+- id: ault
+  name: Ault
+  kind: town
+  counties:
+  - Weld
+  population: 1887
+  wikipedia: https://en.wikipedia.org/wiki/Ault,_Colorado
+- id: aurora
+  name: Aurora
+  kind: city
+  counties:
+  - Arapahoe
+  - Adams
+  - Douglas
+  population: 386261
+  wikipedia: https://en.wikipedia.org/wiki/Aurora,_Colorado
+- id: avon
+  name: Avon
+  kind: town
+  counties:
+  - Eagle
+  population: 6072
+  wikipedia: https://en.wikipedia.org/wiki/Avon,_Colorado
+- id: basalt
+  name: Basalt
+  kind: town
+  counties:
+  - Eagle
+  - Pitkin
+  population: 3984
+  wikipedia: https://en.wikipedia.org/wiki/Basalt,_Colorado
+- id: bayfield
+  name: Bayfield
+  kind: town
+  counties:
+  - La Plata
+  population: 2838
+  wikipedia: https://en.wikipedia.org/wiki/Bayfield,_Colorado
+- id: bennett
+  name: Bennett
+  kind: town
+  counties:
+  - Adams
+  - Arapahoe
+  population: 2862
+  wikipedia: https://en.wikipedia.org/wiki/Bennett,_Colorado
+- id: berthoud
+  name: Berthoud
+  kind: town
+  counties:
+  - Larimer
+  - Weld
+  population: 10332
+  wikipedia: https://en.wikipedia.org/wiki/Berthoud,_Colorado
+- id: bethune
+  name: Bethune
+  kind: town
+  counties:
+  - Kit Carson
+  population: 183
+  wikipedia: https://en.wikipedia.org/wiki/Bethune,_Colorado
+- id: black-hawk
+  name: Black Hawk
+  kind: city
+  counties:
+  - Gilpin
+  population: 127
+  wikipedia: https://en.wikipedia.org/wiki/Black_Hawk,_Colorado
+- id: blanca
+  name: Blanca
+  kind: town
+  counties:
+  - Costilla
+  population: 322
+  wikipedia: https://en.wikipedia.org/wiki/Blanca,_Colorado
+- id: blue-river
+  name: Blue River
+  kind: town
+  counties:
+  - Summit
+  population: 877
+  wikipedia: https://en.wikipedia.org/wiki/Blue_River,_Colorado
+- id: bonanza
+  name: Bonanza
+  kind: town
+  counties:
+  - Saguache
+  population: 17
+  wikipedia: https://en.wikipedia.org/wiki/Bonanza,_Colorado
+- id: boone
+  name: Boone
+  kind: town
+  counties:
+  - Pueblo
+  population: 305
+  wikipedia: https://en.wikipedia.org/wiki/Boone,_Colorado
+- id: boulder
+  name: Boulder
+  kind: city
+  counties:
+  - Boulder
+  population: 108250
+  wikipedia: https://en.wikipedia.org/wiki/Boulder,_Colorado
+  county_seat: true
+- id: bow-mar
+  name: Bow Mar
+  kind: town
+  counties:
+  - Arapahoe
+  - Jefferson
+  population: 853
+  wikipedia: https://en.wikipedia.org/wiki/Bow_Mar,_Colorado
+- id: branson
+  name: Branson
+  kind: town
+  counties:
+  - Las Animas
+  population: 57
+  wikipedia: https://en.wikipedia.org/wiki/Branson,_Colorado
+- id: breckenridge
+  name: Breckenridge
+  kind: town
+  counties:
+  - Summit
+  population: 5078
+  wikipedia: https://en.wikipedia.org/wiki/Breckenridge,_Colorado
+  county_seat: true
+- id: brighton
+  name: Brighton
+  kind: city
+  counties:
+  - Adams
+  - Weld
+  population: 40083
+  wikipedia: https://en.wikipedia.org/wiki/Brighton,_Colorado
+  county_seat: true
+- id: brookside
+  name: Brookside
+  kind: town
+  counties:
+  - Fremont
+  population: 236
+  wikipedia: https://en.wikipedia.org/wiki/Brookside,_Colorado
+- id: broomfield
+  name: Broomfield
+  kind: consolidated
+  counties:
+  - Broomfield
+  population: 74112
+  wikipedia: https://en.wikipedia.org/wiki/Broomfield,_Colorado
+  county_seat: true
+  consolidated_with: Broomfield County
+- id: brush
+  name: Brush
+  kind: city
+  counties:
+  - Morgan
+  population: 5339
+  wikipedia: https://en.wikipedia.org/wiki/Brush,_Colorado
+- id: buena-vista
+  name: Buena Vista
+  kind: town
+  counties:
+  - Chaffee
+  population: 2855
+  wikipedia: https://en.wikipedia.org/wiki/Buena_Vista,_Colorado
+- id: burlington
+  name: Burlington
+  kind: city
+  counties:
+  - Kit Carson
+  population: 3172
+  wikipedia: https://en.wikipedia.org/wiki/Burlington,_Colorado
+  county_seat: true
+- id: calhan
+  name: Calhan
+  kind: town
+  counties:
+  - El Paso
+  population: 762
+  wikipedia: https://en.wikipedia.org/wiki/Calhan,_Colorado
+- id: campo
+  name: Campo
+  kind: town
+  counties:
+  - Baca
+  population: 103
+  wikipedia: https://en.wikipedia.org/wiki/Campo,_Colorado
+- id: canon-city
+  name: Cañon City
+  kind: city
+  counties:
+  - Fremont
+  population: 17141
+  wikipedia: https://en.wikipedia.org/wiki/Cañon_City,_Colorado
+  county_seat: true
+- id: carbonate
+  name: Carbonate
+  kind: town
+  counties:
+  - Garfield
+  population: 0
+  wikipedia: https://en.wikipedia.org/wiki/Carbonate,_Colorado
+- id: carbondale
+  name: Carbondale
+  kind: town
+  counties:
+  - Garfield
+  population: 6434
+  wikipedia: https://en.wikipedia.org/wiki/Carbondale,_Colorado
+- id: castle-pines
+  name: Castle Pines
+  kind: city
+  counties:
+  - Douglas
+  population: 11036
+  wikipedia: https://en.wikipedia.org/wiki/Castle_Pines,_Colorado
+- id: castle-rock
+  name: Castle Rock
+  kind: town
+  counties:
+  - Douglas
+  population: 73158
+  wikipedia: https://en.wikipedia.org/wiki/Castle_Rock,_Colorado
+  county_seat: true
+- id: cedaredge
+  name: Cedaredge
+  kind: town
+  counties:
+  - Delta
+  population: 2279
+  wikipedia: https://en.wikipedia.org/wiki/Cedaredge,_Colorado
+- id: centennial
+  name: Centennial
+  kind: city
+  counties:
+  - Arapahoe
+  population: 108418
+  wikipedia: https://en.wikipedia.org/wiki/Centennial,_Colorado
+- id: center
+  name: Center
+  kind: town
+  counties:
+  - Saguache
+  - Rio Grande
+  population: 1929
+  wikipedia: https://en.wikipedia.org/wiki/Center,_Colorado
+- id: central-city
+  name: Central City
+  kind: city
+  counties:
+  - Gilpin
+  - Clear Creek
+  population: 779
+  wikipedia: https://en.wikipedia.org/wiki/Central_City,_Colorado
+  county_seat: true
+- id: cheraw
+  name: Cheraw
+  kind: town
+  counties:
+  - Otero
+  population: 237
+  wikipedia: https://en.wikipedia.org/wiki/Cheraw,_Colorado
+- id: cherry-hills-village
+  name: Cherry Hills Village
+  kind: city
+  counties:
+  - Arapahoe
+  population: 6442
+  wikipedia: https://en.wikipedia.org/wiki/Cherry_Hills_Village,_Colorado
+- id: cheyenne-wells
+  name: Cheyenne Wells
+  kind: town
+  counties:
+  - Cheyenne
+  population: 758
+  wikipedia: https://en.wikipedia.org/wiki/Cheyenne_Wells,_Colorado
+  county_seat: true
+- id: coal-creek
+  name: Coal Creek
+  kind: town
+  counties:
+  - Fremont
+  population: 364
+  wikipedia: https://en.wikipedia.org/wiki/Coal_Creek,_Colorado
+- id: cokedale
+  name: Cokedale
+  kind: town
+  counties:
+  - Las Animas
+  population: 127
+  wikipedia: https://en.wikipedia.org/wiki/Cokedale,_Colorado
+- id: collbran
+  name: Collbran
+  kind: town
+  counties:
+  - Mesa
+  population: 369
+  wikipedia: https://en.wikipedia.org/wiki/Collbran,_Colorado
+- id: colorado-springs
+  name: Colorado Springs
+  kind: city
+  counties:
+  - El Paso
+  population: 478961
+  wikipedia: https://en.wikipedia.org/wiki/Colorado_Springs,_Colorado
+  county_seat: true
+- id: columbine-valley
+  name: Columbine Valley
+  kind: town
+  counties:
+  - Arapahoe
+  population: 1502
+  wikipedia: https://en.wikipedia.org/wiki/Columbine_Valley,_Colorado
+- id: commerce-city
+  name: Commerce City
+  kind: city
+  counties:
+  - Adams
+  population: 62418
+  wikipedia: https://en.wikipedia.org/wiki/Commerce_City,_Colorado
+- id: cortez
+  name: Cortez
+  kind: city
+  counties:
+  - Montezuma
+  population: 8766
+  wikipedia: https://en.wikipedia.org/wiki/Cortez,_Colorado
+  county_seat: true
+- id: craig
+  name: Craig
+  kind: city
+  counties:
+  - Moffat
+  population: 9060
+  wikipedia: https://en.wikipedia.org/wiki/Craig,_Colorado
+  county_seat: true
+- id: crawford
+  name: Crawford
+  kind: town
+  counties:
+  - Delta
+  population: 403
+  wikipedia: https://en.wikipedia.org/wiki/Crawford,_Colorado
+- id: creede
+  name: Creede
+  kind: town
+  counties:
+  - Mineral
+  population: 257
+  wikipedia: https://en.wikipedia.org/wiki/Creede,_Colorado
+  county_seat: true
+- id: crested-butte
+  name: Crested Butte
+  kind: town
+  counties:
+  - Gunnison
+  population: 1639
+  wikipedia: https://en.wikipedia.org/wiki/Crested_Butte,_Colorado
+- id: crestone
+  name: Crestone
+  kind: town
+  counties:
+  - Saguache
+  population: 141
+  wikipedia: https://en.wikipedia.org/wiki/Crestone,_Colorado
+- id: cripple-creek
+  name: Cripple Creek
+  kind: city
+  counties:
+  - Teller
+  population: 1155
+  wikipedia: https://en.wikipedia.org/wiki/Cripple_Creek,_Colorado
+  county_seat: true
+- id: crook
+  name: Crook
+  kind: town
+  counties:
+  - Logan
+  population: 133
+  wikipedia: https://en.wikipedia.org/wiki/Crook,_Colorado
+- id: crowley
+  name: Crowley
+  kind: town
+  counties:
+  - Crowley
+  population: 166
+  wikipedia: https://en.wikipedia.org/wiki/Crowley,_Colorado
+- id: dacono
+  name: Dacono
+  kind: city
+  counties:
+  - Weld
+  population: 6297
+  wikipedia: https://en.wikipedia.org/wiki/Dacono,_Colorado
+- id: de-beque
+  name: De Beque
+  kind: town
+  counties:
+  - Mesa
+  population: 493
+  wikipedia: https://en.wikipedia.org/wiki/De_Beque,_Colorado
+- id: deer-trail
+  name: Deer Trail
+  kind: town
+  counties:
+  - Arapahoe
+  population: 1068
+  wikipedia: https://en.wikipedia.org/wiki/Deer_Trail,_Colorado
+- id: del-norte
+  name: Del Norte
+  kind: town
+  counties:
+  - Rio Grande
+  population: 1458
+  wikipedia: https://en.wikipedia.org/wiki/Del_Norte,_Colorado
+  county_seat: true
+- id: delta
+  name: Delta
+  kind: city
+  counties:
+  - Delta
+  population: 9035
+  wikipedia: https://en.wikipedia.org/wiki/Delta,_Colorado
+  county_seat: true
+- id: denver
+  name: Denver
+  kind: consolidated
+  counties:
+  - Denver
+  population: 715522
+  wikipedia: https://en.wikipedia.org/wiki/Denver,_Colorado
+  county_seat: true
+  consolidated_with: Denver County
+- id: dillon
+  name: Dillon
+  kind: town
+  counties:
+  - Summit
+  population: 1064
+  wikipedia: https://en.wikipedia.org/wiki/Dillon,_Colorado
+- id: dinosaur
+  name: Dinosaur
+  kind: town
+  counties:
+  - Moffat
+  population: 243
+  wikipedia: https://en.wikipedia.org/wiki/Dinosaur,_Colorado
+- id: dolores
+  name: Dolores
+  kind: town
+  counties:
+  - Montezuma
+  population: 885
+  wikipedia: https://en.wikipedia.org/wiki/Dolores,_Colorado
+- id: dove-creek
+  name: Dove Creek
+  kind: town
+  counties:
+  - Dolores
+  population: 635
+  wikipedia: https://en.wikipedia.org/wiki/Dove_Creek,_Colorado
+  county_seat: true
+- id: durango
+  name: Durango
+  kind: city
+  counties:
+  - La Plata
+  population: 19071
+  wikipedia: https://en.wikipedia.org/wiki/Durango,_Colorado
+  county_seat: true
+- id: eads
+  name: Eads
+  kind: town
+  counties:
+  - Kiowa
+  population: 672
+  wikipedia: https://en.wikipedia.org/wiki/Eads,_Colorado
+  county_seat: true
+- id: eagle
+  name: Eagle
+  kind: town
+  counties:
+  - Eagle
+  population: 7511
+  wikipedia: https://en.wikipedia.org/wiki/Eagle,_Colorado
+  county_seat: true
+- id: eaton
+  name: Eaton
+  kind: town
+  counties:
+  - Weld
+  population: 5802
+  wikipedia: https://en.wikipedia.org/wiki/Eaton,_Colorado
+- id: eckley
+  name: Eckley
+  kind: town
+  counties:
+  - Yuma
+  population: 232
+  wikipedia: https://en.wikipedia.org/wiki/Eckley,_Colorado
+- id: edgewater
+  name: Edgewater
+  kind: city
+  counties:
+  - Jefferson
+  population: 5005
+  wikipedia: https://en.wikipedia.org/wiki/Edgewater,_Colorado
+- id: elizabeth
+  name: Elizabeth
+  kind: town
+  counties:
+  - Elbert
+  population: 1675
+  wikipedia: https://en.wikipedia.org/wiki/Elizabeth,_Colorado
+- id: empire
+  name: Empire
+  kind: town
+  counties:
+  - Clear Creek
+  population: 345
+  wikipedia: https://en.wikipedia.org/wiki/Empire,_Colorado
+- id: englewood
+  name: Englewood
+  kind: city
+  counties:
+  - Arapahoe
+  population: 33659
+  wikipedia: https://en.wikipedia.org/wiki/Englewood,_Colorado
+- id: erie
+  name: Erie
+  kind: town
+  counties:
+  - Weld
+  - Boulder
+  population: 30038
+  wikipedia: https://en.wikipedia.org/wiki/Erie,_Colorado
+- id: estes-park
+  name: Estes Park
+  kind: town
+  counties:
+  - Larimer
+  population: 5904
+  wikipedia: https://en.wikipedia.org/wiki/Estes_Park,_Colorado
+- id: evans
+  name: Evans
+  kind: city
+  counties:
+  - Weld
+  population: 22165
+  wikipedia: https://en.wikipedia.org/wiki/Evans,_Colorado
+- id: fairplay
+  name: Fairplay
+  kind: town
+  counties:
+  - Park
+  population: 724
+  wikipedia: https://en.wikipedia.org/wiki/Fairplay,_Colorado
+  county_seat: true
+- id: federal-heights
+  name: Federal Heights
+  kind: city
+  counties:
+  - Adams
+  population: 14382
+  wikipedia: https://en.wikipedia.org/wiki/Federal_Heights,_Colorado
+- id: firestone
+  name: Firestone
+  kind: town
+  counties:
+  - Weld
+  population: 16381
+  wikipedia: https://en.wikipedia.org/wiki/Firestone,_Colorado
+- id: flagler
+  name: Flagler
+  kind: town
+  counties:
+  - Kit Carson
+  population: 567
+  wikipedia: https://en.wikipedia.org/wiki/Flagler,_Colorado
+- id: fleming
+  name: Fleming
+  kind: town
+  counties:
+  - Logan
+  population: 428
+  wikipedia: https://en.wikipedia.org/wiki/Fleming,_Colorado
+- id: florence
+  name: Florence
+  kind: city
+  counties:
+  - Fremont
+  population: 3822
+  wikipedia: https://en.wikipedia.org/wiki/Florence,_Colorado
+- id: fort-collins
+  name: Fort Collins
+  kind: city
+  counties:
+  - Larimer
+  population: 169810
+  wikipedia: https://en.wikipedia.org/wiki/Fort_Collins,_Colorado
+  county_seat: true
+- id: fort-lupton
+  name: Fort Lupton
+  kind: city
+  counties:
+  - Weld
+  population: 7955
+  wikipedia: https://en.wikipedia.org/wiki/Fort_Lupton,_Colorado
+- id: fort-morgan
+  name: Fort Morgan
+  kind: city
+  counties:
+  - Morgan
+  population: 11597
+  wikipedia: https://en.wikipedia.org/wiki/Fort_Morgan,_Colorado
+  county_seat: true
+- id: fountain
+  name: Fountain
+  kind: city
+  counties:
+  - El Paso
+  population: 29802
+  wikipedia: https://en.wikipedia.org/wiki/Fountain,_Colorado
+- id: fowler
+  name: Fowler
+  kind: town
+  counties:
+  - Otero
+  population: 1253
+  wikipedia: https://en.wikipedia.org/wiki/Fowler,_Colorado
+- id: foxfield
+  name: Foxfield
+  kind: town
+  counties:
+  - Arapahoe
+  population: 754
+  wikipedia: https://en.wikipedia.org/wiki/Foxfield,_Colorado
+- id: fraser
+  name: Fraser
+  kind: town
+  counties:
+  - Grand
+  population: 1400
+  wikipedia: https://en.wikipedia.org/wiki/Fraser,_Colorado
+- id: frederick
+  name: Frederick
+  kind: town
+  counties:
+  - Weld
+  population: 14513
+  wikipedia: https://en.wikipedia.org/wiki/Frederick,_Colorado
+- id: frisco
+  name: Frisco
+  kind: town
+  counties:
+  - Summit
+  population: 2913
+  wikipedia: https://en.wikipedia.org/wiki/Frisco,_Colorado
+- id: fruita
+  name: Fruita
+  kind: city
+  counties:
+  - Mesa
+  population: 13395
+  wikipedia: https://en.wikipedia.org/wiki/Fruita,_Colorado
+- id: garden-city
+  name: Garden City
+  kind: town
+  counties:
+  - Weld
+  population: 254
+  wikipedia: https://en.wikipedia.org/wiki/Garden_City,_Colorado
+- id: genoa
+  name: Genoa
+  kind: town
+  counties:
+  - Lincoln
+  population: 153
+  wikipedia: https://en.wikipedia.org/wiki/Genoa,_Colorado
+- id: georgetown
+  name: Georgetown
+  kind: city
+  counties:
+  - Clear Creek
+  population: 1118
+  wikipedia: https://en.wikipedia.org/wiki/Georgetown,_Colorado
+  county_seat: true
+- id: gilcrest
+  name: Gilcrest
+  kind: town
+  counties:
+  - Weld
+  population: 1029
+  wikipedia: https://en.wikipedia.org/wiki/Gilcrest,_Colorado
+- id: glendale
+  name: Glendale
+  kind: city
+  counties:
+  - Arapahoe
+  population: 4613
+  wikipedia: https://en.wikipedia.org/wiki/Glendale,_Colorado
+- id: glenwood-springs
+  name: Glenwood Springs
+  kind: city
+  counties:
+  - Garfield
+  population: 9963
+  wikipedia: https://en.wikipedia.org/wiki/Glenwood_Springs,_Colorado
+  county_seat: true
+- id: golden
+  name: Golden
+  kind: city
+  counties:
+  - Jefferson
+  population: 20399
+  wikipedia: https://en.wikipedia.org/wiki/Golden,_Colorado
+  county_seat: true
+- id: granada
+  name: Granada
+  kind: town
+  counties:
+  - Prowers
+  population: 445
+  wikipedia: https://en.wikipedia.org/wiki/Granada,_Colorado
+- id: granby
+  name: Granby
+  kind: town
+  counties:
+  - Grand
+  population: 2079
+  wikipedia: https://en.wikipedia.org/wiki/Granby,_Colorado
+- id: grand-junction
+  name: Grand Junction
+  kind: city
+  counties:
+  - Mesa
+  population: 65560
+  wikipedia: https://en.wikipedia.org/wiki/Grand_Junction,_Colorado
+  county_seat: true
+- id: grand-lake
+  name: Grand Lake
+  kind: town
+  counties:
+  - Grand
+  population: 410
+  wikipedia: https://en.wikipedia.org/wiki/Grand_Lake,_Colorado
+- id: greeley
+  name: Greeley
+  kind: city
+  counties:
+  - Weld
+  population: 108795
+  wikipedia: https://en.wikipedia.org/wiki/Greeley,_Colorado
+  county_seat: true
+- id: green-mountain-falls
+  name: Green Mountain Falls
+  kind: town
+  counties:
+  - El Paso
+  - Teller
+  population: 646
+  wikipedia: https://en.wikipedia.org/wiki/Green_Mountain_Falls,_Colorado
+- id: greenwood-village
+  name: Greenwood Village
+  kind: city
+  counties:
+  - Arapahoe
+  population: 15691
+  wikipedia: https://en.wikipedia.org/wiki/Greenwood_Village,_Colorado
+- id: grover
+  name: Grover
+  kind: town
+  counties:
+  - Weld
+  population: 157
+  wikipedia: https://en.wikipedia.org/wiki/Grover,_Colorado
+- id: gunnison
+  name: Gunnison
+  kind: city
+  counties:
+  - Gunnison
+  population: 6560
+  wikipedia: https://en.wikipedia.org/wiki/Gunnison,_Colorado
+  county_seat: true
+- id: gypsum
+  name: Gypsum
+  kind: town
+  counties:
+  - Eagle
+  population: 8040
+  wikipedia: https://en.wikipedia.org/wiki/Gypsum,_Colorado
+- id: haswell
+  name: Haswell
+  kind: town
+  counties:
+  - Kiowa
+  population: 71
+  wikipedia: https://en.wikipedia.org/wiki/Haswell,_Colorado
+- id: haxtun
+  name: Haxtun
+  kind: town
+  counties:
+  - Phillips
+  population: 981
+  wikipedia: https://en.wikipedia.org/wiki/Haxtun,_Colorado
+- id: hayden
+  name: Hayden
+  kind: town
+  counties:
+  - Routt
+  population: 1941
+  wikipedia: https://en.wikipedia.org/wiki/Hayden,_Colorado
+- id: hillrose
+  name: Hillrose
+  kind: town
+  counties:
+  - Morgan
+  population: 312
+  wikipedia: https://en.wikipedia.org/wiki/Hillrose,_Colorado
+- id: holly
+  name: Holly
+  kind: town
+  counties:
+  - Prowers
+  population: 837
+  wikipedia: https://en.wikipedia.org/wiki/Holly,_Colorado
+- id: holyoke
+  name: Holyoke
+  kind: city
+  counties:
+  - Phillips
+  population: 2346
+  wikipedia: https://en.wikipedia.org/wiki/Holyoke,_Colorado
+  county_seat: true
+- id: hooper
+  name: Hooper
+  kind: town
+  counties:
+  - Alamosa
+  population: 81
+  wikipedia: https://en.wikipedia.org/wiki/Hooper,_Colorado
+- id: hot-sulphur-springs
+  name: Hot Sulphur Springs
+  kind: town
+  counties:
+  - Grand
+  population: 687
+  wikipedia: https://en.wikipedia.org/wiki/Hot_Sulphur_Springs,_Colorado
+  county_seat: true
+- id: hotchkiss
+  name: Hotchkiss
+  kind: town
+  counties:
+  - Delta
+  population: 875
+  wikipedia: https://en.wikipedia.org/wiki/Hotchkiss,_Colorado
+- id: hudson
+  name: Hudson
+  kind: town
+  counties:
+  - Weld
+  population: 1651
+  wikipedia: https://en.wikipedia.org/wiki/Hudson,_Colorado
+- id: hugo
+  name: Hugo
+  kind: town
+  counties:
+  - Lincoln
+  population: 787
+  wikipedia: https://en.wikipedia.org/wiki/Hugo,_Colorado
+  county_seat: true
+- id: idaho-springs
+  name: Idaho Springs
+  kind: city
+  counties:
+  - Clear Creek
+  population: 1782
+  wikipedia: https://en.wikipedia.org/wiki/Idaho_Springs,_Colorado
+- id: ignacio
+  name: Ignacio
+  kind: town
+  counties:
+  - La Plata
+  population: 852
+  wikipedia: https://en.wikipedia.org/wiki/Ignacio,_Colorado
+- id: iliff
+  name: Iliff
+  kind: town
+  counties:
+  - Logan
+  population: 246
+  wikipedia: https://en.wikipedia.org/wiki/Iliff,_Colorado
+- id: jamestown
+  name: Jamestown
+  kind: town
+  counties:
+  - Boulder
+  population: 256
+  wikipedia: https://en.wikipedia.org/wiki/Jamestown,_Colorado
+- id: johnstown
+  name: Johnstown
+  kind: town
+  counties:
+  - Weld
+  - Larimer
+  population: 17303
+  wikipedia: https://en.wikipedia.org/wiki/Johnstown,_Colorado
+- id: julesburg
+  name: Julesburg
+  kind: town
+  counties:
+  - Sedgwick
+  population: 1307
+  wikipedia: https://en.wikipedia.org/wiki/Julesburg,_Colorado
+  county_seat: true
+- id: keenesburg
+  name: Keenesburg
+  kind: town
+  counties:
+  - Weld
+  population: 1250
+  wikipedia: https://en.wikipedia.org/wiki/Keenesburg,_Colorado
+- id: kersey
+  name: Kersey
+  kind: town
+  counties:
+  - Weld
+  population: 1495
+  wikipedia: https://en.wikipedia.org/wiki/Kersey,_Colorado
+- id: keystone
+  name: Keystone
+  kind: town
+  counties:
+  - Summit
+  population: 1369
+  wikipedia: https://en.wikipedia.org/wiki/Keystone,_Colorado
+- id: kim
+  name: Kim
+  kind: town
+  counties:
+  - Las Animas
+  population: 63
+  wikipedia: https://en.wikipedia.org/wiki/Kim,_Colorado
+- id: kiowa
+  name: Kiowa
+  kind: town
+  counties:
+  - Elbert
+  population: 725
+  wikipedia: https://en.wikipedia.org/wiki/Kiowa,_Colorado
+  county_seat: true
+- id: kit-carson
+  name: Kit Carson
+  kind: town
+  counties:
+  - Cheyenne
+  population: 255
+  wikipedia: https://en.wikipedia.org/wiki/Kit_Carson,_Colorado
+- id: kremmling
+  name: Kremmling
+  kind: town
+  counties:
+  - Grand
+  population: 1509
+  wikipedia: https://en.wikipedia.org/wiki/Kremmling,_Colorado
+- id: la-jara
+  name: La Jara
+  kind: town
+  counties:
+  - Conejos
+  population: 730
+  wikipedia: https://en.wikipedia.org/wiki/La_Jara,_Colorado
+- id: la-junta
+  name: La Junta
+  kind: city
+  counties:
+  - Otero
+  population: 7322
+  wikipedia: https://en.wikipedia.org/wiki/La_Junta,_Colorado
+  county_seat: true
+- id: la-veta
+  name: La Veta
+  kind: town
+  counties:
+  - Huerfano
+  population: 862
+  wikipedia: https://en.wikipedia.org/wiki/La_Veta,_Colorado
+- id: lafayette
+  name: Lafayette
+  kind: city
+  counties:
+  - Boulder
+  population: 30411
+  wikipedia: https://en.wikipedia.org/wiki/Lafayette,_Colorado
+- id: lake-city
+  name: Lake City
+  kind: town
+  counties:
+  - Hinsdale
+  population: 432
+  wikipedia: https://en.wikipedia.org/wiki/Lake_City,_Colorado
+  county_seat: true
+- id: lakeside
+  name: Lakeside
+  kind: town
+  counties:
+  - Jefferson
+  population: 16
+  wikipedia: https://en.wikipedia.org/wiki/Lakeside,_Colorado
+- id: lakewood
+  name: Lakewood
+  kind: city
+  counties:
+  - Jefferson
+  population: 155984
+  wikipedia: https://en.wikipedia.org/wiki/Lakewood,_Colorado
+- id: lamar
+  name: Lamar
+  kind: city
+  counties:
+  - Prowers
+  population: 7687
+  wikipedia: https://en.wikipedia.org/wiki/Lamar,_Colorado
+  county_seat: true
+- id: larkspur
+  name: Larkspur
+  kind: town
+  counties:
+  - Douglas
+  population: 206
+  wikipedia: https://en.wikipedia.org/wiki/Larkspur,_Colorado
+- id: las-animas
+  name: Las Animas
+  kind: city
+  counties:
+  - Bent
+  population: 2300
+  wikipedia: https://en.wikipedia.org/wiki/Las_Animas,_Colorado
+  county_seat: true
+- id: lasalle
+  name: LaSalle
+  kind: town
+  counties:
+  - Weld
+  population: 2359
+  wikipedia: https://en.wikipedia.org/wiki/LaSalle,_Colorado
+- id: leadville
+  name: Leadville
+  kind: city
+  counties:
+  - Lake
+  population: 2633
+  wikipedia: https://en.wikipedia.org/wiki/Leadville,_Colorado
+  county_seat: true
+- id: limon
+  name: Limon
+  kind: town
+  counties:
+  - Lincoln
+  population: 2043
+  wikipedia: https://en.wikipedia.org/wiki/Limon,_Colorado
+- id: littleton
+  name: Littleton
+  kind: city
+  counties:
+  - Arapahoe
+  - Jefferson
+  - Douglas
+  population: 45652
+  wikipedia: https://en.wikipedia.org/wiki/Littleton,_Colorado
+  county_seat: true
+- id: lochbuie
+  name: Lochbuie
+  kind: town
+  counties:
+  - Weld
+  - Adams
+  population: 8088
+  wikipedia: https://en.wikipedia.org/wiki/Lochbuie,_Colorado
+- id: log-lane-village
+  name: Log Lane Village
+  kind: town
+  counties:
+  - Morgan
+  population: 913
+  wikipedia: https://en.wikipedia.org/wiki/Log_Lane_Village,_Colorado
+- id: lone-tree
+  name: Lone Tree
+  kind: city
+  counties:
+  - Douglas
+  population: 14253
+  wikipedia: https://en.wikipedia.org/wiki/Lone_Tree,_Colorado
+- id: longmont
+  name: Longmont
+  kind: city
+  counties:
+  - Boulder
+  - Weld
+  population: 98885
+  wikipedia: https://en.wikipedia.org/wiki/Longmont,_Colorado
+- id: louisville
+  name: Louisville
+  kind: city
+  counties:
+  - Boulder
+  population: 21226
+  wikipedia: https://en.wikipedia.org/wiki/Louisville,_Colorado
+- id: loveland
+  name: Loveland
+  kind: city
+  counties:
+  - Larimer
+  population: 76378
+  wikipedia: https://en.wikipedia.org/wiki/Loveland,_Colorado
+- id: lyons
+  name: Lyons
+  kind: town
+  counties:
+  - Boulder
+  population: 2209
+  wikipedia: https://en.wikipedia.org/wiki/Lyons,_Colorado
+- id: manassa
+  name: Manassa
+  kind: town
+  counties:
+  - Conejos
+  population: 947
+  wikipedia: https://en.wikipedia.org/wiki/Manassa,_Colorado
+- id: mancos
+  name: Mancos
+  kind: town
+  counties:
+  - Montezuma
+  population: 1196
+  wikipedia: https://en.wikipedia.org/wiki/Mancos,_Colorado
+- id: manitou-springs
+  name: Manitou Springs
+  kind: city
+  counties:
+  - El Paso
+  population: 4858
+  wikipedia: https://en.wikipedia.org/wiki/Manitou_Springs,_Colorado
+- id: manzanola
+  name: Manzanola
+  kind: town
+  counties:
+  - Otero
+  population: 341
+  wikipedia: https://en.wikipedia.org/wiki/Manzanola,_Colorado
+- id: marble
+  name: Marble
+  kind: town
+  counties:
+  - Gunnison
+  population: 133
+  wikipedia: https://en.wikipedia.org/wiki/Marble,_Colorado
+- id: mead
+  name: Mead
+  kind: town
+  counties:
+  - Weld
+  population: 4781
+  wikipedia: https://en.wikipedia.org/wiki/Mead,_Colorado
+- id: meeker
+  name: Meeker
+  kind: town
+  counties:
+  - Rio Blanco
+  population: 2374
+  wikipedia: https://en.wikipedia.org/wiki/Meeker,_Colorado
+  county_seat: true
+- id: merino
+  name: Merino
+  kind: town
+  counties:
+  - Logan
+  population: 281
+  wikipedia: https://en.wikipedia.org/wiki/Merino,_Colorado
+- id: milliken
+  name: Milliken
+  kind: town
+  counties:
+  - Weld
+  population: 8386
+  wikipedia: https://en.wikipedia.org/wiki/Milliken,_Colorado
+- id: minturn
+  name: Minturn
+  kind: town
+  counties:
+  - Eagle
+  population: 1033
+  wikipedia: https://en.wikipedia.org/wiki/Minturn,_Colorado
+- id: moffat
+  name: Moffat
+  kind: town
+  counties:
+  - Saguache
+  population: 108
+  wikipedia: https://en.wikipedia.org/wiki/Moffat,_Colorado
+- id: monte-vista
+  name: Monte Vista
+  kind: city
+  counties:
+  - Rio Grande
+  population: 4247
+  wikipedia: https://en.wikipedia.org/wiki/Monte_Vista,_Colorado
+- id: montezuma
+  name: Montezuma
+  kind: town
+  counties:
+  - Summit
+  population: 74
+  wikipedia: https://en.wikipedia.org/wiki/Montezuma,_Colorado
+- id: montrose
+  name: Montrose
+  kind: city
+  counties:
+  - Montrose
+  population: 20291
+  wikipedia: https://en.wikipedia.org/wiki/Montrose,_Colorado
+  county_seat: true
+- id: monument
+  name: Monument
+  kind: town
+  counties:
+  - El Paso
+  population: 10399
+  wikipedia: https://en.wikipedia.org/wiki/Monument,_Colorado
+- id: morrison
+  name: Morrison
+  kind: town
+  counties:
+  - Jefferson
+  population: 396
+  wikipedia: https://en.wikipedia.org/wiki/Morrison,_Colorado
+- id: mount-crested-butte
+  name: Mount Crested Butte
+  kind: town
+  counties:
+  - Gunnison
+  population: 941
+  wikipedia: https://en.wikipedia.org/wiki/Mount_Crested_Butte,_Colorado
+- id: mountain-view
+  name: Mountain View
+  kind: town
+  counties:
+  - Jefferson
+  population: 541
+  wikipedia: https://en.wikipedia.org/wiki/Mountain_View,_Colorado
+- id: mountain-village
+  name: Mountain Village
+  kind: town
+  counties:
+  - San Miguel
+  population: 1264
+  wikipedia: https://en.wikipedia.org/wiki/Mountain_Village,_Colorado
+- id: naturita
+  name: Naturita
+  kind: town
+  counties:
+  - Montrose
+  population: 485
+  wikipedia: https://en.wikipedia.org/wiki/Naturita,_Colorado
+- id: nederland
+  name: Nederland
+  kind: town
+  counties:
+  - Boulder
+  population: 1471
+  wikipedia: https://en.wikipedia.org/wiki/Nederland,_Colorado
+- id: new-castle
+  name: New Castle
+  kind: town
+  counties:
+  - Garfield
+  population: 4923
+  wikipedia: https://en.wikipedia.org/wiki/New_Castle,_Colorado
+- id: northglenn
+  name: Northglenn
+  kind: city
+  counties:
+  - Adams
+  - Weld
+  population: 38131
+  wikipedia: https://en.wikipedia.org/wiki/Northglenn,_Colorado
+- id: norwood
+  name: Norwood
+  kind: town
+  counties:
+  - San Miguel
+  population: 535
+  wikipedia: https://en.wikipedia.org/wiki/Norwood,_Colorado
+- id: nucla
+  name: Nucla
+  kind: town
+  counties:
+  - Montrose
+  population: 585
+  wikipedia: https://en.wikipedia.org/wiki/Nucla,_Colorado
+- id: nunn
+  name: Nunn
+  kind: town
+  counties:
+  - Weld
+  population: 504
+  wikipedia: https://en.wikipedia.org/wiki/Nunn,_Colorado
+- id: oak-creek
+  name: Oak Creek
+  kind: town
+  counties:
+  - Routt
+  population: 889
+  wikipedia: https://en.wikipedia.org/wiki/Oak_Creek,_Colorado
+- id: olathe
+  name: Olathe
+  kind: town
+  counties:
+  - Montrose
+  population: 2019
+  wikipedia: https://en.wikipedia.org/wiki/Olathe,_Colorado
+- id: olney-springs
+  name: Olney Springs
+  kind: town
+  counties:
+  - Crowley
+  population: 315
+  wikipedia: https://en.wikipedia.org/wiki/Olney_Springs,_Colorado
+- id: ophir
+  name: Ophir
+  kind: town
+  counties:
+  - San Miguel
+  population: 197
+  wikipedia: https://en.wikipedia.org/wiki/Ophir,_Colorado
+- id: orchard-city
+  name: Orchard City
+  kind: town
+  counties:
+  - Delta
+  population: 3142
+  wikipedia: https://en.wikipedia.org/wiki/Orchard_City,_Colorado
+- id: ordway
+  name: Ordway
+  kind: town
+  counties:
+  - Crowley
+  population: 1066
+  wikipedia: https://en.wikipedia.org/wiki/Ordway,_Colorado
+  county_seat: true
+- id: otis
+  name: Otis
+  kind: town
+  counties:
+  - Washington
+  population: 511
+  wikipedia: https://en.wikipedia.org/wiki/Otis,_Colorado
+- id: ouray
+  name: Ouray
+  kind: city
+  counties:
+  - Ouray
+  population: 898
+  wikipedia: https://en.wikipedia.org/wiki/Ouray,_Colorado
+  county_seat: true
+- id: ovid
+  name: Ovid
+  kind: town
+  counties:
+  - Sedgwick
+  population: 271
+  wikipedia: https://en.wikipedia.org/wiki/Ovid,_Colorado
+- id: pagosa-springs
+  name: Pagosa Springs
+  kind: town
+  counties:
+  - Archuleta
+  population: 1571
+  wikipedia: https://en.wikipedia.org/wiki/Pagosa_Springs,_Colorado
+  county_seat: true
+- id: palisade
+  name: Palisade
+  kind: town
+  counties:
+  - Mesa
+  population: 2565
+  wikipedia: https://en.wikipedia.org/wiki/Palisade,_Colorado
+- id: palmer-lake
+  name: Palmer Lake
+  kind: town
+  counties:
+  - El Paso
+  population: 2636
+  wikipedia: https://en.wikipedia.org/wiki/Palmer_Lake,_Colorado
+- id: paoli
+  name: Paoli
+  kind: town
+  counties:
+  - Phillips
+  population: 51
+  wikipedia: https://en.wikipedia.org/wiki/Paoli,_Colorado
+- id: paonia
+  name: Paonia
+  kind: town
+  counties:
+  - Delta
+  population: 1447
+  wikipedia: https://en.wikipedia.org/wiki/Paonia,_Colorado
+- id: parachute
+  name: Parachute
+  kind: town
+  counties:
+  - Garfield
+  population: 1390
+  wikipedia: https://en.wikipedia.org/wiki/Parachute,_Colorado
+- id: parker
+  name: Parker
+  kind: town
+  counties:
+  - Douglas
+  population: 58512
+  wikipedia: https://en.wikipedia.org/wiki/Parker,_Colorado
+- id: peetz
+  name: Peetz
+  kind: town
+  counties:
+  - Logan
+  population: 213
+  wikipedia: https://en.wikipedia.org/wiki/Peetz,_Colorado
+- id: pierce
+  name: Pierce
+  kind: town
+  counties:
+  - Weld
+  population: 1097
+  wikipedia: https://en.wikipedia.org/wiki/Pierce,_Colorado
+- id: pitkin
+  name: Pitkin
+  kind: town
+  counties:
+  - Gunnison
+  population: 72
+  wikipedia: https://en.wikipedia.org/wiki/Pitkin,_Colorado
+- id: platteville
+  name: Platteville
+  kind: town
+  counties:
+  - Weld
+  population: 2955
+  wikipedia: https://en.wikipedia.org/wiki/Platteville,_Colorado
+- id: poncha-springs
+  name: Poncha Springs
+  kind: town
+  counties:
+  - Chaffee
+  population: 925
+  wikipedia: https://en.wikipedia.org/wiki/Poncha_Springs,_Colorado
+- id: pritchett
+  name: Pritchett
+  kind: town
+  counties:
+  - Baca
+  population: 112
+  wikipedia: https://en.wikipedia.org/wiki/Pritchett,_Colorado
+- id: pueblo
+  name: Pueblo
+  kind: city
+  counties:
+  - Pueblo
+  population: 111876
+  wikipedia: https://en.wikipedia.org/wiki/Pueblo,_Colorado
+  county_seat: true
+- id: ramah
+  name: Ramah
+  kind: town
+  counties:
+  - El Paso
+  population: 111
+  wikipedia: https://en.wikipedia.org/wiki/Ramah,_Colorado
+- id: rangely
+  name: Rangely
+  kind: town
+  counties:
+  - Rio Blanco
+  population: 2299
+  wikipedia: https://en.wikipedia.org/wiki/Rangely,_Colorado
+- id: raymer
+  name: Raymer
+  kind: town
+  counties:
+  - Weld
+  population: 110
+  wikipedia: https://en.wikipedia.org/wiki/Raymer,_Colorado
+- id: red-cliff
+  name: Red Cliff
+  kind: town
+  counties:
+  - Eagle
+  population: 257
+  wikipedia: https://en.wikipedia.org/wiki/Red_Cliff,_Colorado
+- id: rico
+  name: Rico
+  kind: town
+  counties:
+  - Dolores
+  population: 288
+  wikipedia: https://en.wikipedia.org/wiki/Rico,_Colorado
+- id: ridgway
+  name: Ridgway
+  kind: town
+  counties:
+  - Ouray
+  population: 1183
+  wikipedia: https://en.wikipedia.org/wiki/Ridgway,_Colorado
+- id: rifle
+  name: Rifle
+  kind: city
+  counties:
+  - Garfield
+  population: 10437
+  wikipedia: https://en.wikipedia.org/wiki/Rifle,_Colorado
+- id: rockvale
+  name: Rockvale
+  kind: town
+  counties:
+  - Fremont
+  population: 511
+  wikipedia: https://en.wikipedia.org/wiki/Rockvale,_Colorado
+- id: rocky-ford
+  name: Rocky Ford
+  kind: city
+  counties:
+  - Otero
+  population: 3876
+  wikipedia: https://en.wikipedia.org/wiki/Rocky_Ford,_Colorado
+- id: romeo
+  name: Romeo
+  kind: town
+  counties:
+  - Conejos
+  population: 302
+  wikipedia: https://en.wikipedia.org/wiki/Romeo,_Colorado
+- id: rye
+  name: Rye
+  kind: town
+  counties:
+  - Pueblo
+  population: 206
+  wikipedia: https://en.wikipedia.org/wiki/Rye,_Colorado
+- id: saguache
+  name: Saguache
+  kind: town
+  counties:
+  - Saguache
+  population: 539
+  wikipedia: https://en.wikipedia.org/wiki/Saguache,_Colorado
+  county_seat: true
+- id: salida
+  name: Salida
+  kind: city
+  counties:
+  - Chaffee
+  population: 5666
+  wikipedia: https://en.wikipedia.org/wiki/Salida,_Colorado
+  county_seat: true
+- id: san-luis
+  name: San Luis
+  kind: town
+  counties:
+  - Costilla
+  population: 598
+  wikipedia: https://en.wikipedia.org/wiki/San_Luis,_Colorado
+  county_seat: true
+- id: sanford
+  name: Sanford
+  kind: town
+  counties:
+  - Conejos
+  population: 879
+  wikipedia: https://en.wikipedia.org/wiki/Sanford,_Colorado
+- id: sawpit
+  name: Sawpit
+  kind: town
+  counties:
+  - San Miguel
+  population: 38
+  wikipedia: https://en.wikipedia.org/wiki/Sawpit,_Colorado
+- id: sedgwick
+  name: Sedgwick
+  kind: town
+  counties:
+  - Sedgwick
+  population: 172
+  wikipedia: https://en.wikipedia.org/wiki/Sedgwick,_Colorado
+- id: seibert
+  name: Seibert
+  kind: town
+  counties:
+  - Kit Carson
+  population: 172
+  wikipedia: https://en.wikipedia.org/wiki/Seibert,_Colorado
+- id: severance
+  name: Severance
+  kind: town
+  counties:
+  - Weld
+  population: 7683
+  wikipedia: https://en.wikipedia.org/wiki/Severance,_Colorado
+- id: sheridan
+  name: Sheridan
+  kind: city
+  counties:
+  - Arapahoe
+  population: 6105
+  wikipedia: https://en.wikipedia.org/wiki/Sheridan,_Colorado
+- id: sheridan-lake
+  name: Sheridan Lake
+  kind: town
+  counties:
+  - Kiowa
+  population: 55
+  wikipedia: https://en.wikipedia.org/wiki/Sheridan_Lake,_Colorado
+- id: silt
+  name: Silt
+  kind: town
+  counties:
+  - Garfield
+  population: 3536
+  wikipedia: https://en.wikipedia.org/wiki/Silt,_Colorado
+- id: silver-cliff
+  name: Silver Cliff
+  kind: town
+  counties:
+  - Custer
+  population: 609
+  wikipedia: https://en.wikipedia.org/wiki/Silver_Cliff,_Colorado
+- id: silver-plume
+  name: Silver Plume
+  kind: town
+  counties:
+  - Clear Creek
+  population: 207
+  wikipedia: https://en.wikipedia.org/wiki/Silver_Plume,_Colorado
+- id: silverthorne
+  name: Silverthorne
+  kind: town
+  counties:
+  - Summit
+  population: 4402
+  wikipedia: https://en.wikipedia.org/wiki/Silverthorne,_Colorado
+- id: silverton
+  name: Silverton
+  kind: town
+  counties:
+  - San Juan
+  population: 622
+  wikipedia: https://en.wikipedia.org/wiki/Silverton,_Colorado
+  county_seat: true
+- id: simla
+  name: Simla
+  kind: town
+  counties:
+  - Elbert
+  population: 601
+  wikipedia: https://en.wikipedia.org/wiki/Simla,_Colorado
+- id: snowmass-village
+  name: Snowmass Village
+  kind: town
+  counties:
+  - Pitkin
+  population: 3096
+  wikipedia: https://en.wikipedia.org/wiki/Snowmass_Village,_Colorado
+- id: south-fork
+  name: South Fork
+  kind: town
+  counties:
+  - Rio Grande
+  population: 510
+  wikipedia: https://en.wikipedia.org/wiki/South_Fork,_Colorado
+- id: springfield
+  name: Springfield
+  kind: town
+  counties:
+  - Baca
+  population: 1325
+  wikipedia: https://en.wikipedia.org/wiki/Springfield,_Colorado
+  county_seat: true
+- id: starkville
+  name: Starkville
+  kind: town
+  counties:
+  - Las Animas
+  population: 62
+  wikipedia: https://en.wikipedia.org/wiki/Starkville,_Colorado
+- id: steamboat-springs
+  name: Steamboat Springs
+  kind: city
+  counties:
+  - Routt
+  population: 13224
+  wikipedia: https://en.wikipedia.org/wiki/Steamboat_Springs,_Colorado
+  county_seat: true
+- id: sterling
+  name: Sterling
+  kind: city
+  counties:
+  - Logan
+  population: 13735
+  wikipedia: https://en.wikipedia.org/wiki/Sterling,_Colorado
+  county_seat: true
+- id: stratton
+  name: Stratton
+  kind: town
+  counties:
+  - Kit Carson
+  population: 656
+  wikipedia: https://en.wikipedia.org/wiki/Stratton,_Colorado
+- id: sugar-city
+  name: Sugar City
+  kind: town
+  counties:
+  - Crowley
+  population: 259
+  wikipedia: https://en.wikipedia.org/wiki/Sugar_City,_Colorado
+- id: superior
+  name: Superior
+  kind: town
+  counties:
+  - Boulder
+  - Jefferson
+  population: 13094
+  wikipedia: https://en.wikipedia.org/wiki/Superior,_Colorado
+- id: swink
+  name: Swink
+  kind: town
+  counties:
+  - Otero
+  population: 604
+  wikipedia: https://en.wikipedia.org/wiki/Swink,_Colorado
+- id: telluride
+  name: Telluride
+  kind: town
+  counties:
+  - San Miguel
+  population: 2607
+  wikipedia: https://en.wikipedia.org/wiki/Telluride,_Colorado
+  county_seat: true
+- id: thornton
+  name: Thornton
+  kind: city
+  counties:
+  - Adams
+  - Weld
+  population: 141867
+  wikipedia: https://en.wikipedia.org/wiki/Thornton,_Colorado
+- id: timnath
+  name: Timnath
+  kind: town
+  counties:
+  - Larimer
+  population: 6487
+  wikipedia: https://en.wikipedia.org/wiki/Timnath,_Colorado
+- id: trinidad
+  name: Trinidad
+  kind: city
+  counties:
+  - Las Animas
+  population: 8329
+  wikipedia: https://en.wikipedia.org/wiki/Trinidad,_Colorado
+  county_seat: true
+- id: two-buttes
+  name: Two Buttes
+  kind: town
+  counties:
+  - Baca
+  population: 34
+  wikipedia: https://en.wikipedia.org/wiki/Two_Buttes,_Colorado
+- id: vail
+  name: Vail
+  kind: town
+  counties:
+  - Eagle
+  population: 4835
+  wikipedia: https://en.wikipedia.org/wiki/Vail,_Colorado
+- id: victor
+  name: Victor
+  kind: city
+  counties:
+  - Teller
+  population: 379
+  wikipedia: https://en.wikipedia.org/wiki/Victor,_Colorado
+- id: vilas
+  name: Vilas
+  kind: town
+  counties:
+  - Baca
+  population: 98
+  wikipedia: https://en.wikipedia.org/wiki/Vilas,_Colorado
+- id: vona
+  name: Vona
+  kind: town
+  counties:
+  - Kit Carson
+  population: 95
+  wikipedia: https://en.wikipedia.org/wiki/Vona,_Colorado
+- id: walden
+  name: Walden
+  kind: town
+  counties:
+  - Jackson
+  population: 606
+  wikipedia: https://en.wikipedia.org/wiki/Walden,_Colorado
+  county_seat: true
+- id: walsenburg
+  name: Walsenburg
+  kind: city
+  counties:
+  - Huerfano
+  population: 3049
+  wikipedia: https://en.wikipedia.org/wiki/Walsenburg,_Colorado
+  county_seat: true
+- id: walsh
+  name: Walsh
+  kind: town
+  counties:
+  - Baca
+  population: 543
+  wikipedia: https://en.wikipedia.org/wiki/Walsh,_Colorado
+- id: ward
+  name: Ward
+  kind: town
+  counties:
+  - Boulder
+  population: 128
+  wikipedia: https://en.wikipedia.org/wiki/Ward,_Colorado
+- id: wellington
+  name: Wellington
+  kind: town
+  counties:
+  - Larimer
+  population: 11047
+  wikipedia: https://en.wikipedia.org/wiki/Wellington,_Colorado
+- id: westcliffe
+  name: Westcliffe
+  kind: town
+  counties:
+  - Custer
+  population: 435
+  wikipedia: https://en.wikipedia.org/wiki/Westcliffe,_Colorado
+  county_seat: true
+- id: westminster
+  name: Westminster
+  kind: city
+  counties:
+  - Adams
+  - Jefferson
+  population: 116317
+  wikipedia: https://en.wikipedia.org/wiki/Westminster,_Colorado
+- id: wheat-ridge
+  name: Wheat Ridge
+  kind: city
+  counties:
+  - Jefferson
+  population: 32398
+  wikipedia: https://en.wikipedia.org/wiki/Wheat_Ridge,_Colorado
+- id: wiggins
+  name: Wiggins
+  kind: town
+  counties:
+  - Morgan
+  population: 1401
+  wikipedia: https://en.wikipedia.org/wiki/Wiggins,_Colorado
+- id: wiley
+  name: Wiley
+  kind: town
+  counties:
+  - Prowers
+  population: 437
+  wikipedia: https://en.wikipedia.org/wiki/Wiley,_Colorado
+- id: williamsburg
+  name: Williamsburg
+  kind: town
+  counties:
+  - Fremont
+  population: 731
+  wikipedia: https://en.wikipedia.org/wiki/Williamsburg,_Colorado
+- id: windsor
+  name: Windsor
+  kind: town
+  counties:
+  - Weld
+  - Larimer
+  population: 32716
+  wikipedia: https://en.wikipedia.org/wiki/Windsor,_Colorado
+- id: winter-park
+  name: Winter Park
+  kind: town
+  counties:
+  - Grand
+  population: 1033
+  wikipedia: https://en.wikipedia.org/wiki/Winter_Park,_Colorado
+- id: woodland-park
+  name: Woodland Park
+  kind: city
+  counties:
+  - Teller
+  population: 7920
+  wikipedia: https://en.wikipedia.org/wiki/Woodland_Park,_Colorado
+- id: wray
+  name: Wray
+  kind: city
+  counties:
+  - Yuma
+  population: 2358
+  wikipedia: https://en.wikipedia.org/wiki/Wray,_Colorado
+  county_seat: true
+- id: yampa
+  name: Yampa
+  kind: town
+  counties:
+  - Routt
+  population: 399
+  wikipedia: https://en.wikipedia.org/wiki/Yampa,_Colorado
+- id: yuma
+  name: Yuma
+  kind: city
+  counties:
+  - Yuma
+  population: 3456
+  wikipedia: https://en.wikipedia.org/wiki/Yuma,_Colorado

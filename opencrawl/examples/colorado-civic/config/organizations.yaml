@@ -1,0 +1,9 @@
+# Hand notes on organizations that appear in money and endorsement records (research module).
+# Each entry: name (as it appears in filings), aliases, kind (pac | nonprofit | company | union |
+# association | party | chamber), website (its own site: the crawler reads the about page and any
+# officer list it carries), what (a one-line description, with src: the page it came from), and
+# officers [{name, role, src}] (only from a page that was opened; put its url in src).
+#
+# Entries here are merged with what the registries say (FEC, IRS/ProPublica, OpenCorporates).
+# Keep every claim sourced; leave fields out rather than guess.
+organizations: []
